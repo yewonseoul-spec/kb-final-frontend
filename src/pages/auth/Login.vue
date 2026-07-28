@@ -75,7 +75,8 @@ const login = async () => {
     </form>
 
     <p class="text-center text-muted mt-3 mb-0">
-      아이디 조회 · 암호 설정 · 회원가입
+      아이디 조회 · 암호 설정
+      <RouterLink to="/signup">회원가입</RouterLink>
     </p>
   </div>
 </template>
