@@ -1,4 +1,5 @@
 import axios from 'axios';
+import instance from '@/api';
 
 const BASE_URL = '/api/auth';
 
@@ -22,6 +23,12 @@ export default {
   // 회원가입
   async signup(member) {
     const { data } = await axios.post(`${BASE_URL}/signup`, member);
+    return data;
+  },
+
+  // 로그아웃 - 인증이 필요하므로 instance(토큰 자동 첨부) 사용
+  async logout() {
+    const { data } = await instance.post(`${BASE_URL}/logout`);
     return data;
   },
 };
