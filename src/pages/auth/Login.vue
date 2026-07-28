@@ -1,9 +1,10 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const member = reactive({
@@ -11,7 +12,9 @@ const member = reactive({
   password: '',
 });
 
-const error = ref('');
+const error = ref(
+  route.query.error === 'login_required' ? '로그인이 필요한 서비스입니다' : '',
+);
 const disableSubmit = computed(() => !(member.loginId && member.password));
 
 const login = async () => {
