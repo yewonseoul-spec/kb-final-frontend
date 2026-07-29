@@ -5,8 +5,9 @@ import axios from 'axios';
 const initState = {
   token: '', // 접근 토큰(JWT)
   user: {
-    username: '', // 사용자 ID
+    loginId: '', // 사용자 ID
     email: '', // Email
+    realName: '',
     roles: [], // 권한 목록
   },
 };
@@ -14,11 +15,14 @@ const initState = {
 export const useAuthStore = defineStore('auth', () => {
   const state = ref({ ...initState });
 
-  const isLogin = computed(() => !!state.value.user.username); // 로그인 여부
+  const isLogin = computed(() => !!state.value.user.loginId); // 로그인 여부
 
-  const username = computed(() => state.value.user.username); // 로그인 사용자 ID
+  const loginId = computed(() => state.value.user.loginId); // 로그인 사용자 ID
 
   const email = computed(() => state.value.user.email); // 로그인 사용자 email
+
+  const realName = computed(() => state.value.user.realName); // 로그인 사용자 실명
+
   const login = async (member) => {
     const { data } = await axios.post('/api/auth/login', member);
     state.value = { ...data };
@@ -49,8 +53,9 @@ export const useAuthStore = defineStore('auth', () => {
 
   return {
     state,
-    username,
+    loginId,
     email,
+    realName,
     isLogin,
     changeProfile,
     login,
