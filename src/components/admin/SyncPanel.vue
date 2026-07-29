@@ -48,16 +48,20 @@
 
         <table class="table table-sm mb-0">
           <tbody>
-            <tr><th class="text-muted fw-normal" style="width:130px">처리 건수</th>
+            <tr><th class="text-muted fw-normal" style="width:150px">처리 건수</th>
                 <td>{{ result.totalCnt }}건</td></tr>
-            <tr><th class="text-muted fw-normal">신규 등록</th>
+            <tr><th class="text-muted fw-normal">신규 추정</th>
                 <td>{{ result.insertCnt }}건</td></tr>
-            <tr><th class="text-muted fw-normal">기존 수정</th>
+            <tr><th class="text-muted fw-normal">기존 처리 추정</th>
                 <td>{{ result.updateCnt }}건</td></tr>
             <tr><th class="text-muted fw-normal">소요 시간</th>
                 <td>{{ (result.durationMs / 1000).toFixed(1) }}초</td></tr>
           </tbody>
         </table>
+
+        <small class="text-muted d-block mt-2">
+          신규·기존 건수는 동기화 전후 전체 정책 수의 차이로 계산한 추정치입니다.
+        </small>
 
         <div v-if="result.errorMsg" class="alert alert-danger mt-3 mb-0 py-2 small">
           {{ result.errorMsg }}
