@@ -1,10 +1,15 @@
 <script setup>
+import { ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
+import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue'; // 🌟 1. 메뉴 드로어 임포트
 
 const router = useRouter();
 const auth = useAuthStore();
+
+// 🌟 2. 메뉴 열림/닫힘 상태 관리 변수
+const isMenuOpen = ref(false);
 
 const onLogout = async () => {
   try {
@@ -38,13 +43,34 @@ const onLogout = async () => {
           로그아웃
         </button>
       </div>
+
       <RouterLink v-else to="/login" class="btn btn-sm btn-warning"
         >로그인</RouterLink
       >
+
+      <!-- TO-DO 로그인 완료 이후에 위치 변경 해야됨 -->
+      <button type="button" class="hamburger-btn" @click="isMenuOpen = true">
+        ☰
+      </button>
+
+      <!--------------------------------------------------------->
     </header>
 
     <div class="content my-5 px-3">
       <slot></slot>
     </div>
+
+    <KbMenuDrawer :isOpen="isMenuOpen" @close="isMenuOpen = false" />
   </div>
 </template>
+
+<style scoped>
+.hamburger-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  color: #2e2a24;
+}
+</style>
