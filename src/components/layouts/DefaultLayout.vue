@@ -3,12 +3,11 @@ import { ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
-import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue'; // 🌟 1. 메뉴 드로어 임포트
+import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
 
-// 🌟 2. 메뉴 열림/닫힘 상태 관리 변수
 const isMenuOpen = ref(false);
 
 const onLogout = async () => {
