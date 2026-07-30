@@ -146,17 +146,17 @@
 .kb-tab-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  transform: none;
   width: 100%;
-  max-width: 402px;
+  max-width: none;
   height: 80px;
   background-color: #ffffff;
   border-top: 1px solid #efece4;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 10px;
   box-sizing: border-box;
   z-index: 1000;
 }
@@ -172,6 +172,7 @@
   /* font-family: 'Pretendard', sans-serif; */
   font-size: 11px;
   font-weight: 500;
+  flex: 1;
 }
 
 .tab-item.active {
