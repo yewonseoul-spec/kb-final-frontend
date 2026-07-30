@@ -1,14 +1,17 @@
 <script setup>
-import { ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
 import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const isMenuOpen = ref(false);
+
+const pageTitle = computed(() => route.meta.title || '청년타파');
 
 const onLogout = async () => {
   try {
@@ -27,7 +30,7 @@ const onLogout = async () => {
       class="d-flex justify-content-between align-items-center py-3 border-bottom"
     >
       <RouterLink to="/" class="fw-bold fs-5 text-decoration-none text-dark">
-        청년타파
+        {{ pageTitle }}
       </RouterLink>
 
       <div v-if="auth.isLogin" class="d-flex align-items-center gap-3">
