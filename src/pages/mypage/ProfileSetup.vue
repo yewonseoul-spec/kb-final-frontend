@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
-import mypageApi from '@/api/mypageApi';
+import mypageApi, { validateProfile } from '@/api/mypageApi';
 import KbButton from '@/components/common/KbButton.vue';
 import KbCard from '@/components/common/KbCard.vue';
 import ProfileForm from '@/components/mypage/ProfileForm.vue';
@@ -30,46 +30,29 @@ onMounted(async () => {
   try {
     await mypageApi.getProfile();
     // 입력을 이미 끝낸 회원 → 온보딩이 필요 없다.
-    // TODO(다음 커밋): 프로필 조회 화면이 생기면 '/mypage/profile' 로 보낸다.
-    router.replace('/');
+    // 목적지가 지연 로딩이라 이동이 즉시 끝나지 않는다.
+    // isLoading 을 켜 둔 채로 넘겨야 그 사이에 폼이 깜빡이지 않는다.
+    router.replace('/mypage/profile');
+    return;
   } catch (e) {
     if (e.response?.status !== 404) {
       submitError.value =
         '프로필 정보를 확인하지 못했어요. 저장이 안 되면 잠시 후 다시 시도해 주세요.';
     }
-  } finally {
-    isLoading.value = false;
   }
+  isLoading.value = false;
 });
-
-const validate = () => {
-  Object.keys(errors).forEach((key) => delete errors[key]);
-
-  // KbInput 의 루트가 div 라서 max/min 이 input 까지 전달되지 않는다 → 여기서 직접 검사한다.
-  const today = new Date().toISOString().slice(0, 10);
-  if (form.birthDate && form.birthDate > today) {
-    errors.birthDate = '미래 날짜는 선택할 수 없어요.';
-  }
-  if (form.income !== '' && Number(form.income) < 0) {
-    errors.income = '0 이상으로 입력해 주세요.';
-  }
-  // household_size 에 CHECK (>= 1) 가 걸려 있어 0 을 보내면 400 이 난다.
-  if (form.householdSize !== '' && Number(form.householdSize) < 1) {
-    errors.householdSize = '본인을 포함해 1명 이상이어야 해요.';
-  }
-
-  return Object.keys(errors).length === 0;
-};
 
 const onSubmit = async () => {
   submitError.value = '';
-  if (!validate()) return;
+  Object.keys(errors).forEach((key) => delete errors[key]);
+  Object.assign(errors, validateProfile(form));
+  if (Object.keys(errors).length > 0) return;
 
   isSaving.value = true;
   try {
     await mypageApi.createProfile(form);
-    // TODO(다음 커밋): 프로필 조회 화면이 생기면 그쪽으로 보낸다.
-    router.replace('/');
+    router.replace('/mypage/profile');
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보내므로 여기서 다루지 않는다.
     // (그 경우 e.response 자체가 없어서 아래 옵셔널 체이닝이 반드시 필요하다)

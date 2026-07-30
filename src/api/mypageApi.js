@@ -13,6 +13,25 @@ const sanitize = (profile) =>
     ]),
   );
 
+// 서버·DB 제약과 1:1로 대응하는 검증.
+export const validateProfile = (profile) => {
+  const errors = {};
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (profile.birthDate && profile.birthDate > today) {
+    errors.birthDate = '미래 날짜는 선택할 수 없어요.';
+  }
+  if (profile.income !== '' && Number(profile.income) < 0) {
+    errors.income = '0 이상으로 입력해 주세요.';
+  }
+  // member_profile 에 CHECK (household_size >= 1) 가 있어 0 을 보내면 400 이 난다.
+  if (profile.householdSize !== '' && Number(profile.householdSize) < 1) {
+    errors.householdSize = '본인을 포함해 1명 이상이어야 해요.';
+  }
+
+  return errors;
+};
+
 export default {
   // 프로필 최초 저장 — 이미 있으면 409
   async createProfile(profile) {
