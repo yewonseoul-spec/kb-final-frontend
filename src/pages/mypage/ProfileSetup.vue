@@ -1,0 +1,226 @@
+<script setup>
+import { onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import mypageApi from '@/api/mypageApi';
+import KbButton from '@/components/common/KbButton.vue';
+import KbCard from '@/components/common/KbCard.vue';
+import ProfileForm from '@/components/mypage/ProfileForm.vue';
+
+const router = useRouter();
+
+// input/select 는 미입력을 '' 로 만든다. null 변환은 전송 직전 mypageApi 의 sanitize 가 맡는다.
+const form = reactive({
+  birthDate: '',
+  income: '',
+  employStatus: '',
+  major: '',
+  householdSize: '',
+  education: '',
+  mrgSttsCd: '',
+});
+
+const errors = reactive({});
+const submitError = ref('');
+const isLoading = ref(true);
+const isSaving = ref(false);
+
+// 이미 프로필이 있는 회원이 이 화면에 들어오면 POST 가 409 가 된다.
+// 진입할 때 조회해서 미리 걸러낸다. 404 는 오류가 아니라 '미입력' 이므로 정상 흐름이다.
+onMounted(async () => {
+  try {
+    await mypageApi.getProfile();
+    // 입력을 이미 끝낸 회원 → 온보딩이 필요 없다.
+    // TODO(다음 커밋): 프로필 조회 화면이 생기면 '/mypage/profile' 로 보낸다.
+    router.replace('/');
+  } catch (e) {
+    if (e.response?.status !== 404) {
+      submitError.value =
+        '프로필 정보를 확인하지 못했어요. 저장이 안 되면 잠시 후 다시 시도해 주세요.';
+    }
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+const validate = () => {
+  Object.keys(errors).forEach((key) => delete errors[key]);
+
+  // KbInput 의 루트가 div 라서 max/min 이 input 까지 전달되지 않는다 → 여기서 직접 검사한다.
+  const today = new Date().toISOString().slice(0, 10);
+  if (form.birthDate && form.birthDate > today) {
+    errors.birthDate = '미래 날짜는 선택할 수 없어요.';
+  }
+  if (form.income !== '' && Number(form.income) < 0) {
+    errors.income = '0 이상으로 입력해 주세요.';
+  }
+  // household_size 에 CHECK (>= 1) 가 걸려 있어 0 을 보내면 400 이 난다.
+  if (form.householdSize !== '' && Number(form.householdSize) < 1) {
+    errors.householdSize = '본인을 포함해 1명 이상이어야 해요.';
+  }
+
+  return Object.keys(errors).length === 0;
+};
+
+const onSubmit = async () => {
+  submitError.value = '';
+  if (!validate()) return;
+
+  isSaving.value = true;
+  try {
+    await mypageApi.createProfile(form);
+    // TODO(다음 커밋): 프로필 조회 화면이 생기면 그쪽으로 보낸다.
+    router.replace('/');
+  } catch (e) {
+    // 401 은 api/index.js 인터셉터가 로그인 페이지로 보내므로 여기서 다루지 않는다.
+    // (그 경우 e.response 자체가 없어서 아래 옵셔널 체이닝이 반드시 필요하다)
+    if (e.response?.status === 409) {
+      // 서버 409 문구가 회원가입용("이미 사용 중인 아이디 또는 이메일입니다")이라 그대로 쓸 수 없다.
+      submitError.value =
+        '이미 프로필이 저장되어 있어요. 마이페이지에서 수정해 주세요.';
+    } else {
+      // 에러 본문은 JSON 이 아니라 평문 문자열이다(ApiExceptionAdvice)
+      submitError.value =
+        e.response?.data || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    }
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const onSkip = () => {
+  router.replace('/');
+};
+</script>
+
+<template>
+  <!-- 프로필 유무를 확인하기 전에 폼을 그리면, 이미 입력한 회원에게 폼이 깜빡였다 사라진다 -->
+  <div v-if="!isLoading" class="profile-setup">
+    <header class="setup-header">
+      <h1 class="setup-title">프로필 입력</h1>
+      <button type="button" class="skip-button" @click="onSkip">
+        건너뛰기
+      </button>
+    </header>
+
+    <div class="progress">
+      <div class="progress-track">
+        <span class="progress-step done"></span>
+        <span class="progress-step done"></span>
+      </div>
+      <span class="progress-label">2/2 프로필</span>
+    </div>
+
+    <KbCard yellow-bg>
+      <p class="guide-main">
+        ✨ 여기 적는 정보로 <strong>받을 수 있는 혜택</strong>을 골라드려요.
+      </p>
+      <p class="guide-sub">정확할수록 추천이 정확해집니다.</p>
+    </KbCard>
+
+    <ProfileForm :profile="form" :errors="errors" />
+
+    <p v-if="submitError" class="submit-error">{{ submitError }}</p>
+
+    <p class="skip-guide">
+      지금 건너뛰어도 괜찮아요.<br />
+      나중에 마이페이지에서 채우면 추천이 더 정확해져요.
+    </p>
+
+    <!-- KbButton 은 inline-flex 라서 grid 아이템으로 두어 폭을 꽉 채운다 -->
+    <div class="submit-row">
+      <KbButton type="primary" :disabled="isSaving" @click="onSubmit">
+        {{ isSaving ? '저장 중…' : '다음' }}
+      </KbButton>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.profile-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.setup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.setup-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #2e2a24;
+}
+
+.skip-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  color: #908980;
+  cursor: pointer;
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-track {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+}
+
+.progress-step {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #efece4;
+}
+
+.progress-step.done {
+  background-color: #ffbc00;
+}
+
+.progress-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #908980;
+  white-space: nowrap;
+}
+
+.guide-main {
+  margin: 0;
+  font-size: 14px;
+  color: #2e2a24;
+}
+
+.guide-sub {
+  margin: 0;
+  font-size: 13px;
+  color: #908980;
+}
+
+.submit-error {
+  margin: 0;
+  font-size: 13px;
+  color: #d64545;
+}
+
+.skip-guide {
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #908980;
+}
+
+.submit-row {
+  display: grid;
+}
+</style>
