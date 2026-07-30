@@ -8,13 +8,13 @@ export default [
   {
     path: '/mypage/profile',
     name: 'ProfileEdit',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, title: '마이페이지' },
     component: () => import('../pages/mypage/ProfileEdit.vue'),
   },
   {
     path: '/mypage/infosetup',
     name: 'ProfileSetup',
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, title: '프로필 입력' },
     component: () => import('../pages/mypage/ProfileSetup.vue'),
   },
 ];
