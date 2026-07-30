@@ -1,7 +1,10 @@
+import AssetView from '@/pages/asset/AssetDashboard.vue';
+
 export default [
   {
     path: '/asset',
     name: '/asset',
-    component: () => import('../pages/asset/AssetDashboard.vue'),
+    meta: { title: '자산' },
+    component: AssetView,
   },
 ];
