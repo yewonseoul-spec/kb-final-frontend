@@ -1,10 +1,17 @@
 <script setup>
-import { RouterLink, useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
+import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
+
+const isMenuOpen = ref(false);
+
+const pageTitle = computed(() => route.meta.title || '청년타파');
 
 const onLogout = async () => {
   try {
@@ -23,7 +30,7 @@ const onLogout = async () => {
       class="d-flex justify-content-between align-items-center py-3 border-bottom"
     >
       <RouterLink to="/" class="fw-bold fs-5 text-decoration-none text-dark">
-        청년타파
+        {{ pageTitle }}
       </RouterLink>
 
       <div v-if="auth.isLogin" class="d-flex align-items-center gap-3">
@@ -38,13 +45,34 @@ const onLogout = async () => {
           로그아웃
         </button>
       </div>
+
       <RouterLink v-else to="/login" class="btn btn-sm btn-warning"
         >로그인</RouterLink
       >
+
+      <!-- TO-DO 로그인 완료 이후에 위치 변경 해야됨 -->
+      <button type="button" class="hamburger-btn" @click="isMenuOpen = true">
+        ☰
+      </button>
+
+      <!--------------------------------------------------------->
     </header>
 
     <div class="content my-5 px-3">
       <slot></slot>
     </div>
+
+    <KbMenuDrawer :isOpen="isMenuOpen" @close="isMenuOpen = false" />
   </div>
 </template>
+
+<style scoped>
+.hamburger-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 4px;
+  color: #2e2a24;
+}
+</style>
