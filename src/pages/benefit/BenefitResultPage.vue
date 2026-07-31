@@ -95,17 +95,14 @@
         <template #top>
           <div class="card-top">
             <div class="card-badges">
-              <KbBadge :variant="getStatusVariant(item.benefitStatus)">
-                {{ getStatusText(item.benefitStatus) }}
-              </KbBadge>
+             <KbBadge
+  class="d-day-badge"
+  :class="getDDayClass(item)"
+>
+  {{ getDDayText(item) }}
+</KbBadge>
             </div>
 
-            <span
-              v-if="item.applyEndDate && item.benefitStatus !== 'ALWAYS'"
-              class="end-date"
-            >
-              {{ formatDate(item.applyEndDate) }}까지
-            </span>
           </div>
         </template>
 
@@ -193,6 +190,34 @@ const selectedRegionLabel = computed(() => {
   return names.length > 0 ? names.join(' ') : '전국'
 })
 
+const getDDayClass = (item) => {
+  const text = getDDayText(item)
+
+  if (text === '마감') {
+    return 'is-closed'
+  }
+
+  if (text === '상시') {
+    return 'is-always'
+  }
+
+  if (text === 'D-Day') {
+    return 'is-urgent'
+  }
+
+  const match = text.match(/^D-(\d+)$/)
+
+  if (match) {
+    const remainingDays = Number(match[1])
+
+    if (remainingDays <= 7) {
+      return 'is-urgent'
+    }
+  }
+
+  return 'is-open'
+}
+
 const getStatusText = (status) => {
   switch (status) {
     case 'OPEN':
@@ -204,6 +229,33 @@ const getStatusText = (status) => {
     default:
       return '상태 미정'
   }
+}
+
+const getDDayText = (item) => {
+  if (item.benefitStatus === 'ALWAYS' || !item.applyEndDate) {
+    return '상시'
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const endDate = new Date(`${item.applyEndDate}T00:00:00`)
+  const difference =
+    endDate.getTime() - today.getTime()
+
+  const remainingDays = Math.ceil(
+    difference / (1000 * 60 * 60 * 24)
+  )
+
+  if (remainingDays < 0) {
+    return '마감'
+  }
+
+  if (remainingDays === 0) {
+    return 'D-Day'
+  }
+
+  return `D-${remainingDays}`
 }
 
 const getStatusVariant = (status) => {
@@ -555,5 +607,25 @@ onMounted(loadBenefit)
   .card-top {
     flex-direction: column;
   }
+}
+
+.d-day-badge.is-open {
+  background: #eaf3ff;
+  color: #1769d2;
+}
+
+.d-day-badge.is-urgent {
+  background: #fff0ee;
+  color: #e34a3e;
+}
+
+.d-day-badge.is-always {
+  background: #fff7df;
+  color: #9a7100;
+}
+
+.d-day-badge.is-closed {
+  background: #f2f2f2;
+  color: #908980;
 }
 </style>
