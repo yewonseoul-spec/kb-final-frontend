@@ -28,3 +28,10 @@ export const getBenefitRegions = async (parentRegionCode = null) => {
 
   return response.data;
 };
+
+//전공 조회
+
+export const getBenefitMajors = async () => {
+  const response = await api.get("/majors");
+  return response.data;
+};
