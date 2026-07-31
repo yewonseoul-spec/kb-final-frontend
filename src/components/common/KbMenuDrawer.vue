@@ -249,6 +249,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import authApi from '@/api/authApi';
 
 defineProps({
   isOpen: { type: Boolean, default: false },
@@ -256,6 +258,7 @@ defineProps({
 
 const emit = defineEmits(['close']);
 const router = useRouter();
+const auth = useAuthStore();
 
 // 🌟 3. 로그아웃 확인 모달창 열림/닫힘 상태 변수
 const showLogoutConfirm = ref(false);
@@ -265,7 +268,13 @@ const goPage = (path) => {
   emit('close');
 };
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await authApi.logout();
+  } catch (e) {
+    // 토큰이 이미 만료된 경우 등 — 로컬 정리는 그대로 진행한다
+  }
+  auth.logout();
   showLogoutConfirm.value = false;
   router.push('/login');
   emit('close');
