@@ -21,9 +21,7 @@
         <template v-if="keyword">
           <strong>“{{ keyword }}”</strong> 검색 결과
         </template>
-        <template v-else>
-          전체 검색 결과
-        </template>
+        <template v-else> 전체 검색 결과 </template>
       </p>
 
       <strong class="result-count">{{ benefit.length }}건</strong>
@@ -57,6 +55,21 @@
           type="button"
           aria-label="지역 필터 해제"
           @click="clearRegion"
+        >
+          ×
+        </button>
+      </div>
+
+      <div
+        v-if="selectedPlcyMajorCd"
+        class="filter-chip"
+      >
+        <span>{{ selectedMajorName }}</span>
+
+        <button
+          type="button"
+          aria-label="전공 필터 해제"
+          @click="clearMajor"
         >
           ×
         </button>
@@ -95,14 +108,13 @@
         <template #top>
           <div class="card-top">
             <div class="card-badges">
-             <KbBadge
-  class="d-day-badge"
-  :class="getDDayClass(item)"
->
-  {{ getDDayText(item) }}
-</KbBadge>
+              <KbBadge
+                class="d-day-badge"
+                :class="getDDayClass(item)"
+              >
+                {{ getDDayText(item) }}
+              </KbBadge>
             </div>
-
           </div>
         </template>
 
@@ -111,7 +123,7 @@
         </h2>
 
         <p class="benefit-provider">
-          {{ item.sprvsnInstCdNm || '제공 기관 미정' }}
+          {{ item.sprvsnInstCdNm || "제공 기관 미정" }}
         </p>
 
         <p
@@ -124,9 +136,9 @@
           v-else-if="item.applyStartDate || item.applyEndDate"
           class="benefit-period"
         >
-          {{ formatDate(item.applyStartDate) || '시작일 미정' }}
+          {{ formatDate(item.applyStartDate) || "시작일 미정" }}
           <span>~</span>
-          {{ formatDate(item.applyEndDate) || '종료일 미정' }}
+          {{ formatDate(item.applyEndDate) || "종료일 미정" }}
         </p>
       </KbCard>
     </section>
@@ -141,178 +153,189 @@
       :city-name="selectedCityName"
       :district-code="selectedDistrictCode"
       :district-name="selectedDistrictName"
+      :plcy-major-cd="selectedPlcyMajorCd"
+      :major-name="selectedMajorName"
       @apply="handleApplyFilter"
     />
   </main>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import BenefitFilterModal from '@/components/benefit/BenefitFilterModal.vue'
-import KbBadge from '@/components/common/KbBadge.vue'
-import KbButton from '@/components/common/KbButton.vue'
-import KbCard from '@/components/common/KbCard.vue'
-import { getBenefit } from '@/api/benefitApi'
+import { computed, onMounted, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import BenefitFilterModal from "@/components/benefit/BenefitFilterModal.vue";
+import KbBadge from "@/components/common/KbBadge.vue";
+import KbButton from "@/components/common/KbButton.vue";
+import KbCard from "@/components/common/KbCard.vue";
+import { getBenefit } from "@/api/benefitApi";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const keyword = ref(route.query.keyword ?? '')
-const isFilterOpen = ref(false)
-const isLoading = ref(false)
-const benefit = ref([])
+const keyword = ref(route.query.keyword ?? "");
+const isFilterOpen = ref(false);
+const isLoading = ref(false);
+const benefit = ref([]);
 
 // 카테고리
-const selectedCategoryCode = ref(route.query.categoryCode ?? '')
-const selectedCategoryName = ref(route.query.categoryName ?? '전체')
+const selectedCategoryCode = ref(route.query.categoryCode ?? "");
+const selectedCategoryName = ref(route.query.categoryName ?? "전체");
 
 // 지역
-const selectedZipCd = ref(route.query.zipCd ?? '')
-const selectedProvinceCode = ref(route.query.provinceCode ?? '')
-const selectedProvinceName = ref(route.query.provinceName ?? '전국')
-const selectedCityCode = ref(route.query.cityCode ?? '')
-const selectedCityName = ref(route.query.cityName ?? '중분류')
-const selectedDistrictCode = ref(route.query.districtCode ?? '')
-const selectedDistrictName = ref(route.query.districtName ?? '분류')
+const selectedZipCd = ref(route.query.zipCd ?? "");
+const selectedProvinceCode = ref(route.query.provinceCode ?? "");
+const selectedProvinceName = ref(route.query.provinceName ?? "전국");
+const selectedCityCode = ref(route.query.cityCode ?? "");
+const selectedCityName = ref(route.query.cityName ?? "중분류");
+const selectedDistrictCode = ref(route.query.districtCode ?? "");
+const selectedDistrictName = ref(route.query.districtName ?? "분류");
+
+//전공
+const selectedPlcyMajorCd = ref(route.query.plcyMajorCd ?? "");
+const selectedMajorName = ref(route.query.majorName ?? "전체");
 
 const hasActiveFilter = computed(() => {
-  return selectedCategoryName.value !== '전체' || Boolean(selectedZipCd.value)
-})
+  return (
+    selectedCategoryName.value !== "전체" ||
+    Boolean(selectedZipCd.value) ||
+    Boolean(selectedPlcyMajorCd.value)
+  );
+});
 
 const selectedRegionLabel = computed(() => {
   const names = [
-    selectedProvinceCode.value ? selectedProvinceName.value : '',
-    selectedCityCode.value ? selectedCityName.value : '',
-    selectedDistrictCode.value ? selectedDistrictName.value : ''
-  ].filter(Boolean)
+    selectedProvinceCode.value ? selectedProvinceName.value : "",
+    selectedCityCode.value ? selectedCityName.value : "",
+    selectedDistrictCode.value ? selectedDistrictName.value : "",
+  ].filter(Boolean);
 
-  return names.length > 0 ? names.join(' ') : '전국'
-})
+  return names.length > 0 ? names.join(" ") : "전국";
+});
 
 const getDDayClass = (item) => {
-  const text = getDDayText(item)
+  const text = getDDayText(item);
 
-  if (text === '마감') {
-    return 'is-closed'
+  if (text === "마감") {
+    return "is-closed";
   }
 
-  if (text === '상시') {
-    return 'is-always'
+  if (text === "상시") {
+    return "is-always";
   }
 
-  if (text === 'D-Day') {
-    return 'is-urgent'
+  if (text === "D-Day") {
+    return "is-urgent";
   }
 
-  const match = text.match(/^D-(\d+)$/)
+  const match = text.match(/^D-(\d+)$/);
 
   if (match) {
-    const remainingDays = Number(match[1])
+    const remainingDays = Number(match[1]);
 
     if (remainingDays <= 7) {
-      return 'is-urgent'
+      return "is-urgent";
     }
   }
 
-  return 'is-open'
-}
+  return "is-open";
+};
 
 const getStatusText = (status) => {
   switch (status) {
-    case 'OPEN':
-      return '진행 중'
-    case 'ALWAYS':
-      return '상시'
-    case 'CLOSED':
-      return '마감'
+    case "OPEN":
+      return "진행 중";
+    case "ALWAYS":
+      return "상시";
+    case "CLOSED":
+      return "마감";
     default:
-      return '상태 미정'
+      return "상태 미정";
   }
-}
+};
 
 const getDDayText = (item) => {
-  if (item.benefitStatus === 'ALWAYS' || !item.applyEndDate) {
-    return '상시'
+  if (item.benefitStatus === "ALWAYS" || !item.applyEndDate) {
+    return "상시";
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const endDate = new Date(`${item.applyEndDate}T00:00:00`)
-  const difference =
-    endDate.getTime() - today.getTime()
+  const endDate = new Date(`${item.applyEndDate}T00:00:00`);
+  const difference = endDate.getTime() - today.getTime();
 
-  const remainingDays = Math.ceil(
-    difference / (1000 * 60 * 60 * 24)
-  )
+  const remainingDays = Math.ceil(difference / (1000 * 60 * 60 * 24));
 
   if (remainingDays < 0) {
-    return '마감'
+    return "마감";
   }
 
   if (remainingDays === 0) {
-    return 'D-Day'
+    return "D-Day";
   }
 
-  return `D-${remainingDays}`
-}
+  return `D-${remainingDays}`;
+};
 
 const getStatusVariant = (status) => {
   switch (status) {
-    case 'CLOSED':
-      return 'gray'
-    case 'OPEN':
-      return 'info'
+    case "CLOSED":
+      return "gray";
+    case "OPEN":
+      return "info";
     default:
-      return 'default'
+      return "default";
   }
-}
+};
 
 const formatDate = (date) => {
-  if (!date) return ''
-  return String(date).replaceAll('-', '.')
-}
+  if (!date) return "";
+  return String(date).replaceAll("-", ".");
+};
 
 const loadBenefit = async () => {
-  isLoading.value = true
+  isLoading.value = true;
 
   try {
     benefit.value = await getBenefit({
       keyword: keyword.value || undefined,
       categoryCode: selectedCategoryCode.value || undefined,
-      zipCd: selectedZipCd.value || undefined
-    })
+      zipCd: selectedZipCd.value || undefined,
+      plcyMajorCd: selectedPlcyMajorCd.value || undefined,
+    });
   } catch (error) {
-    console.error('혜택 조회 실패:', error)
-    benefit.value = []
+    console.error("혜택 조회 실패:", error);
+    benefit.value = [];
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const handleApplyFilter = async ({
   categoryCode,
   categoryName,
+  plcyMajorCd,
+  majorName,
   zipCd,
   provinceCode,
   provinceName,
   cityCode,
   cityName,
   districtCode,
-  districtName
+  districtName,
 }) => {
-  selectedCategoryCode.value = categoryCode
-  selectedCategoryName.value = categoryName
+  selectedCategoryCode.value = categoryCode;
+  selectedCategoryName.value = categoryName;
 
-  selectedZipCd.value = zipCd
-  selectedProvinceCode.value = provinceCode
-  selectedProvinceName.value = provinceName
-  selectedCityCode.value = cityCode
-  selectedCityName.value = cityName
-  selectedDistrictCode.value = districtCode
-  selectedDistrictName.value = districtName
-
+  selectedZipCd.value = zipCd;
+  selectedProvinceCode.value = provinceCode;
+  selectedProvinceName.value = provinceName;
+  selectedCityCode.value = cityCode;
+  selectedCityName.value = cityName;
+  selectedDistrictCode.value = districtCode;
+  selectedDistrictName.value = districtName;
+  selectedPlcyMajorCd.value = plcyMajorCd;
+  selectedMajorName.value = majorName;
   await router.replace({
     query: {
       ...route.query,
@@ -325,36 +348,38 @@ const handleApplyFilter = async ({
       cityCode: cityCode || undefined,
       cityName: cityCode ? cityName : undefined,
       districtCode: districtCode || undefined,
-      districtName: districtCode ? districtName : undefined
-    }
-  })
+      districtName: districtCode ? districtName : undefined,
+      plcyMajorCd: plcyMajorCd || undefined,
+      majorName: plcyMajorCd ? majorName : undefined,
+    },
+  });
 
-  await loadBenefit()
-}
+  await loadBenefit();
+};
 
 const clearCategory = async () => {
-  selectedCategoryCode.value = ''
-  selectedCategoryName.value = '전체'
+  selectedCategoryCode.value = "";
+  selectedCategoryName.value = "전체";
 
   await router.replace({
     query: {
       ...route.query,
       categoryCode: undefined,
-      categoryName: undefined
-    }
-  })
+      categoryName: undefined,
+    },
+  });
 
-  await loadBenefit()
-}
+  await loadBenefit();
+};
 
 const clearRegion = async () => {
-  selectedZipCd.value = ''
-  selectedProvinceCode.value = ''
-  selectedProvinceName.value = '전국'
-  selectedCityCode.value = ''
-  selectedCityName.value = '중분류'
-  selectedDistrictCode.value = ''
-  selectedDistrictName.value = '분류'
+  selectedZipCd.value = "";
+  selectedProvinceCode.value = "";
+  selectedProvinceName.value = "전국";
+  selectedCityCode.value = "";
+  selectedCityName.value = "중분류";
+  selectedDistrictCode.value = "";
+  selectedDistrictName.value = "분류";
 
   await router.replace({
     query: {
@@ -365,14 +390,29 @@ const clearRegion = async () => {
       cityCode: undefined,
       cityName: undefined,
       districtCode: undefined,
-      districtName: undefined
-    }
-  })
+      districtName: undefined,
+    },
+  });
 
-  await loadBenefit()
-}
+  await loadBenefit();
+};
 
-onMounted(loadBenefit)
+const clearMajor = async () => {
+  selectedPlcyMajorCd.value = "";
+  selectedMajorName.value = "전체";
+
+  await router.replace({
+    query: {
+      ...route.query,
+      plcyMajorCd: undefined,
+      majorName: undefined,
+    },
+  });
+
+  await loadBenefit();
+};
+
+onMounted(loadBenefit);
 </script>
 
 <style scoped>
@@ -383,7 +423,7 @@ onMounted(loadBenefit)
   padding: 28px 20px 112px;
   background: #ffffff;
   color: #2e2a24;
-  font-family: 'Pretendard', sans-serif;
+  font-family: "Pretendard", sans-serif;
 }
 
 .result-header {

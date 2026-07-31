@@ -11,10 +11,7 @@
         <div>
           <h2>필터 설정</h2>
 
-          <p>
-            선택한 조건에 맞는 청년혜택을
-            확인할 수 있어요.
-          </p>
+          <p>선택한 조건에 맞는 청년혜택을 확인할 수 있어요.</p>
         </div>
 
         <button
@@ -29,9 +26,7 @@
       <!-- 카테고리 -->
 
       <section class="filter-section">
-        <span class="filter-label">
-          카테고리
-        </span>
+        <span class="filter-label"> 카테고리 </span>
 
         <button
           type="button"
@@ -49,9 +44,7 @@
       <!-- 지역 -->
 
       <section class="filter-section">
-        <span class="filter-label">
-          지역
-        </span>
+        <span class="filter-label"> 지역 </span>
 
         <div class="region-filter-row">
           <button
@@ -69,9 +62,7 @@
           <button
             type="button"
             class="filter-select"
-            :disabled="
-              selectedProvinceCode === ''
-            "
+            :disabled="selectedProvinceCode === ''"
             @click="isCityOpen = true"
           >
             <strong>
@@ -84,10 +75,7 @@
           <button
             type="button"
             class="filter-select"
-            :disabled="
-              selectedCityCode === '' ||
-              districtList.length === 0
-            "
+            :disabled="selectedCityCode === '' || districtList.length === 0"
             @click="isDistrictOpen = true"
           >
             <strong>
@@ -97,6 +85,19 @@
             <span class="arrow">⌄</span>
           </button>
         </div>
+      </section>
+
+      <section class="filter-section">
+        <p class="filter-label">전공</p>
+
+        <button
+          type="button"
+          class="filter-select full"
+          @click="isMajorOpen = true"
+        >
+          <strong>{{ selectedMajorName }}</strong>
+          <span class="select-arrow">⌄</span>
+        </button>
       </section>
 
       <div class="filter-actions">
@@ -191,11 +192,7 @@
           class="option-item"
           @click="selectProvince(region)"
         >
-          {{
-            getSimpleRegionName(
-              region.regionName
-            )
-          }}
+          {{ getSimpleRegionName(region.regionName) }}
         </button>
       </section>
     </div>
@@ -234,11 +231,7 @@
           class="option-item"
           @click="selectCity(region)"
         >
-          {{
-            getSimpleRegionName(
-              region.regionName
-            )
-          }}
+          {{ getSimpleRegionName(region.regionName) }}
         </button>
       </section>
     </div>
@@ -248,9 +241,7 @@
     <div
       v-if="isDistrictOpen"
       class="option-overlay"
-      @click.self="
-        isDistrictOpen = false
-      "
+      @click.self="isDistrictOpen = false"
     >
       <section class="option-sheet">
         <header class="option-header">
@@ -258,9 +249,7 @@
 
           <button
             type="button"
-            @click="
-              isDistrictOpen = false
-            "
+            @click="isDistrictOpen = false"
           >
             ×
           </button>
@@ -281,29 +270,73 @@
           class="option-item"
           @click="selectDistrict(region)"
         >
-          {{
-            getSimpleRegionName(
-              region.regionName
-            )
-          }}
+          {{ getSimpleRegionName(region.regionName) }}
         </button>
       </section>
     </div>
   </div>
+
+  <div
+    v-if="isMajorOpen"
+    class="option-overlay"
+    @click.self="isMajorOpen = false"
+  >
+    <section class="option-sheet">
+      <div class="sheet-handle"></div>
+
+      <header class="option-header">
+        <h3>전공 선택</h3>
+
+        <button
+          type="button"
+          class="option-close"
+          @click="isMajorOpen = false"
+        >
+          ×
+        </button>
+      </header>
+
+      <div class="option-list">
+        <button
+          type="button"
+          class="option-item"
+          :class="{
+            selected: selectedPlcyMajorCd === '',
+          }"
+          @click="selectAllMajor"
+        >
+          <span>전체</span>
+
+          <span v-if="selectedPlcyMajorCd === ''"> ✓ </span>
+        </button>
+
+        <button
+          v-for="major in majorList"
+          :key="major.plcyMajorCd"
+          type="button"
+          class="option-item"
+          :class="{
+            selected: selectedPlcyMajorCd === major.plcyMajorCd,
+          }"
+          @click="selectMajor(major)"
+        >
+          <span>{{ major.codeName }}</span>
+
+          <span v-if="selectedPlcyMajorCd === major.plcyMajorCd"> ✓ </span>
+        </button>
+      </div>
+    </section>
+  </div>
 </template>
 
 <script setup>
-import {
-  computed,
-  onMounted,
-  ref,
-  watch,
-} from 'vue'
+import { computed, onMounted, ref, watch } from "vue";
 
 import {
   getBenefitCategories,
   getBenefitRegions,
-} from '@/api/benefitApi'
+  getBenefitMajors,
+} from "@/api/benefitApi";
 
 const props = defineProps({
   modelValue: {
@@ -313,81 +346,97 @@ const props = defineProps({
 
   categoryCode: {
     type: String,
-    default: '',
+    default: "",
   },
 
   categoryName: {
     type: String,
-    default: '전체',
+    default: "전체",
   },
 
   provinceCode: {
     type: String,
-    default: '',
+    default: "",
   },
 
   provinceName: {
     type: String,
-    default: '전국',
+    default: "전국",
   },
 
   cityCode: {
     type: String,
-    default: '',
+    default: "",
   },
 
   cityName: {
     type: String,
-    default: '중분류',
+    default: "중분류",
   },
 
   districtCode: {
     type: String,
-    default: '',
+    default: "",
   },
 
   districtName: {
     type: String,
-    default: '분류',
+    default: "분류",
   },
-})
 
-const emit = defineEmits([
-  'update:modelValue',
-  'apply',
-])
+  plcyMajorCd: {
+    type: String,
+    default: "",
+  },
+
+  majorName: {
+    type: String,
+    default: "전체",
+  },
+});
+
+const emit = defineEmits(["update:modelValue", "apply"]);
 
 /* 카테고리 */
 
-const categoryList = ref([])
+const categoryList = ref([]);
 
-const selectedCategoryCode = ref('')
-const selectedCategoryName = ref('전체')
+const selectedCategoryCode = ref("");
+const selectedCategoryName = ref("전체");
 
-const isCategoryOpen = ref(false)
+const isCategoryOpen = ref(false);
 
 /* 지역 목록 */
 
-const provinceList = ref([])
-const cityList = ref([])
-const districtList = ref([])
+const provinceList = ref([]);
+const cityList = ref([]);
+const districtList = ref([]);
 
 /* 선택된 지역 */
 
-const selectedProvinceCode = ref('')
-const selectedProvinceName = ref('전국')
+const selectedProvinceCode = ref("");
+const selectedProvinceName = ref("전국");
 
-const selectedCityCode = ref('')
-const selectedCityName = ref('중분류')
+const selectedCityCode = ref("");
+const selectedCityName = ref("중분류");
 
-const selectedDistrictCode = ref('')
-const selectedDistrictName = ref('분류')
+const selectedDistrictCode = ref("");
+const selectedDistrictName = ref("분류");
 
 /* 지역 선택창 상태 */
 
-const isProvinceOpen = ref(false)
-const isCityOpen = ref(false)
-const isDistrictOpen = ref(false)
+const isProvinceOpen = ref(false);
+const isCityOpen = ref(false);
+const isDistrictOpen = ref(false);
+
+//전공
+const majorList = ref([]);
+
+const selectedPlcyMajorCd = ref(props.plcyMajorCd);
+
+const selectedMajorName = ref(props.majorName);
+
+const isMajorOpen = ref(false);
 
 /*
  * 최종적으로 서버에 전달할 지역코드
@@ -398,211 +447,225 @@ const selectedZipCd = computed(() => {
     selectedDistrictCode.value ||
     selectedCityCode.value ||
     selectedProvinceCode.value ||
-    ''
-  )
-})
+    ""
+  );
+});
 
 const getSimpleRegionName = (regionName) => {
   if (!regionName) {
-    return ''
+    return "";
   }
 
-  const names = regionName.trim().split(/\s+/)
-  return names[names.length - 1]
-}
+  const names = regionName.trim().split(/\s+/);
+  return names[names.length - 1];
+};
 
 /* 최초 데이터 조회 */
 
 const loadCategory = async () => {
   try {
-    categoryList.value =
-      await getBenefitCategories()
+    categoryList.value = await getBenefitCategories();
   } catch (error) {
-    console.error('카테고리 조회 실패:', error)
-    categoryList.value = []
+    console.error("카테고리 조회 실패:", error);
+    categoryList.value = [];
   }
-}
+};
 
 const loadProvince = async () => {
   try {
-    provinceList.value =
-      await getBenefitRegions()
+    provinceList.value = await getBenefitRegions();
   } catch (error) {
-    console.error('시·도 조회 실패:', error)
-    provinceList.value = []
+    console.error("시·도 조회 실패:", error);
+    provinceList.value = [];
   }
-}
+};
+
+const loadMajor = async () => {
+  try {
+    majorList.value = await getBenefitMajors();
+  } catch (error) {
+    console.error("전공 목록 조회 실패:", error);
+    majorList.value = [];
+  }
+};
 
 /* 카테고리 선택 */
 
 const selectCategory = (category) => {
-  selectedCategoryCode.value =
-    category.categoryCode
+  selectedCategoryCode.value = category.categoryCode;
 
-  selectedCategoryName.value =
-    category.categoryName
+  selectedCategoryName.value = category.categoryName;
 
-  isCategoryOpen.value = false
-}
+  isCategoryOpen.value = false;
+};
 
 const selectAllCategory = () => {
-  selectedCategoryCode.value = ''
-  selectedCategoryName.value = '전체'
-  isCategoryOpen.value = false
-}
+  selectedCategoryCode.value = "";
+  selectedCategoryName.value = "전체";
+  isCategoryOpen.value = false;
+};
 
 /* 전국 선택 */
 
 const selectNationwide = () => {
-  selectedProvinceCode.value = ''
-  selectedProvinceName.value = '전국'
+  selectedProvinceCode.value = "";
+  selectedProvinceName.value = "전국";
 
-  selectedCityCode.value = ''
-  selectedCityName.value = '중분류'
+  selectedCityCode.value = "";
+  selectedCityName.value = "중분류";
 
-  selectedDistrictCode.value = ''
-  selectedDistrictName.value = '분류'
+  selectedDistrictCode.value = "";
+  selectedDistrictName.value = "분류";
 
-  cityList.value = []
-  districtList.value = []
+  cityList.value = [];
+  districtList.value = [];
 
-  isProvinceOpen.value = false
-}
+  isProvinceOpen.value = false;
+};
 
 /* 시·도 선택 */
 
 const selectProvince = async (region) => {
-  selectedProvinceCode.value = region.zipCd
-  selectedProvinceName.value =
-    getSimpleRegionName(region.regionName)
+  selectedProvinceCode.value = region.zipCd;
+  selectedProvinceName.value = getSimpleRegionName(region.regionName);
 
-  selectedCityCode.value = ''
-  selectedCityName.value = '전체'
+  selectedCityCode.value = "";
+  selectedCityName.value = "전체";
 
-  selectedDistrictCode.value = ''
-  selectedDistrictName.value = '분류'
+  selectedDistrictCode.value = "";
+  selectedDistrictName.value = "분류";
 
-  districtList.value = []
+  districtList.value = [];
 
   try {
-    cityList.value =
-      await getBenefitRegions(region.zipCd)
+    cityList.value = await getBenefitRegions(region.zipCd);
   } catch (error) {
-    console.error('중분류 조회 실패:', error)
-    cityList.value = []
+    console.error("중분류 조회 실패:", error);
+    cityList.value = [];
   }
 
-  isProvinceOpen.value = false
-}
+  isProvinceOpen.value = false;
+};
 
 /* 시·군 전체 */
 
 const selectCityAll = () => {
-  selectedCityCode.value = ''
-  selectedCityName.value = '전체'
+  selectedCityCode.value = "";
+  selectedCityName.value = "전체";
 
-  selectedDistrictCode.value = ''
-  selectedDistrictName.value = '분류'
+  selectedDistrictCode.value = "";
+  selectedDistrictName.value = "분류";
 
-  districtList.value = []
+  districtList.value = [];
 
-  isCityOpen.value = false
-}
+  isCityOpen.value = false;
+};
 
 /* 시·군 선택 */
 
 const selectCity = async (region) => {
-  selectedCityCode.value = region.zipCd
-  selectedCityName.value =
-    getSimpleRegionName(region.regionName)
+  selectedCityCode.value = region.zipCd;
+  selectedCityName.value = getSimpleRegionName(region.regionName);
 
-  selectedDistrictCode.value = ''
+  selectedDistrictCode.value = "";
 
   if (region.hasChildren) {
     try {
-      districtList.value =
-        await getBenefitRegions(region.zipCd)
+      districtList.value = await getBenefitRegions(region.zipCd);
 
-      selectedDistrictName.value = '전체'
+      selectedDistrictName.value = "전체";
     } catch (error) {
-      console.error('세부 지역 조회 실패:', error)
+      console.error("세부 지역 조회 실패:", error);
 
-      districtList.value = []
-      selectedDistrictName.value = '분류'
+      districtList.value = [];
+      selectedDistrictName.value = "분류";
     }
   } else {
-    districtList.value = []
-    selectedDistrictName.value = '분류'
+    districtList.value = [];
+    selectedDistrictName.value = "분류";
   }
 
-  isCityOpen.value = false
-}
+  isCityOpen.value = false;
+};
 
 /* 구 전체 */
 
 const selectDistrictAll = () => {
-  selectedDistrictCode.value = ''
-  selectedDistrictName.value = '전체'
-  isDistrictOpen.value = false
-}
+  selectedDistrictCode.value = "";
+  selectedDistrictName.value = "전체";
+  isDistrictOpen.value = false;
+};
 
 /* 구 선택 */
 
 const selectDistrict = (region) => {
-  selectedDistrictCode.value = region.zipCd
-  selectedDistrictName.value =
-    getSimpleRegionName(region.regionName)
+  selectedDistrictCode.value = region.zipCd;
+  selectedDistrictName.value = getSimpleRegionName(region.regionName);
 
-  isDistrictOpen.value = false
-}
+  isDistrictOpen.value = false;
+};
+
+//전공 선택
+const selectAllMajor = () => {
+  selectedPlcyMajorCd.value = "";
+  selectedMajorName.value = "전체";
+  isMajorOpen.value = false;
+};
+
+const selectMajor = (major) => {
+  selectedPlcyMajorCd.value = major.plcyMajorCd;
+
+  selectedMajorName.value = major.codeName;
+
+  isMajorOpen.value = false;
+};
 
 /* 필터 초기화 */
 
 const resetFilter = () => {
-  selectedCategoryCode.value = ''
-  selectedCategoryName.value = '전체'
+  selectedCategoryCode.value = "";
+  selectedCategoryName.value = "전체";
 
-  selectNationwide()
-}
+  selectedZipCd.value = "";
+  selectedProvinceCode.value = "";
+  selectedProvinceName.value = "전국";
+  selectedPlcyMajorCd.value = "";
+  selectedMajorName.value = "전체";
+};
 
 /* 필터 적용 */
 
 const applyFilter = () => {
-  emit('apply', {
-    categoryCode:
-      selectedCategoryCode.value,
+  emit("apply", {
+    categoryCode: selectedCategoryCode.value,
 
-    categoryName:
-      selectedCategoryName.value,
+    categoryName: selectedCategoryName.value,
 
-    zipCd:
-      selectedZipCd.value,
+    zipCd: selectedZipCd.value,
 
-    provinceCode:
-      selectedProvinceCode.value,
+    provinceCode: selectedProvinceCode.value,
 
-    provinceName:
-      selectedProvinceName.value,
+    provinceName: selectedProvinceName.value,
 
-    cityCode:
-      selectedCityCode.value,
+    cityCode: selectedCityCode.value,
 
-    cityName:
-      selectedCityName.value,
+    cityName: selectedCityName.value,
 
-    districtCode:
-      selectedDistrictCode.value,
+    districtCode: selectedDistrictCode.value,
 
-    districtName:
-      selectedDistrictName.value,
-  })
+    districtName: selectedDistrictName.value,
 
-  emit('update:modelValue', false)
-}
+    plcyMajorCd: selectedPlcyMajorCd.value,
+
+    majorName: selectedMajorName.value,
+  });
+
+  emit("update:modelValue", false);
+};
 
 const closeModal = () => {
-  emit('update:modelValue', false)
-}
+  emit("update:modelValue", false);
+};
 
 /*
  * 모달을 다시 열었을 때
@@ -612,55 +675,42 @@ watch(
   () => props.modelValue,
   async (isOpen) => {
     if (!isOpen) {
-      return
+      return;
     }
 
-    selectedCategoryCode.value =
-      props.categoryCode
+    selectedCategoryCode.value = props.categoryCode;
 
-    selectedCategoryName.value =
-      props.categoryName
+    selectedCategoryName.value = props.categoryName;
 
-    selectedProvinceCode.value =
-      props.provinceCode
+    selectedProvinceCode.value = props.provinceCode;
 
-    selectedProvinceName.value =
-      props.provinceName
+    selectedProvinceName.value = props.provinceName;
 
-    selectedCityCode.value =
-      props.cityCode
+    selectedCityCode.value = props.cityCode;
 
-    selectedCityName.value =
-      props.cityName
+    selectedCityName.value = props.cityName;
 
-    selectedDistrictCode.value =
-      props.districtCode
+    selectedDistrictCode.value = props.districtCode;
 
-    selectedDistrictName.value =
-      props.districtName
+    selectedDistrictName.value = props.districtName;
+
+    selectedPlcyMajorCd.value = props.plcyMajorCd;
+
+    selectedMajorName.value = props.majorName;
 
     if (props.provinceCode) {
-      cityList.value =
-        await getBenefitRegions(
-          props.provinceCode
-        )
+      cityList.value = await getBenefitRegions(props.provinceCode);
     }
 
     if (props.cityCode) {
-      districtList.value =
-        await getBenefitRegions(
-          props.cityCode
-        )
+      districtList.value = await getBenefitRegions(props.cityCode);
     }
-  }
-)
+  },
+);
 
 onMounted(async () => {
-  await Promise.all([
-    loadCategory(),
-    loadProvince(),
-  ])
-})
+  await Promise.all([loadCategory(), loadProvince(), loadMajor()]);
+});
 </script>
 
 <style scoped>
@@ -680,8 +730,7 @@ onMounted(async () => {
   width: min(100%, 440px);
   max-height: 90dvh;
   overflow-y: auto;
-  padding: 12px 28px
-    calc(28px + env(safe-area-inset-bottom));
+  padding: 12px 28px calc(28px + env(safe-area-inset-bottom));
   border-radius: 28px 28px 0 0;
   background: #fff;
 }
@@ -733,8 +782,7 @@ onMounted(async () => {
 
 .region-filter-row {
   display: grid;
-  grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -780,8 +828,7 @@ onMounted(async () => {
   grid-template-columns: 1fr 2fr;
   gap: 12px;
   margin-top: 32px;
-  padding: 14px 0
-    calc(8px + env(safe-area-inset-bottom));
+  padding: 14px 0 calc(8px + env(safe-area-inset-bottom));
   background: #fff;
 }
 
