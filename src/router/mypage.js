@@ -14,7 +14,7 @@ export default [
   {
     path: '/mypage/infosetup',
     name: 'ProfileSetup',
-    meta: { requiresAuth: true, title: '프로필 입력' },
+    meta: { requiresAuth: true, title: '프로필 입력', hideTabBar: true },
     component: () => import('../pages/mypage/ProfileSetup.vue'),
   },
 ];
