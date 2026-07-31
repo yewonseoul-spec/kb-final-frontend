@@ -224,8 +224,12 @@
         </div>
 
         <div class="drawer-footer">
-          <button class="logout-btn" @click="showLogoutConfirm = true">
-            로그아웃
+          <button
+            class="auth-btn"
+            :class="auth.isLogin ? 'logout' : 'login'"
+            @click="onAuthAction"
+          >
+            {{ auth.isLogin ? '로그아웃' : '로그인' }}
           </button>
         </div>
       </div>
@@ -249,6 +253,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import authApi from '@/api/authApi';
 
 defineProps({
   isOpen: { type: Boolean, default: false },
@@ -256,6 +262,7 @@ defineProps({
 
 const emit = defineEmits(['close']);
 const router = useRouter();
+const auth = useAuthStore();
 
 // 🌟 3. 로그아웃 확인 모달창 열림/닫힘 상태 변수
 const showLogoutConfirm = ref(false);
@@ -265,7 +272,22 @@ const goPage = (path) => {
   emit('close');
 };
 
-const handleLogout = () => {
+// 헤더(DefaultLayout)와 같은 규칙 — 로그인 상태면 로그아웃 확인, 아니면 로그인 페이지로.
+const onAuthAction = () => {
+  if (auth.isLogin) {
+    showLogoutConfirm.value = true;
+    return;
+  }
+  goPage('/login');
+};
+
+const handleLogout = async () => {
+  try {
+    await authApi.logout();
+  } catch (e) {
+    // 토큰이 이미 만료된 경우 등 — 로컬 정리는 그대로 진행한다
+  }
+  auth.logout();
   showLogoutConfirm.value = false;
   router.push('/login');
   emit('close');
@@ -367,13 +389,20 @@ const handleLogout = () => {
   justify-content: flex-end;
 }
 
-.logout-btn {
+.auth-btn {
   background: none;
   border: none;
-  color: #d64545;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.auth-btn.logout {
+  color: #d64545;
+}
+
+.auth-btn.login {
+  color: #2e2a24;
 }
 
 .modal-overlay {
