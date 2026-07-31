@@ -6,19 +6,21 @@ import benefit from './benefit.js';
 import mypage from './mypage.js';
 import consumption from './consumption.js';
 import auth from './auth.js';
+import guide from './guide.js';
 import { useAuthStore } from '@/stores/auth.js';
 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'home', component: Home },
+    { path: '/', name: 'home', component: Home, meta: { title: '청년타파' } },
     ...admin,
     ...asset,
     ...benefit,
     ...mypage,
     ...consumption,
     ...auth,
+    ...guide,
   ],
 });
 

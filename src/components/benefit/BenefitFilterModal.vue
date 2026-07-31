@@ -667,7 +667,7 @@ onMounted(async () => {
 .filter-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 3000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -675,10 +675,13 @@ onMounted(async () => {
 }
 
 .filter-modal {
+  position: relative;
+  z-index: 3001;
   width: min(100%, 440px);
-  max-height: 90vh;
-  padding: 12px 28px 28px;
+  max-height: 90dvh;
   overflow-y: auto;
+  padding: 12px 28px
+    calc(28px + env(safe-area-inset-bottom));
   border-radius: 28px 28px 0 0;
   background: #fff;
 }
@@ -770,10 +773,16 @@ onMounted(async () => {
 }
 
 .filter-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 12px;
-  margin-top: 42px;
+  margin-top: 32px;
+  padding: 14px 0
+    calc(8px + env(safe-area-inset-bottom));
+  background: #fff;
 }
 
 .reset-button,
@@ -797,18 +806,20 @@ onMounted(async () => {
 .option-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: 4000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.35);
 }
 
 .option-sheet {
+  position: relative;
+  z-index: 4001;
   width: min(100%, 440px);
-  max-height: 70vh;
-  padding: 24px;
+  max-height: 70dvh;
   overflow-y: auto;
+  padding: 24px;
   border-radius: 24px 24px 0 0;
   background: #fff;
 }
