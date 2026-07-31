@@ -5,8 +5,17 @@
     @click.self="closeModal"
   >
     <section class="filter-modal">
+      <div class="filter-handle"></div>
+
       <header class="filter-header">
-        <h2>필터 설정</h2>
+        <div>
+          <h2>필터 설정</h2>
+
+          <p>
+            선택한 조건에 맞는 청년혜택을
+            확인할 수 있어요.
+          </p>
+        </div>
 
         <button
           type="button"
@@ -17,22 +26,78 @@
         </button>
       </header>
 
-      <p class="filter-description">
-        선택한 조건에 맞는 청년혜택을 확인할 수 있어요.
-      </p>
+      <!-- 카테고리 -->
 
-      <div class="filter-section">
-        <span class="filter-label">카테고리</span>
+      <section class="filter-section">
+        <span class="filter-label">
+          카테고리
+        </span>
 
         <button
           type="button"
-          class="filter-select"
-          @click="isCategorySheetOpen = true"
+          class="filter-select full"
+          @click="isCategoryOpen = true"
         >
-          <strong>{{ selectedCategoryName }}</strong>
-          <span>⌄</span>
+          <strong>
+            {{ selectedCategoryName }}
+          </strong>
+
+          <span class="arrow">⌄</span>
         </button>
-      </div>
+      </section>
+
+      <!-- 지역 -->
+
+      <section class="filter-section">
+        <span class="filter-label">
+          지역
+        </span>
+
+        <div class="region-filter-row">
+          <button
+            type="button"
+            class="filter-select"
+            @click="isProvinceOpen = true"
+          >
+            <strong>
+              {{ selectedProvinceName }}
+            </strong>
+
+            <span class="arrow">⌄</span>
+          </button>
+
+          <button
+            type="button"
+            class="filter-select"
+            :disabled="
+              selectedProvinceCode === ''
+            "
+            @click="isCityOpen = true"
+          >
+            <strong>
+              {{ selectedCityName }}
+            </strong>
+
+            <span class="arrow">⌄</span>
+          </button>
+
+          <button
+            type="button"
+            class="filter-select"
+            :disabled="
+              selectedCityCode === '' ||
+              districtList.length === 0
+            "
+            @click="isDistrictOpen = true"
+          >
+            <strong>
+              {{ selectedDistrictName }}
+            </strong>
+
+            <span class="arrow">⌄</span>
+          </button>
+        </div>
+      </section>
 
       <div class="filter-actions">
         <button
@@ -51,143 +116,551 @@
           적용하기
         </button>
       </div>
+    </section>
 
-      <div
-        v-if="isCategorySheetOpen"
-        class="category-sheet-overlay"
-        @click.self="isCategorySheetOpen = false"
-      >
-        <section class="category-sheet">
-          <header class="category-sheet-header">
-            <h3>카테고리</h3>
+    <!-- 카테고리 선택 -->
 
-            <button
-              type="button"
-              @click="isCategorySheetOpen = false"
-            >
-              ×
-            </button>
-          </header>
-
-          <div class="category-list">
-            <button
-              type="button"
-              :class="['category-item', { active: draftCategoryCode === '' }]"
-              @click="selectCategory('', '전체')"
-            >
-              전체
-            </button>
-
-            <button
-              v-for="category in categories"
-              :key="category.categoryCode"
-              type="button"
-              :class="[
-                'category-item',
-                {
-                  active: draftCategoryCode === category.categoryCode,
-                },
-              ]"
-              @click="
-                selectCategory(category.categoryCode, category.categoryName)
-              "
-            >
-              {{ category.categoryName }}
-            </button>
-          </div>
+    <div
+      v-if="isCategoryOpen"
+      class="option-overlay"
+      @click.self="isCategoryOpen = false"
+    >
+      <section class="option-sheet">
+        <header class="option-header">
+          <h3>카테고리 선택</h3>
 
           <button
             type="button"
-            class="category-confirm-button"
-            @click="isCategorySheetOpen = false"
+            @click="isCategoryOpen = false"
           >
-            확인
+            ×
           </button>
-        </section>
-      </div>
-    </section>
+        </header>
+
+        <button
+          type="button"
+          class="option-item"
+          @click="selectAllCategory"
+        >
+          전체
+        </button>
+
+        <button
+          v-for="category in categoryList"
+          :key="category.categoryCode"
+          type="button"
+          class="option-item"
+          @click="selectCategory(category)"
+        >
+          {{ category.categoryName }}
+        </button>
+      </section>
+    </div>
+
+    <!-- 시·도 선택 -->
+
+    <div
+      v-if="isProvinceOpen"
+      class="option-overlay"
+      @click.self="isProvinceOpen = false"
+    >
+      <section class="option-sheet">
+        <header class="option-header">
+          <h3>시·도 선택</h3>
+
+          <button
+            type="button"
+            @click="isProvinceOpen = false"
+          >
+            ×
+          </button>
+        </header>
+
+        <button
+          type="button"
+          class="option-item"
+          @click="selectNationwide"
+        >
+          전국
+        </button>
+
+        <button
+          v-for="region in provinceList"
+          :key="region.zipCd"
+          type="button"
+          class="option-item"
+          @click="selectProvince(region)"
+        >
+          {{
+            getSimpleRegionName(
+              region.regionName
+            )
+          }}
+        </button>
+      </section>
+    </div>
+
+    <!-- 시·군 선택 -->
+
+    <div
+      v-if="isCityOpen"
+      class="option-overlay"
+      @click.self="isCityOpen = false"
+    >
+      <section class="option-sheet">
+        <header class="option-header">
+          <h3>중분류 선택</h3>
+
+          <button
+            type="button"
+            @click="isCityOpen = false"
+          >
+            ×
+          </button>
+        </header>
+
+        <button
+          type="button"
+          class="option-item"
+          @click="selectCityAll"
+        >
+          전체
+        </button>
+
+        <button
+          v-for="region in cityList"
+          :key="region.zipCd"
+          type="button"
+          class="option-item"
+          @click="selectCity(region)"
+        >
+          {{
+            getSimpleRegionName(
+              region.regionName
+            )
+          }}
+        </button>
+      </section>
+    </div>
+
+    <!-- 구 선택 -->
+
+    <div
+      v-if="isDistrictOpen"
+      class="option-overlay"
+      @click.self="
+        isDistrictOpen = false
+      "
+    >
+      <section class="option-sheet">
+        <header class="option-header">
+          <h3>세부 지역 선택</h3>
+
+          <button
+            type="button"
+            @click="
+              isDistrictOpen = false
+            "
+          >
+            ×
+          </button>
+        </header>
+
+        <button
+          type="button"
+          class="option-item"
+          @click="selectDistrictAll"
+        >
+          전체
+        </button>
+
+        <button
+          v-for="region in districtList"
+          :key="region.zipCd"
+          type="button"
+          class="option-item"
+          @click="selectDistrict(region)"
+        >
+          {{
+            getSimpleRegionName(
+              region.regionName
+            )
+          }}
+        </button>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
-import { getBenefitCategories } from "@/api/benefitApi";
+import {
+  computed,
+  onMounted,
+  ref,
+  watch,
+} from 'vue'
+
+import {
+  getBenefitCategories,
+  getBenefitRegions,
+} from '@/api/benefitApi'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
-    required: true,
+    default: false,
   },
 
   categoryCode: {
     type: String,
-    default: "",
+    default: '',
   },
 
   categoryName: {
     type: String,
-    default: "전체",
+    default: '전체',
   },
-});
 
-const emit = defineEmits(["update:modelValue", "apply"]);
+  provinceCode: {
+    type: String,
+    default: '',
+  },
 
-const categories = ref([]);
-const isCategorySheetOpen = ref(false);
+  provinceName: {
+    type: String,
+    default: '전국',
+  },
 
-const draftCategoryCode = ref("");
-const draftCategoryName = ref("전체");
+  cityCode: {
+    type: String,
+    default: '',
+  },
 
-const selectedCategoryName = computed(() => {
-  return draftCategoryName.value || "전체";
-});
+  cityName: {
+    type: String,
+    default: '중분류',
+  },
 
-const loadCategories = async () => {
-  try {
-    categories.value = await getBenefitCategories();
-  } catch (error) {
-    console.error("카테고리 조회 실패:", error);
-    categories.value = [];
+  districtCode: {
+    type: String,
+    default: '',
+  },
+
+  districtName: {
+    type: String,
+    default: '분류',
+  },
+})
+
+const emit = defineEmits([
+  'update:modelValue',
+  'apply',
+])
+
+/* 카테고리 */
+
+const categoryList = ref([])
+
+const selectedCategoryCode = ref('')
+const selectedCategoryName = ref('전체')
+
+const isCategoryOpen = ref(false)
+
+/* 지역 목록 */
+
+const provinceList = ref([])
+const cityList = ref([])
+const districtList = ref([])
+
+/* 선택된 지역 */
+
+const selectedProvinceCode = ref('')
+const selectedProvinceName = ref('전국')
+
+const selectedCityCode = ref('')
+const selectedCityName = ref('중분류')
+
+const selectedDistrictCode = ref('')
+const selectedDistrictName = ref('분류')
+
+/* 지역 선택창 상태 */
+
+const isProvinceOpen = ref(false)
+const isCityOpen = ref(false)
+const isDistrictOpen = ref(false)
+
+/*
+ * 최종적으로 서버에 전달할 지역코드
+ * 구 → 시·군 → 시·도 순으로 우선 적용
+ */
+const selectedZipCd = computed(() => {
+  return (
+    selectedDistrictCode.value ||
+    selectedCityCode.value ||
+    selectedProvinceCode.value ||
+    ''
+  )
+})
+
+const getSimpleRegionName = (regionName) => {
+  if (!regionName) {
+    return ''
   }
-};
 
-const selectCategory = (categoryCode, categoryName) => {
-  draftCategoryCode.value = categoryCode;
-  draftCategoryName.value = categoryName;
-};
+  const names = regionName.trim().split(/\s+/)
+  return names[names.length - 1]
+}
+
+/* 최초 데이터 조회 */
+
+const loadCategory = async () => {
+  try {
+    categoryList.value =
+      await getBenefitCategories()
+  } catch (error) {
+    console.error('카테고리 조회 실패:', error)
+    categoryList.value = []
+  }
+}
+
+const loadProvince = async () => {
+  try {
+    provinceList.value =
+      await getBenefitRegions()
+  } catch (error) {
+    console.error('시·도 조회 실패:', error)
+    provinceList.value = []
+  }
+}
+
+/* 카테고리 선택 */
+
+const selectCategory = (category) => {
+  selectedCategoryCode.value =
+    category.categoryCode
+
+  selectedCategoryName.value =
+    category.categoryName
+
+  isCategoryOpen.value = false
+}
+
+const selectAllCategory = () => {
+  selectedCategoryCode.value = ''
+  selectedCategoryName.value = '전체'
+  isCategoryOpen.value = false
+}
+
+/* 전국 선택 */
+
+const selectNationwide = () => {
+  selectedProvinceCode.value = ''
+  selectedProvinceName.value = '전국'
+
+  selectedCityCode.value = ''
+  selectedCityName.value = '중분류'
+
+  selectedDistrictCode.value = ''
+  selectedDistrictName.value = '분류'
+
+  cityList.value = []
+  districtList.value = []
+
+  isProvinceOpen.value = false
+}
+
+/* 시·도 선택 */
+
+const selectProvince = async (region) => {
+  selectedProvinceCode.value = region.zipCd
+  selectedProvinceName.value =
+    getSimpleRegionName(region.regionName)
+
+  selectedCityCode.value = ''
+  selectedCityName.value = '전체'
+
+  selectedDistrictCode.value = ''
+  selectedDistrictName.value = '분류'
+
+  districtList.value = []
+
+  try {
+    cityList.value =
+      await getBenefitRegions(region.zipCd)
+  } catch (error) {
+    console.error('중분류 조회 실패:', error)
+    cityList.value = []
+  }
+
+  isProvinceOpen.value = false
+}
+
+/* 시·군 전체 */
+
+const selectCityAll = () => {
+  selectedCityCode.value = ''
+  selectedCityName.value = '전체'
+
+  selectedDistrictCode.value = ''
+  selectedDistrictName.value = '분류'
+
+  districtList.value = []
+
+  isCityOpen.value = false
+}
+
+/* 시·군 선택 */
+
+const selectCity = async (region) => {
+  selectedCityCode.value = region.zipCd
+  selectedCityName.value =
+    getSimpleRegionName(region.regionName)
+
+  selectedDistrictCode.value = ''
+
+  if (region.hasChildren) {
+    try {
+      districtList.value =
+        await getBenefitRegions(region.zipCd)
+
+      selectedDistrictName.value = '전체'
+    } catch (error) {
+      console.error('세부 지역 조회 실패:', error)
+
+      districtList.value = []
+      selectedDistrictName.value = '분류'
+    }
+  } else {
+    districtList.value = []
+    selectedDistrictName.value = '분류'
+  }
+
+  isCityOpen.value = false
+}
+
+/* 구 전체 */
+
+const selectDistrictAll = () => {
+  selectedDistrictCode.value = ''
+  selectedDistrictName.value = '전체'
+  isDistrictOpen.value = false
+}
+
+/* 구 선택 */
+
+const selectDistrict = (region) => {
+  selectedDistrictCode.value = region.zipCd
+  selectedDistrictName.value =
+    getSimpleRegionName(region.regionName)
+
+  isDistrictOpen.value = false
+}
+
+/* 필터 초기화 */
 
 const resetFilter = () => {
-  draftCategoryCode.value = "";
-  draftCategoryName.value = "전체";
-};
+  selectedCategoryCode.value = ''
+  selectedCategoryName.value = '전체'
+
+  selectNationwide()
+}
+
+/* 필터 적용 */
 
 const applyFilter = () => {
-  emit("apply", {
-    categoryCode: draftCategoryCode.value,
-    categoryName: draftCategoryName.value,
-  });
+  emit('apply', {
+    categoryCode:
+      selectedCategoryCode.value,
 
-  closeModal();
-};
+    categoryName:
+      selectedCategoryName.value,
+
+    zipCd:
+      selectedZipCd.value,
+
+    provinceCode:
+      selectedProvinceCode.value,
+
+    provinceName:
+      selectedProvinceName.value,
+
+    cityCode:
+      selectedCityCode.value,
+
+    cityName:
+      selectedCityName.value,
+
+    districtCode:
+      selectedDistrictCode.value,
+
+    districtName:
+      selectedDistrictName.value,
+  })
+
+  emit('update:modelValue', false)
+}
 
 const closeModal = () => {
-  isCategorySheetOpen.value = false;
-  emit("update:modelValue", false);
-};
+  emit('update:modelValue', false)
+}
 
+/*
+ * 모달을 다시 열었을 때
+ * 이전에 적용한 필터 상태 복원
+ */
 watch(
   () => props.modelValue,
-  (isOpen) => {
+  async (isOpen) => {
     if (!isOpen) {
-      return;
+      return
     }
 
-    draftCategoryCode.value = props.categoryCode;
-    draftCategoryName.value = props.categoryName;
-  },
-);
+    selectedCategoryCode.value =
+      props.categoryCode
 
-onMounted(loadCategories);
+    selectedCategoryName.value =
+      props.categoryName
+
+    selectedProvinceCode.value =
+      props.provinceCode
+
+    selectedProvinceName.value =
+      props.provinceName
+
+    selectedCityCode.value =
+      props.cityCode
+
+    selectedCityName.value =
+      props.cityName
+
+    selectedDistrictCode.value =
+      props.districtCode
+
+    selectedDistrictName.value =
+      props.districtName
+
+    if (props.provinceCode) {
+      cityList.value =
+        await getBenefitRegions(
+          props.provinceCode
+        )
+    }
+
+    if (props.cityCode) {
+      districtList.value =
+        await getBenefitRegions(
+          props.cityCode
+        )
+    }
+  }
+)
+
+onMounted(async () => {
+  await Promise.all([
+    loadCategory(),
+    loadProvince(),
+  ])
+})
 </script>
 
 <style scoped>
@@ -198,96 +671,130 @@ onMounted(loadCategories);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.28);
 }
 
 .filter-modal {
-  width: min(100%, 430px);
-  min-height: 70vh;
-  padding: 24px 20px 28px;
+  width: min(100%, 440px);
+  max-height: 90vh;
+  padding: 12px 28px 28px;
+  overflow-y: auto;
+  border-radius: 28px 28px 0 0;
   background: #fff;
-  border-radius: 24px 24px 0 0;
 }
 
-.filter-header,
-.category-sheet-header {
+.filter-handle {
+  width: 42px;
+  height: 4px;
+  margin: 0 auto 24px;
+  border-radius: 999px;
+  background: #c6bfb4;
+}
+
+.filter-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 }
 
-.filter-header h2,
-.category-sheet-header h3 {
+.filter-header h2 {
   margin: 0;
+  font-size: 25px;
 }
 
-.close-button,
-.category-sheet-header button {
+.filter-header p {
+  margin: 10px 0 0;
+  color: #666;
+  font-size: 13px;
+}
+
+.close-button {
   border: 0;
   background: transparent;
-  font-size: 32px;
+  font-size: 38px;
+  font-weight: 200;
+  line-height: 1;
   cursor: pointer;
 }
 
-.filter-description {
-  margin: 8px 0 32px;
-  font-size: 13px;
-  color: #777;
-}
-
 .filter-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-top: 42px;
 }
 
 .filter-label {
-  font-size: 14px;
-  color: #888;
+  display: block;
+  margin-bottom: 4px;
+  color: #8a8a8a;
+  font-size: 15px;
+}
+
+.region-filter-row {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
 .filter-select {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding: 12px 0;
+  min-width: 0;
+  padding: 10px 0 14px;
   border: 0;
-  border-bottom: 1px solid #9a8546;
+  border-bottom: 2px solid #aa985e;
   background: transparent;
   font-size: 18px;
   text-align: left;
-}
-
-.filter-actions {
-  position: absolute;
-  right: 20px;
-  bottom: 28px;
-  left: 20px;
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 12px;
-}
-
-.reset-button,
-.apply-button,
-.category-confirm-button {
-  min-height: 52px;
-  border: 0;
-  border-radius: 14px;
-  font-weight: 700;
   cursor: pointer;
 }
 
-.reset-button {
-  background: #f0eee9;
+.filter-select.full {
+  width: 100%;
 }
 
-.apply-button,
-.category-confirm-button {
+.filter-select strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-select:disabled {
+  color: #aaa;
+  border-bottom-color: #ddd;
+  cursor: default;
+}
+
+.arrow {
+  margin-left: 8px;
+}
+
+.filter-actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  margin-top: 42px;
+}
+
+.reset-button,
+.apply-button {
+  height: 52px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.reset-button {
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.apply-button {
+  border: 0;
   background: #ffbc00;
 }
 
-.category-sheet-overlay {
+.option-overlay {
   position: fixed;
   inset: 0;
   z-index: 1100;
@@ -297,38 +804,40 @@ onMounted(loadCategories);
   background: rgba(0, 0, 0, 0.3);
 }
 
-.category-sheet {
-  width: min(100%, 430px);
-  padding: 24px 0 0;
-  background: #fff;
-  border-radius: 24px 24px 0 0;
-}
-
-.category-sheet-header {
-  padding: 0 20px 16px;
-}
-
-.category-list {
-  max-height: 320px;
+.option-sheet {
+  width: min(100%, 440px);
+  max-height: 70vh;
+  padding: 24px;
   overflow-y: auto;
-}
-
-.category-item {
-  width: 100%;
-  padding: 16px 20px;
-  border: 0;
+  border-radius: 24px 24px 0 0;
   background: #fff;
-  font-size: 17px;
-  cursor: pointer;
 }
 
-.category-item.active {
-  background: #f7f5f0;
-  font-weight: 700;
+.option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
 }
 
-.category-confirm-button {
+.option-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.option-header button {
+  border: 0;
+  background: transparent;
+  font-size: 28px;
+}
+
+.option-item {
   width: 100%;
-  border-radius: 0;
+  padding: 15px 4px;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  background: #fff;
+  font-size: 16px;
+  text-align: left;
 }
 </style>

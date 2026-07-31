@@ -58,11 +58,33 @@
     </section>
 
     <BenefitFilterModal
-      v-model="isFilterOpen"
-      :category-code="selectedCategoryCode"
-      :category-name="selectedCategoryName"
-      @apply="handleApplyFilter"
-    />
+  v-model="isFilterOpen"
+  :category-code="
+    selectedCategoryCode
+  "
+  :category-name="
+    selectedCategoryName
+  "
+  :province-code="
+    selectedProvinceCode
+  "
+  :province-name="
+    selectedProvinceName
+  "
+  :city-code="
+    selectedCityCode
+  "
+  :city-name="
+    selectedCityName
+  "
+  :district-code="
+    selectedDistrictCode
+  "
+  :district-name="
+    selectedDistrictName
+  "
+  @apply="handleApplyFilter"
+/>
   </main>
 </template>
 
@@ -82,6 +104,7 @@ const isLoading = ref(false)
 
 const benefit = ref([])
 
+//카테고리 
 const selectedCategoryCode = ref(
   route.query.categoryCode ?? ''
 )
@@ -90,17 +113,57 @@ const selectedCategoryName = ref(
   route.query.categoryName ?? '전체'
 )
 
+//지역 
+const selectedZipCd = ref(
+  route.query.zipCd ?? ''
+)
+
+const selectedProvinceCode = ref(
+  route.query.provinceCode ?? ''
+)
+
+const selectedProvinceName = ref(
+  route.query.provinceName ?? '전국'
+)
+
+const selectedCityCode = ref(
+  route.query.cityCode ?? ''
+)
+
+const selectedCityName = ref(
+  route.query.cityName ?? '중분류'
+)
+
+const selectedDistrictCode = ref(
+  route.query.districtCode ?? ''
+)
+
+const selectedDistrictName = ref(
+  route.query.districtName ?? '분류'
+)
+
 const loadBenefit = async () => {
   isLoading.value = true
 
   try {
     benefit.value = await getBenefit({
-      keyword: keyword.value || undefined,
+      keyword:
+        keyword.value || undefined,
+
       categoryCode:
-        selectedCategoryCode.value || undefined
+        selectedCategoryCode.value ||
+        undefined,
+
+      zipCd:
+        selectedZipCd.value ||
+        undefined,
     })
   } catch (error) {
-    console.error('혜택 조회 실패:', error)
+    console.error(
+      '혜택 조회 실패:',
+      error
+    )
+
     benefit.value = []
   } finally {
     isLoading.value = false
@@ -109,18 +172,70 @@ const loadBenefit = async () => {
 
 const handleApplyFilter = async ({
   categoryCode,
-  categoryName
+  categoryName,
+  zipCd,
+  provinceCode,
+  provinceName,
+  cityCode,
+  cityName,
+  districtCode,
+  districtName
 }) => {
   selectedCategoryCode.value = categoryCode
   selectedCategoryName.value = categoryName
 
+  selectedZipCd.value = zipCd
+
+  selectedProvinceCode.value = provinceCode
+  selectedProvinceName.value = provinceName
+
+  selectedCityCode.value = cityCode
+  selectedCityName.value = cityName
+
+  selectedDistrictCode.value = districtCode
+  selectedDistrictName.value = districtName
+
   await router.replace({
     query: {
       ...route.query,
-      keyword: keyword.value || undefined,
-      categoryCode: categoryCode || undefined,
+
+      keyword:
+        keyword.value || undefined,
+
+      categoryCode:
+        categoryCode || undefined,
+
       categoryName:
-        categoryCode === '' ? undefined : categoryName
+        categoryCode
+          ? categoryName
+          : undefined,
+
+      zipCd:
+        zipCd || undefined,
+
+      provinceCode:
+        provinceCode || undefined,
+
+      provinceName:
+        provinceCode
+          ? provinceName
+          : undefined,
+
+      cityCode:
+        cityCode || undefined,
+
+      cityName:
+        cityCode
+          ? cityName
+          : undefined,
+
+      districtCode:
+        districtCode || undefined,
+
+      districtName:
+        districtCode
+          ? districtName
+          : undefined
     }
   })
 
@@ -136,6 +251,38 @@ const clearCategory = async () => {
       ...route.query,
       categoryCode: undefined,
       categoryName: undefined
+    }
+  })
+
+  await loadBenefit()
+}
+
+const clearRegion = async () => {
+  selectedZipCd.value = ''
+
+  selectedProvinceCode.value = ''
+  selectedProvinceName.value = '전국'
+
+  selectedCityCode.value = ''
+  selectedCityName.value = '중분류'
+
+  selectedDistrictCode.value = ''
+  selectedDistrictName.value = '분류'
+
+  await router.replace({
+    query: {
+      ...route.query,
+
+      zipCd: undefined,
+
+      provinceCode: undefined,
+      provinceName: undefined,
+
+      cityCode: undefined,
+      cityName: undefined,
+
+      districtCode: undefined,
+      districtName: undefined
     }
   })
 
