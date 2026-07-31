@@ -224,8 +224,12 @@
         </div>
 
         <div class="drawer-footer">
-          <button class="logout-btn" @click="showLogoutConfirm = true">
-            로그아웃
+          <button
+            class="auth-btn"
+            :class="auth.isLogin ? 'logout' : 'login'"
+            @click="onAuthAction"
+          >
+            {{ auth.isLogin ? '로그아웃' : '로그인' }}
           </button>
         </div>
       </div>
@@ -266,6 +270,15 @@ const showLogoutConfirm = ref(false);
 const goPage = (path) => {
   router.push(path);
   emit('close');
+};
+
+// 헤더(DefaultLayout)와 같은 규칙 — 로그인 상태면 로그아웃 확인, 아니면 로그인 페이지로.
+const onAuthAction = () => {
+  if (auth.isLogin) {
+    showLogoutConfirm.value = true;
+    return;
+  }
+  goPage('/login');
 };
 
 const handleLogout = async () => {
@@ -376,13 +389,20 @@ const handleLogout = async () => {
   justify-content: flex-end;
 }
 
-.logout-btn {
+.auth-btn {
   background: none;
   border: none;
-  color: #d64545;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.auth-btn.logout {
+  color: #d64545;
+}
+
+.auth-btn.login {
+  color: #2e2a24;
 }
 
 .modal-overlay {
