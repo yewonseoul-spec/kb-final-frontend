@@ -17,4 +17,11 @@ export default [
     meta: { requiresAuth: true, title: '프로필 입력', hideTabBar: true },
     component: () => import('../pages/mypage/ProfileSetup.vue'),
   },
+
+  {
+    path: '/mypage/goalsetup',
+    name: 'GoalSetup',
+    meta: { requiresAuth: true, title: '목표 설정', hideTabBar: true },
+    component: () => import('../pages/mypage/GoalSetup.vue'),
+  },
 ];
