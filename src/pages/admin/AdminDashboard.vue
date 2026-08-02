@@ -56,6 +56,7 @@
                       <th class="text-end">신규(추정)</th>
                       <th class="text-end">갱신(추정)</th>
                       <th class="text-end">소요</th>
+                      <th style="min-width:180px">오류 내용</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -74,9 +75,15 @@
                       <td class="text-end small">{{ log.insertCnt }}건</td>
                       <td class="text-end small">{{ log.updateCnt }}건</td>
                       <td class="text-end small">{{ formatDuration(log.durationMs) }}</td>
+                      <td class="small">
+                      <span v-if="log.errorMsg" :class="log.resultStatus === 'F' ? 'text-danger' : 'text-warning-emphasis'">
+                      {{ shortenError(log.errorMsg) }}
+                      </span>
+                      <span v-else class="text-muted">-</span>
+                      </td>
                     </tr>
                     <tr v-if="data.recentSyncLogs.length === 0">
-                      <td colspan="6" class="text-center text-muted small py-4">
+                      <td colspan="7" class="text-center text-muted small py-4">
                         아직 동기화 이력이 없습니다.
                       </td>
                     </tr>
@@ -168,6 +175,10 @@ async function loadDashboard() {
     loading.value = false;
   }
 }
+// 외부 서버 에러 페이지가 통째로 들어오는 경우가 있어 대시보드에서는 앞부분만 보여준다
+function shortenError(text) {
+  return text.length > 40 ? `${text.slice(0, 40)}…` : text;
+}
 
 function categoryName(code) {
   return CATEGORY[code] || '기타';
@@ -221,3 +232,8 @@ function formatDuration(ms) {
 
 onMounted(loadDashboard);
 </script>
+
+<style scoped>
+/* 한글이 글자 단위로 끊기지 않도록 */
+.table td { word-break: keep-all; }
+</style>

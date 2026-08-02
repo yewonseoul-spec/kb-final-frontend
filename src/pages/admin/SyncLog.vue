@@ -13,17 +13,19 @@
           <div class="col-auto">
             <label class="form-label small text-muted mb-1">시작일</label>
             <input v-model="filters.startDate" type="date"
+                   :max="filters.endDate || undefined"
                    class="form-control form-control-sm" style="width:170px" />
           </div>
 
           <div class="col-auto">
             <label class="form-label small text-muted mb-1">종료일</label>
             <input v-model="filters.endDate" type="date"
+                   :min="filters.startDate || undefined"
                    class="form-control form-control-sm" style="width:170px" />
           </div>
 
           <div class="col-auto">
-            <button class="btn btn-sm btn-dark px-4" @click="search">조회</button>
+            <button class="btn btn-sm btn-dark px-4" :disabled="!isPeriodValid" @click="search">조회</button>
             <button class="btn btn-sm btn-link text-muted" @click="resetFilters">초기화</button>
           </div>
         </div>
@@ -107,7 +109,7 @@
                   <th class="text-end" style="width:100px">신규(추정)</th>
                   <th class="text-end" style="width:100px">갱신(추정)</th>
                   <th class="text-end" style="width:80px">소요</th>
-                  <th>오류 내용</th>
+                  <th style="min-width:280px">오류 내용</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,6 +207,11 @@ const loading = ref(false);
 const loadError = ref('');
 const data = ref(null);
 const expanded = ref({});
+
+// 달력에서 막지만 직접 입력하는 경우까지 대비한다.
+// 조회 화면이라 미래 날짜는 허용한다 — 결과가 0건으로 나올 뿐 문제가 없다.
+const isPeriodValid = computed(() =>
+    !filters.startDate || !filters.endDate || filters.startDate <= filters.endDate);
 
 const statCards = computed(() => {
   if (!data.value) return [];
@@ -326,3 +333,7 @@ function formatDuration(ms) {
 
 onMounted(() => load(1));
 </script>
+
+<style scoped>
+.table td { word-break: keep-all; }
+</style>
