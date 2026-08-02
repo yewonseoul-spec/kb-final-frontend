@@ -40,7 +40,7 @@ const onSubmit = async () => {
       await mypageApi.createGoal(goalType.value);
     }
     // 목적지가 지연 로딩이라 isSaving 을 끄지 않는다(끄면 화면이 깜빡였다 사라진다)
-    router.replace('/mypage');
+    router.replace({ name: 'MyPage' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보낸다(그 경우 e.response 가 없다)
     // 에러 본문은 JSON 이 아니라 평문 문자열이다(ApiExceptionAdvice)
@@ -52,7 +52,7 @@ const onSubmit = async () => {
 
 // 건너뛰기는 '아무것도 바꾸지 않는다' 이므로 기존 목표를 지우지 않는다
 const onSkip = () => {
-  router.replace('/mypage');
+  router.replace({ name: 'MyPage' });
 };
 </script>
 

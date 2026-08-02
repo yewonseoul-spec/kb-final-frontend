@@ -34,7 +34,7 @@ onMounted(async () => {
     // 입력을 이미 끝낸 회원 → 온보딩이 필요 없다.
     // 목적지가 지연 로딩이라 이동이 즉시 끝나지 않는다.
     // isLoading 을 켜 둔 채로 넘겨야 그 사이에 폼이 깜빡이지 않는다.
-    router.replace('/mypage');
+    router.replace({ name: 'MyPage' });
     return;
   } catch (e) {
     if (e.response?.status !== 404) {
@@ -54,7 +54,7 @@ const onSubmit = async () => {
   isSaving.value = true;
   try {
     await mypageApi.createProfile(form);
-    router.replace('/mypage/goalsetup');
+    router.replace({ name: 'GoalSetup' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보내므로 여기서 다루지 않는다.
     // (그 경우 e.response 자체가 없어서 아래 옵셔널 체이닝이 반드시 필요하다)
@@ -73,7 +73,7 @@ const onSubmit = async () => {
 };
 
 const onSkip = () => {
-  router.replace('/mypage/goalsetup');
+  router.replace({ name: 'GoalSetup' });
 };
 </script>
 

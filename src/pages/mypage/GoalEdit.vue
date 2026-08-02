@@ -54,6 +54,7 @@ const onSave = async () => {
     isSaving.value = false;
   }
 };
+
 // 취소는 들어온 화면으로 돌아간다. 다만 주소창 직접 진입이나 새로고침 직후에는
 // 히스토리가 없어 back() 이 앱 밖으로 나가므로, 그때는 /mypage 로 보낸다.
 const onCancel = () => {
@@ -61,7 +62,7 @@ const onCancel = () => {
     router.back();
     return;
   }
-  router.push('/mypage');
+  router.push({ name: 'MyPage' });
 };
 </script>
 
