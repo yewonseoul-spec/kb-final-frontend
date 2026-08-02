@@ -162,6 +162,14 @@ const onWithdrawDone = () => {
 
     <button
       type="button"
+      class="goal-link"
+      @click="router.push('/mypage/goal')"
+    >
+      목표 설정
+    </button>
+
+    <button
+      type="button"
       class="withdraw-link"
       @click="showWithdrawConfirm = true"
     >
@@ -239,6 +247,7 @@ const onWithdrawDone = () => {
   margin: 0;
   font-size: 13px;
   color: #43a047;
+  word-break: keep-all;
 }
 
 .message.error {
@@ -328,5 +337,16 @@ const onWithdrawDone = () => {
 
 .modal-actions.two {
   grid-template-columns: 1fr 1fr;
+}
+
+.goal-link {
+  align-self: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e2a24;
+  cursor: pointer;
 }
 </style>
