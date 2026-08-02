@@ -56,7 +56,6 @@ const MARITAL_OPTIONS = [
 
 <template>
   <div class="profile-form">
-    <RegionSelect v-model="profile.regionCode" class="region-field" />
     <KbInput
       v-model="profile.birthDate"
       type="date"
@@ -64,6 +63,8 @@ const MARITAL_OPTIONS = [
       :is-error="!!errors.birthDate"
       :error-message="errors.birthDate"
     />
+
+    <RegionSelect v-model="profile.regionCode" />
 
     <KbInput
       v-model="profile.income"
@@ -114,8 +115,5 @@ const MARITAL_OPTIONS = [
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px 12px;
-}
-.region-field {
-  grid-column: 1 / -1;
 }
 </style>
