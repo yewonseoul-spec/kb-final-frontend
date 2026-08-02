@@ -11,6 +11,7 @@ const router = useRouter();
 // input/select 는 미입력을 '' 로 만든다. null 변환은 전송 직전 mypageApi 의 sanitize 가 맡는다.
 const form = reactive({
   birthDate: '',
+  regionCode: '',
   income: '',
   employStatus: '',
   major: '',

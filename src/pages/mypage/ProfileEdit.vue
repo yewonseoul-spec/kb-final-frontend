@@ -14,6 +14,7 @@ const auth = useAuthStore();
 // 보낼 때는 mypageApi 의 sanitize 가 다시 null 로 되돌린다.
 const FIELDS = [
   'birthDate',
+  'regionCode',
   'income',
   'employStatus',
   'major',
