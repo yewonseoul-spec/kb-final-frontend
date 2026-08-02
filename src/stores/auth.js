@@ -12,6 +12,19 @@ const initState = {
   },
 };
 
+// JWT는 'header.payload.signature' 세 조각이고, payload는 JSON을 base64url로 인코딩한 것.
+// 가운데 조각을 풀어서 만료 시각(exp)을 꺼낸다. 형식이 깨졌으면 null.
+const getTokenExpiry = (token) => {
+  try {
+    // base64url은 표준 Base64의 '+', '/' 자리에 '-', '_'를 쓴다. atob이 읽도록 되돌린다
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64)); // atob = Base64 문자열 → 원래 문자열
+    return payload.exp ? payload.exp * 1000 : null; // exp는 초 단위, JS는 밀리초
+  } catch {
+    return null;
+  }
+};
+
 export const useAuthStore = defineStore('auth', () => {
   const state = ref({ ...initState });
 
@@ -30,7 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem('auth');
     state.value = { ...initState };
   };
 
@@ -43,10 +56,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   const load = () => {
     const auth = localStorage.getItem('auth');
-    if (auth != null) {
-      state.value = JSON.parse(auth);
-      console.log(state.value);
+    if (auth == null) return;
+
+    const saved = JSON.parse(auth);
+    const expiry = getTokenExpiry(saved.token);
+
+    // 만료됐거나 해석 불가능한 토큰이면 저장된 로그인 정보를 버린다
+    if (expiry == null || expiry <= Date.now()) {
+      localStorage.removeItem('auth');
+      return;
     }
+
+    state.value = saved;
   };
 
   load();
