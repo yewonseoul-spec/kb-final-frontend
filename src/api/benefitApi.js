@@ -35,3 +35,9 @@ export const getBenefitMajors = async () => {
   const response = await api.get("/majors");
   return response.data;
 };
+
+//학력 조회
+export const getBenefitSchools = async () => {
+  const response = await api.get("/schools");
+  return response.data;
+};
