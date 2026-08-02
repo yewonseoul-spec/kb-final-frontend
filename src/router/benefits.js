@@ -1,10 +1,10 @@
-import BenefitsView from '@/pages/benefits/BenefitsMain.vue';
+import BenefitsView from "@/pages/benefits/BenefitsMain.vue";
 
 export default [
   {
-    path: '/benefits',
-    name: '/benefits',
+    path: "/benefit",
+    name: "/benefit",
     component: BenefitsView,
-    meta: { title: '청년혜택' },
+    meta: { title: "청년혜택" },
   },
 ];

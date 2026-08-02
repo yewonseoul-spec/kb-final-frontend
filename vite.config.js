@@ -23,6 +23,6 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: '../backend/src/main/webapp/resources',
+    outDir: '../kb-final-backend/src/main/webapp/resources',
   },
 })
