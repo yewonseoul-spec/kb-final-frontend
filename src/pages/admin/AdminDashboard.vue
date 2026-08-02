@@ -20,13 +20,16 @@
       <!-- 통계 카드 -->
       <div class="row g-3 mb-4">
         <div class="col-6 col-lg" v-for="card in cards" :key="card.label">
-          <div class="card h-100 border-0 shadow-sm">
+          <component :is="card.to ? 'router-link' : 'div'"
+                     :to="card.to"
+                     class="card h-100 border-0 shadow-sm text-decoration-none text-reset"
+                     :class="card.to ? 'card-link' : ''">
             <div class="card-body py-3">
               <div class="small text-muted mb-1">{{ card.label }}</div>
               <div class="fs-4 fw-bold" :class="card.tone">{{ card.value }}</div>
               <div class="small text-muted mt-1">{{ card.note }}</div>
             </div>
-          </div>
+          </component>
         </div>
       </div>
 
@@ -103,8 +106,9 @@
                 <span class="badge bg-light text-danger border">30일 이내</span>
               </div>
 
-              <div v-for="b in data.deadlineBenefits" :key="b.benefitNo"
-                   class="d-flex justify-content-between align-items-start py-2 border-bottom">
+              <router-link v-for="b in data.deadlineBenefits" :key="b.benefitNo"
+                   :to="`/admin/benefits?keyword=${encodeURIComponent(b.plcyNm)}`"
+                   class="d-flex justify-content-between align-items-start py-2 border-bottom text-decoration-none text-reset">
                 <div class="pe-2">
                   <div class="small fw-semibold">{{ b.plcyNm }}</div>
                   <span class="badge bg-light text-muted border mt-1">
@@ -114,7 +118,7 @@
                 <span class="small fw-bold text-nowrap" :class="ddayTone(b.dday)">
                   {{ ddayLabel(b.dday) }}
                 </span>
-              </div>
+              </router-link>
 
               <p v-if="data.deadlineBenefits.length === 0"
                  class="text-center text-muted small py-4 mb-0">
@@ -150,15 +154,20 @@ const cards = computed(() => {
   const d = data.value;
   return [
     { label: '전체 정책', value: `${d.totalBenefits.toLocaleString()}건`,
-      note: '온통청년 수집 누적', tone: '' },
+      note: '온통청년 수집 누적', tone: '',
+      to: '/admin/benefits' },
     { label: '추천 가능 정책', value: `${d.activeBenefits.toLocaleString()}건`,
-      note: '마감·미개시 제외', tone: 'text-primary' },
+      note: '마감·미개시 제외', tone: 'text-primary',
+      to: '/admin/benefits?isActive=Y' },
+    // 대시보드는 is_active='Y' 기준으로 세므로 목록에도 같은 조건을 건다
     { label: '마감 임박 정책', value: `${d.deadlineSoonCount}건`,
-      note: '30일 이내', tone: 'text-danger' },
+      note: '30일 이내', tone: 'text-danger',
+      to: '/admin/benefits?deadlineSoon=true&isActive=Y' },
     { label: '중복수혜 규칙', value: `${d.conflictRuleCount}건`,
-      note: '검수 확정분만 적용', tone: '' },
+      note: '검수 확정분만 적용', tone: '',
+      to: '/admin/benefits?hasConflict=true' },
     { label: '전체 회원', value: `${d.memberCount}명`,
-      note: '탈퇴 회원 제외', tone: '' },
+      note: '탈퇴 회원 제외', tone: '', to: null },
   ];
 });
 
@@ -236,4 +245,8 @@ onMounted(loadDashboard);
 <style scoped>
 /* 한글이 글자 단위로 끊기지 않도록 */
 .table td { word-break: keep-all; }
+
+/* 클릭 가능한 카드임을 hover로 알린다 */
+.card-link { transition: box-shadow .15s; }
+.card-link:hover { box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .1) !important; }
 </style>

@@ -1,3 +1,4 @@
+// src/router/admin.js
 export default [
   {
     path: '/admin',
@@ -7,6 +8,11 @@ export default [
         path: '',
         name: 'adminDashboard',
         component: () => import('../pages/admin/AdminDashboard.vue'),
+      },
+      {
+        path: 'benefits',
+        name: 'adminBenefits',
+        component: () => import('../pages/admin/BenefitList.vue'),
       },
       {
         path: 'synclog',

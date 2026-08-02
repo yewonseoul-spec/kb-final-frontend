@@ -15,15 +15,13 @@
           대시보드
         </router-link>
 
+        <router-link to="/admin/benefits" class="admin-nav-item" active-class="is-active">
+          혜택 관리
+        </router-link>
+
         <router-link to="/admin/synclog" class="admin-nav-item" active-class="is-active">
           동기화 로그
         </router-link>
-
-        <!-- ADMIN-02 미구현. 라우트가 없어 링크 대신 비활성 표시 -->
-        <span class="admin-nav-item is-disabled">
-          정책 관리
-          <small class="ms-1">준비 중</small>
-        </span>
       </nav>
     </aside>
 
