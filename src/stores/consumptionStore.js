@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
-import axios from '@/api/axios';
+import axios from '@/api';
+
+
+const baseURL =  'http://localhost:8080'
+const headers = {
+    'Content-Type': 'application/json'
+}
 
 export const useConsumptionStore = defineStore('consumption', {
   state: () => ({
@@ -14,7 +20,7 @@ export const useConsumptionStore = defineStore('consumption', {
       this.calendarError = null;
 
       try {
-        const res = await axios.get(`/consumption/calendar/${yearMonth}`);
+        const res = await axios.get(`${baseURL}/consumption/calendar/${yearMonth}`, headers);
         this.calendarData = res.data;
       } catch (err) {
         console.error('캘린더 데이터 조회 실패:', err);
