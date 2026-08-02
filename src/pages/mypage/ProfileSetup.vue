@@ -5,12 +5,14 @@ import mypageApi, { validateProfile } from '@/api/mypageApi';
 import KbButton from '@/components/common/KbButton.vue';
 import KbCard from '@/components/common/KbCard.vue';
 import ProfileForm from '@/components/mypage/ProfileForm.vue';
+import OnboardingHeader from '@/components/mypage/OnboardingHeader.vue';
 
 const router = useRouter();
 
 // input/select 는 미입력을 '' 로 만든다. null 변환은 전송 직전 mypageApi 의 sanitize 가 맡는다.
 const form = reactive({
   birthDate: '',
+  regionCode: '',
   income: '',
   employStatus: '',
   major: '',
@@ -32,7 +34,7 @@ onMounted(async () => {
     // 입력을 이미 끝낸 회원 → 온보딩이 필요 없다.
     // 목적지가 지연 로딩이라 이동이 즉시 끝나지 않는다.
     // isLoading 을 켜 둔 채로 넘겨야 그 사이에 폼이 깜빡이지 않는다.
-    router.replace('/mypage/profile');
+    router.replace({ name: 'MyPage' });
     return;
   } catch (e) {
     if (e.response?.status !== 404) {
@@ -52,7 +54,7 @@ const onSubmit = async () => {
   isSaving.value = true;
   try {
     await mypageApi.createProfile(form);
-    router.replace('/mypage/profile');
+    router.replace({ name: 'GoalSetup' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보내므로 여기서 다루지 않는다.
     // (그 경우 e.response 자체가 없어서 아래 옵셔널 체이닝이 반드시 필요하다)
@@ -71,27 +73,20 @@ const onSubmit = async () => {
 };
 
 const onSkip = () => {
-  router.replace('/');
+  router.replace({ name: 'GoalSetup' });
 };
 </script>
 
 <template>
   <!-- 프로필 유무를 확인하기 전에 폼을 그리면, 이미 입력한 회원에게 폼이 깜빡였다 사라진다 -->
   <div v-if="!isLoading" class="profile-setup">
-    <header class="setup-header">
-      <h1 class="setup-title">프로필 입력</h1>
-      <button type="button" class="skip-button" @click="onSkip">
-        건너뛰기
-      </button>
-    </header>
-
-    <div class="progress">
-      <div class="progress-track">
-        <span class="progress-step done"></span>
-        <span class="progress-step done"></span>
-      </div>
-      <span class="progress-label">2/2 프로필</span>
-    </div>
+    <OnboardingHeader
+      title="프로필 입력"
+      :step="2"
+      :steps="3"
+      step-name="프로필"
+      @skip="onSkip"
+    />
 
     <KbCard yellow-bg>
       <p class="guide-main">
@@ -123,58 +118,6 @@ const onSkip = () => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-.setup-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.setup-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
-}
-
-.skip-button {
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 14px;
-  color: #908980;
-  cursor: pointer;
-}
-
-.progress {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.progress-track {
-  display: flex;
-  flex: 1;
-  gap: 8px;
-}
-
-.progress-step {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background-color: #efece4;
-}
-
-.progress-step.done {
-  background-color: #ffbc00;
-}
-
-.progress-label {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #908980;
-  white-space: nowrap;
 }
 
 .guide-main {
