@@ -74,6 +74,25 @@ const passwordMatch = computed(
   () => !!member.password && member.password === member.passwordConfirm,
 );
 
+// 오류 문구는 칸을 벗어난 뒤부터 보여준다
+// 통과 표시는 타이핑 도중 즉시 사라진다
+const touched = reactive({
+  password: false,
+  passwordConfirm: false,
+  email: false,
+});
+
+const passwordError = computed(
+  () => touched.password && !!member.password && !passwordValid.value,
+);
+const passwordConfirmError = computed(
+  () =>
+    touched.passwordConfirm && !!member.passwordConfirm && !passwordMatch.value,
+);
+const emailFormatError = computed(
+  () => touched.email && !!member.email && !emailValid.value,
+);
+
 const allAgreed = computed({
   get: () =>
     terms.value.length > 0 && terms.value.every((t) => agreed[t.termsNo]),
@@ -170,10 +189,11 @@ const signup = async () => {
           type="password"
           label="비밀번호"
           placeholder="비밀번호를 입력하세요"
-          :is-error="!!member.password && !passwordValid"
+          :is-error="passwordError"
+          @focusout="touched.password = true"
         />
         <p class="field-msg">영문·숫자·특수문자 포함 8자 이상</p>
-        <p v-if="member.password && !passwordValid" class="field-msg err">
+        <p v-if="passwordError" class="field-msg err">
           비밀번호 조건을 만족하지 않아요
         </p>
       </div>
@@ -184,12 +204,10 @@ const signup = async () => {
           type="password"
           label="비밀번호 확인"
           placeholder="비밀번호를 다시 입력하세요"
-          :is-error="!!member.passwordConfirm && !passwordMatch"
+          :is-error="passwordConfirmError"
+          @focusout="touched.passwordConfirm = true"
         />
-        <p
-          v-if="member.passwordConfirm && !passwordMatch"
-          class="field-msg err"
-        >
+        <p v-if="passwordConfirmError" class="field-msg err">
           비밀번호가 일치하지 않아요
         </p>
       </div>
@@ -201,9 +219,8 @@ const signup = async () => {
             class="field-input"
             label="이메일"
             placeholder="name@example.com"
-            :is-error="
-              (!!member.email && !emailValid) || emailAvailable === false
-            "
+            :is-error="emailFormatError || emailAvailable === false"
+            @focusout="touched.email = true"
           />
           <button
             type="button"
@@ -215,7 +232,7 @@ const signup = async () => {
           </button>
         </div>
         <p class="field-msg">알림 수신에 사용돼요</p>
-        <p v-if="member.email && !emailValid" class="field-msg err">
+        <p v-if="emailFormatError" class="field-msg err">
           이메일 형식이 올바르지 않아요
         </p>
         <p
