@@ -135,7 +135,7 @@ const onWithdrawDone = () => {
         <p class="empty-sub">입력하면 받을 수 있는 혜택을 골라드려요.</p>
       </KbCard>
       <div class="button-row">
-        <KbButton type="primary"  @click="router.push({ name: 'ProfileSetup' })"">
+        <KbButton type="primary" @click="router.push({ name: 'ProfileSetup' })">
           프로필 입력하러 가기
         </KbButton>
       </div>
