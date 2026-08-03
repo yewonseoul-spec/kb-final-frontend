@@ -23,7 +23,7 @@ const login = async () => {
   error.value = '';
   try {
     await auth.login(member);
-    router.push('/');
+    router.push({ name: 'Home' });
   } catch (e) {
     error.value = e.response?.data || '로그인 중 오류가 발생했어요';
   }
@@ -64,7 +64,9 @@ const login = async () => {
 
     <p class="login-footer">
       아이디 조회 · 암호 설정
-      <RouterLink class="signup-link" to="/signup">회원가입</RouterLink>
+      <RouterLink class="signup-link" :to="{ name: 'SignUp' }"
+        >회원가입</RouterLink
+      >
     </p>
   </div>
 </template>

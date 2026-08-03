@@ -113,9 +113,9 @@ const signup = async () => {
     // 가입은 이미 성공했으므로, 로그인만 실패하면 로그인 화면으로 보내되 가입 실패로 표시하지 않는다.
     try {
       await auth.login({ loginId: member.loginId, password: member.password });
-      router.push('/mypage/infosetup');
+      router.push({ name: 'ProfileSetup' });
     } catch {
-      router.push('/login');
+      router.push({ name: 'Login' });
     }
   } catch (e) {
     error.value = e.response?.data || '회원가입 중 오류가 발생했어요';
