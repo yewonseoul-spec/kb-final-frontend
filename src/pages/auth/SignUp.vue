@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router';
 import authApi from '@/api/authApi';
 import termsApi from '@/api/termsApi';
 import { useAuthStore } from '@/stores/auth';
+import KbInput from '@/components/common/KbInput.vue';
+import KbButton from '@/components/common/KbButton.vue';
+import KbCheckbox from '@/components/common/KbCheckbox.vue';
+import KbBadge from '@/components/common/KbBadge.vue';
+import KbCard from '@/components/common/KbCard.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -18,6 +23,7 @@ const member = reactive({
 
 const terms = ref([]);
 const agreed = reactive({});
+const expanded = reactive({});
 
 const idAvailable = ref(null);
 const emailAvailable = ref(null);
@@ -33,16 +39,35 @@ watch(
   () => (emailAvailable.value = null),
 );
 
+// KbInput 은 루트가 div 라 maxlength 가 input 까지 가지 않는다. DB 컬럼 길이를 넘기면
+// MySQL 1406 으로 500 이 나므로 여기서 잘라 둔다. KbInput 이 속성을 넘기게 되면 지울 코드.
+const LENGTH_LIMIT = { realName: 20, loginId: 30, email: 100 };
+Object.entries(LENGTH_LIMIT).forEach(([field, limit]) => {
+  watch(
+    () => member[field],
+    (v) => {
+      if (v.length > limit) member[field] = v.slice(0, limit);
+    },
+  );
+});
+
 onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
-  terms.value.forEach((t) => (agreed[t.termsNo] = false));
+  terms.value.forEach((t) => {
+    agreed[t.termsNo] = false;
+    expanded[t.termsNo] = false;
+  });
 });
 
 const checkId = async () => {
   idAvailable.value = !(await authApi.checkId(member.loginId));
 };
 
+const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailValid = computed(() => EMAIL_RULE.test(member.email));
+
 const checkEmail = async () => {
+  if (!emailValid.value) return;
   emailAvailable.value = !(await authApi.checkEmail(member.email));
 };
 
@@ -51,6 +76,25 @@ const PASSWORD_RULE = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const passwordValid = computed(() => PASSWORD_RULE.test(member.password));
 const passwordMatch = computed(
   () => !!member.password && member.password === member.passwordConfirm,
+);
+
+// 오류 문구는 칸을 벗어난 뒤부터 보여준다
+// 통과 표시는 타이핑 도중 즉시 사라진다
+const touched = reactive({
+  password: false,
+  passwordConfirm: false,
+  email: false,
+});
+
+const passwordError = computed(
+  () => touched.password && !!member.password && !passwordValid.value,
+);
+const passwordConfirmError = computed(
+  () =>
+    touched.passwordConfirm && !!member.passwordConfirm && !passwordMatch.value,
+);
+const emailFormatError = computed(
+  () => touched.email && !!member.email && !emailValid.value,
 );
 
 const allAgreed = computed({
@@ -92,9 +136,9 @@ const signup = async () => {
     // 가입은 이미 성공했으므로, 로그인만 실패하면 로그인 화면으로 보내되 가입 실패로 표시하지 않는다.
     try {
       await auth.login({ loginId: member.loginId, password: member.password });
-      router.push('/mypage/infosetup');
+      router.push({ name: 'ProfileSetup' });
     } catch {
-      router.push('/login');
+      router.push({ name: 'Login' });
     }
   } catch (e) {
     error.value = e.response?.data || '회원가입 중 오류가 발생했어요';
@@ -103,171 +147,306 @@ const signup = async () => {
 </script>
 
 <template>
-  <div class="mt-5 mx-auto" style="max-width: 500px">
-    <h1 class="h4 fw-bold my-5">회원가입</h1>
+  <div class="signup">
+    <h1 class="page-title">회원가입</h1>
 
-    <form @submit.prevent="signup">
-      <div class="mb-3">
-        <label for="realName" class="form-label">실명</label>
-        <input
-          id="realName"
-          v-model="member.realName"
-          type="text"
-          class="form-control"
-          maxlength="20"
-          placeholder="실명을 입력하세요"
-        />
-      </div>
+    <form class="signup-form" @submit.prevent="signup">
+      <KbInput
+        v-model="member.realName"
+        label="실명"
+        placeholder="실명을 입력하세요"
+      />
 
-      <div class="mb-3">
-        <label for="loginId" class="form-label">아이디</label>
-        <div class="input-group">
-          <input
-            id="loginId"
+      <div class="field">
+        <div class="field-row">
+          <KbInput
             v-model="member.loginId"
-            type="text"
-            class="form-control"
-            maxlength="30"
+            class="field-input"
+            label="아이디"
             placeholder="아이디를 입력하세요"
+            :is-error="idAvailable === false"
           />
+          <!-- KbButton 은 폼 안에서 submit 으로 동작해 회원가입이 제출된다. 중복확인은 네이티브 button 유지 -->
           <button
             type="button"
-            class="btn btn-outline-secondary"
+            class="check-btn"
             :disabled="!member.loginId"
             @click="checkId"
           >
             중복 확인
           </button>
         </div>
-        <div
-          v-if="member.loginId && idAvailable === null"
-          class="text-secondary small"
-        >
+        <p v-if="member.loginId && idAvailable === null" class="field-msg">
           중복 확인을 해주세요
-        </div>
-        <div v-if="idAvailable === true" class="text-success small">
+        </p>
+        <p v-if="idAvailable === true" class="field-msg ok">
           사용할 수 있는 아이디예요
-        </div>
-        <div v-if="idAvailable === false" class="text-danger small">
+        </p>
+        <p v-if="idAvailable === false" class="field-msg err">
           이미 사용 중인 아이디예요
-        </div>
+        </p>
       </div>
 
-      <div class="mb-3">
-        <label for="password" class="form-label">비밀번호</label>
-        <input
-          id="password"
+      <div class="field">
+        <KbInput
           v-model="member.password"
           type="password"
-          class="form-control"
+          label="비밀번호"
           placeholder="비밀번호를 입력하세요"
+          :is-error="passwordError"
+          @focusout="touched.password = true"
         />
-        <div class="form-text">영문·숫자·특수문자 포함 8자 이상</div>
-        <div v-if="member.password && !passwordValid" class="text-danger small">
+        <p class="field-msg">영문·숫자·특수문자 포함 8자 이상</p>
+        <p v-if="passwordError" class="field-msg err">
           비밀번호 조건을 만족하지 않아요
-        </div>
+        </p>
       </div>
 
-      <div class="mb-3">
-        <label for="passwordConfirm" class="form-label">비밀번호 확인</label>
-        <input
-          id="passwordConfirm"
+      <div class="field">
+        <KbInput
           v-model="member.passwordConfirm"
           type="password"
-          class="form-control"
+          label="비밀번호 확인"
           placeholder="비밀번호를 다시 입력하세요"
+          :is-error="passwordConfirmError"
+          @focusout="touched.passwordConfirm = true"
         />
-        <div
-          v-if="member.passwordConfirm && !passwordMatch"
-          class="text-danger small"
-        >
+        <p v-if="passwordConfirmError" class="field-msg err">
           비밀번호가 일치하지 않아요
-        </div>
+        </p>
       </div>
 
-      <div class="mb-3">
-        <label for="email" class="form-label">이메일</label>
-        <div class="input-group">
-          <input
-            id="email"
+      <div class="field">
+        <div class="field-row">
+          <KbInput
             v-model="member.email"
-            type="email"
-            class="form-control"
-            maxlength="100"
+            class="field-input"
+            label="이메일"
             placeholder="name@example.com"
+            :is-error="emailFormatError || emailAvailable === false"
+            @focusout="touched.email = true"
           />
           <button
             type="button"
-            class="btn btn-outline-secondary"
-            :disabled="!member.email"
+            class="check-btn"
+            :disabled="!emailValid"
             @click="checkEmail"
           >
             중복 확인
           </button>
         </div>
-        <div class="form-text">알림 수신에 사용돼요</div>
-        <div
-          v-if="member.email && emailAvailable === null"
-          class="text-secondary small"
+        <p class="field-msg">알림 수신에 사용돼요</p>
+        <p v-if="emailFormatError" class="field-msg err">
+          이메일 형식이 올바르지 않아요
+        </p>
+        <p
+          v-if="member.email && emailValid && emailAvailable === null"
+          class="field-msg"
         >
           중복 확인을 해주세요
-        </div>
-        <div v-if="emailAvailable === true" class="text-success small">
+        </p>
+        <p v-if="emailAvailable === true" class="field-msg ok">
           사용할 수 있는 이메일이에요
-        </div>
-        <div v-if="emailAvailable === false" class="text-danger small">
+        </p>
+        <p v-if="emailAvailable === false" class="field-msg err">
           이미 사용 중인 이메일이에요
-        </div>
+        </p>
       </div>
 
-      <div class="border rounded p-3 mb-3">
-        <div class="form-check fw-bold mb-2">
-          <input
-            id="allAgreed"
-            v-model="allAgreed"
-            type="checkbox"
-            class="form-check-input"
-          />
-          <label for="allAgreed" class="form-check-label"
-            >약관에 모두 동의</label
-          >
+      <KbCard>
+        <KbCheckbox v-model="allAgreed" class="agree-all">
+          약관에 모두 동의
+        </KbCheckbox>
+
+        <hr class="terms-divider" />
+
+        <div v-for="t in terms" :key="t.termsNo" class="terms-item">
+          <div class="terms-row">
+            <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
+              {{ t.title }}
+            </KbCheckbox>
+            <KbBadge :variant="t.required ? 'danger' : 'gray'">
+              {{ t.required ? '필수' : '선택' }}
+            </KbBadge>
+            <!-- KbCheckbox 루트가 label 이라 안에 넣으면 화살표 클릭에 동의가 토글된다 -->
+            <button
+              type="button"
+              class="terms-toggle"
+              :class="{ open: expanded[t.termsNo] }"
+              :aria-expanded="!!expanded[t.termsNo]"
+              :aria-label="t.title + ' 전문 보기'"
+              @click="expanded[t.termsNo] = !expanded[t.termsNo]"
+            >
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path
+                  d="M1 1.5L6 6.5L11 1.5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <p v-if="expanded[t.termsNo]" class="terms-content">
+            {{ t.content }}
+          </p>
         </div>
-        <hr />
-        <div
-          v-for="t in terms"
-          :key="t.termsNo"
-          class="form-check d-flex align-items-center gap-2"
-        >
-          <input
-            :id="`terms-${t.termsNo}`"
-            v-model="agreed[t.termsNo]"
-            type="checkbox"
-            class="form-check-input"
-          />
-          <label
-            :for="`terms-${t.termsNo}`"
-            class="form-check-label flex-grow-1"
-          >
-            {{ t.title }}
-          </label>
-          <span
-            class="badge"
-            :class="t.required ? 'bg-danger' : 'bg-secondary'"
-          >
-            {{ t.required ? '필수' : '선택' }}
-          </span>
-        </div>
+      </KbCard>
+
+      <p v-if="error" class="signup-error">{{ error }}</p>
+
+      <!-- KbButton 은 inline-flex 라서 grid 아이템으로 두어 폭을 꽉 채운다 -->
+      <div class="submit-row">
+        <KbButton type="primary" :disabled="disableSubmit">가입하기</KbButton>
       </div>
-
-      <div v-if="error" class="text-danger">{{ error }}</div>
-
-      <button
-        type="submit"
-        class="btn btn-warning w-100 mt-2"
-        :disabled="disableSubmit"
-      >
-        가입하기
-      </button>
     </form>
   </div>
 </template>
+
+<style scoped>
+/* 바깥 DefaultLayout 이 my-5 px-3 을 이미 주므로 여기서는 정렬과 폭만 맡는다 */
+.signup {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.page-title {
+  margin: 0 0 32px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2e2a24;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 라벨 높이만큼 입력칸이 내려가므로 아래를 기준으로 버튼을 맞춘다 */
+.field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.field-input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* KbButton secondary 와 같은 모양. KbButton 이 native type 을 받게 되면 교체할 것 */
+.check-btn {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  background-color: #ffffff;
+  border: 1px solid #efece4;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e2a24;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.check-btn:disabled {
+  background-color: #f8f7f2;
+  border-color: #e4e0d6;
+  color: #a1998d;
+  cursor: not-allowed;
+}
+
+.field-msg {
+  margin: 0;
+  font-size: 12px;
+  color: #908980;
+}
+.field-msg.ok {
+  color: #43a047;
+}
+.field-msg.err {
+  color: #d64545;
+}
+
+/* KbCheckbox 안쪽 글자라 :deep 이 필요하다 */
+.agree-all :deep(.label-text) {
+  font-weight: 700;
+}
+
+.terms-divider {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #efece4;
+}
+
+.terms-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.terms-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.terms-check {
+  flex: 1;
+}
+
+.terms-toggle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 4px;
+  background: none;
+  border: 0;
+  color: #908980;
+  cursor: pointer;
+}
+
+.terms-toggle svg {
+  transition: transform 0.2s;
+}
+
+.terms-toggle.open svg {
+  transform: rotate(180deg);
+}
+
+/* content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
+.terms-content {
+  margin: 0;
+  max-height: 160px;
+  padding: 12px;
+  overflow-y: auto;
+  background-color: #f8f7f2;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #908980;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.signup-error {
+  margin: 0;
+  font-size: 13px;
+  color: #d64545;
+}
+
+.submit-row {
+  display: grid;
+  margin-top: 8px;
+}
+</style>

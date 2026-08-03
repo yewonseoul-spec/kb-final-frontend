@@ -90,9 +90,9 @@ const onCancel = () => {
     router.back();
     return;
   }
-  // TODO: 마이페이지 요약 화면이 생기면 '/mypage' 로 바꾼다.
-  //       지금은 /mypage 가 이 화면으로 리다이렉트돼서 제자리걸음이 된다.
-  router.push('/');
+  // TODO: 마이페이지 요약 화면이 생기면 { name: 'MyPage' } 로 바꾼다.
+  //       지금 MyPage 로 보내면 이 화면으로 다시 리다이렉트돼 제자리걸음이라 Home 으로 둔다.
+  router.push({ name: 'Home' });
 };
 
 // 회원 탈퇴 — 재확인 절차
@@ -163,7 +163,7 @@ const onWithdrawDone = () => {
     <button
       type="button"
       class="goal-link"
-      @click="router.push('/mypage/goal')"
+      @click="router.push({ name: 'GoalEdit' })"
     >
       목표 설정
     </button>
