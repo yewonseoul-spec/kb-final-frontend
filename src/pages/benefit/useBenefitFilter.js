@@ -14,6 +14,8 @@ const defaults = () => ({
   majorName: "전체",
   schoolCd: "",
   schoolName: "전체",
+  jobCd: "",
+  jobName: "전체",
 });
 
 export const useBenefitFilter = (route) => {
@@ -31,6 +33,8 @@ export const useBenefitFilter = (route) => {
     majorName: route.query.majorName ?? "전체",
     schoolCd: route.query.schoolCd ?? "",
     schoolName: route.query.schoolName ?? "전체",
+    jobCd: route.query.jobCd ?? "",
+    jobName: route.query.jobName ?? "전체",
   });
 
   const regionLabel = computed(() => {
@@ -44,10 +48,14 @@ export const useBenefitFilter = (route) => {
 
   const activeFilters = computed(() => {
     const items = [];
-    if (filter.categoryCode) items.push({ key: "category", label: filter.categoryName });
+    if (filter.categoryCode)
+      items.push({ key: "category", label: filter.categoryName });
     if (filter.zipCd) items.push({ key: "region", label: regionLabel.value });
-    if (filter.plcyMajorCd) items.push({ key: "major", label: filter.majorName });
-    if (filter.schoolCd) items.push({ key: "school", label: filter.schoolName });
+    if (filter.plcyMajorCd)
+      items.push({ key: "major", label: filter.majorName });
+    if (filter.schoolCd)
+      items.push({ key: "school", label: filter.schoolName });
+    if (filter.jobCd) items.push({ key: "job", label: filter.jobName });
     return items;
   });
 
@@ -56,6 +64,7 @@ export const useBenefitFilter = (route) => {
     zipCd: filter.zipCd || undefined,
     plcyMajorCd: filter.plcyMajorCd || undefined,
     schoolCd: filter.schoolCd || undefined,
+    jobCd: filter.jobCd || undefined,
   }));
 
   const queryParams = computed(() => ({
@@ -72,22 +81,29 @@ export const useBenefitFilter = (route) => {
     majorName: filter.plcyMajorCd ? filter.majorName : undefined,
     schoolCd: filter.schoolCd || undefined,
     schoolName: filter.schoolCd ? filter.schoolName : undefined,
+    jobCd: filter.jobCd || undefined,
+    jobName: filter.jobCd ? filter.jobName : undefined,
   }));
 
   const apply = (next) => Object.assign(filter, next);
 
   const clear = (key) => {
-    if (key === "category") Object.assign(filter, { categoryCode: "", categoryName: "전체" });
-    if (key === "region") Object.assign(filter, defaults(), {
-      categoryCode: filter.categoryCode,
-      categoryName: filter.categoryName,
-      plcyMajorCd: filter.plcyMajorCd,
-      majorName: filter.majorName,
-      schoolCd: filter.schoolCd,
-      schoolName: filter.schoolName,
-    });
-    if (key === "major") Object.assign(filter, { plcyMajorCd: "", majorName: "전체" });
-    if (key === "school") Object.assign(filter, { schoolCd: "", schoolName: "전체" });
+    if (key === "category")
+      Object.assign(filter, { categoryCode: "", categoryName: "전체" });
+    if (key === "region")
+      Object.assign(filter, defaults(), {
+        categoryCode: filter.categoryCode,
+        categoryName: filter.categoryName,
+        plcyMajorCd: filter.plcyMajorCd,
+        majorName: filter.majorName,
+        schoolCd: filter.schoolCd,
+        schoolName: filter.schoolName,
+      });
+    if (key === "major")
+      Object.assign(filter, { plcyMajorCd: "", majorName: "전체" });
+    if (key === "school")
+      Object.assign(filter, { schoolCd: "", schoolName: "전체" });
+    if (key === "job") Object.assign(filter, { jobCd: "", jobName: "전체" });
   };
 
   return { filter, activeFilters, apiParams, queryParams, apply, clear };

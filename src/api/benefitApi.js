@@ -41,3 +41,9 @@ export const getBenefitSchools = async () => {
   const response = await api.get("/schools");
   return response.data;
 };
+
+// 직업 조회
+export const getBenefitJobs = async () => {
+  const response = await api.get('/jobs')
+  return response.data
+}

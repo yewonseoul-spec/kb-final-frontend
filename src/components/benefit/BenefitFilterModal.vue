@@ -1,7 +1,15 @@
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="filter-overlay" @click.self="closeModal">
-      <section class="filter-modal" role="dialog" aria-label="혜택 필터 설정">
+    <div
+      v-if="modelValue"
+      class="filter-overlay"
+      @click.self="closeModal"
+    >
+      <section
+        class="filter-modal"
+        role="dialog"
+        aria-label="혜택 필터 설정"
+      >
         <div class="filter-handle" />
 
         <header class="filter-header">
@@ -9,7 +17,13 @@
             <h2>필터 설정</h2>
             <p>선택한 조건에 맞는 청년혜택을 확인할 수 있어요.</p>
           </div>
-          <button type="button" class="close-button" @click="closeModal">×</button>
+          <button
+            type="button"
+            class="close-button"
+            @click="closeModal"
+          >
+            ×
+          </button>
         </header>
 
         <FilterSelectField
@@ -40,9 +54,27 @@
           @open="openSheet('school')"
         />
 
+        <FilterSelectField
+          label="직업"
+          :value="draft.jobName"
+          @open="openSheet('job')"
+        />
+
         <div class="filter-actions">
-          <button type="button" class="reset-button" @click="resetFilter">초기화</button>
-          <button type="button" class="apply-button" @click="applyFilter">적용하기</button>
+          <button
+            type="button"
+            class="reset-button"
+            @click="resetFilter"
+          >
+            초기화
+          </button>
+          <button
+            type="button"
+            class="apply-button"
+            @click="applyFilter"
+          >
+            적용하기
+          </button>
         </div>
       </section>
     </div>
@@ -63,6 +95,7 @@ import {
   getBenefitCategories,
   getBenefitMajors,
   getBenefitSchools,
+  getBenefitJobs,
 } from "@/api/benefitApi";
 import FilterOptionSheet from "./filter/FilterOptionSheet.vue";
 import FilterSelectField from "./filter/FilterSelectField.vue";
@@ -82,6 +115,8 @@ const props = defineProps({
   majorName: { type: String, default: "전체" },
   schoolCd: { type: String, default: "" },
   schoolName: { type: String, default: "전체" },
+  jobCd: { type: String, default: "" },
+  jobName: { type: String, default: "전체" },
 });
 
 const emit = defineEmits(["update:modelValue", "apply"]);
@@ -100,80 +135,105 @@ const createDraft = () => ({
   majorName: props.majorName,
   schoolCd: props.schoolCd,
   schoolName: props.schoolName,
+  jobCd: props.jobCd,
+  jobName: props.jobName,
 });
 
 const draft = reactive(createDraft());
 const activeSheet = ref("");
-const categoryList = ref([]);
-const majorList = ref([]);
-const schoolList = ref([]);
 
-const categoryOptions = computed(() =>
-  categoryList.value.map((item) => ({
-    code: item.categoryCode,
-    name: item.categoryName,
-    raw: item,
-  })),
-);
+const optionLists = reactive({
+  category: [],
+  major: [],
+  school: [],
+  job: [],
+});
 
-const majorOptions = computed(() =>
-  majorList.value.map((item) => ({
-    code: item.plcyMajorCd,
-    name: item.codeName,
-    raw: item,
-  })),
-);
+const filterConfigs = {
+  category: {
+    title: "카테고리 선택",
+    codeField: "categoryCode",
+    nameField: "categoryName",
+    optionCodeField: "categoryCode",
+    optionNameField: "categoryName",
+  },
+  major: {
+    title: "전공 선택",
+    codeField: "plcyMajorCd",
+    nameField: "majorName",
+    optionCodeField: "plcyMajorCd",
+    optionNameField: "codeName",
+  },
+  school: {
+    title: "학력 선택",
+    codeField: "schoolCd",
+    nameField: "schoolName",
+    optionCodeField: "schoolCd",
+    optionNameField: "codeName",
+  },
+  job: {
+    title: "직업 선택",
+    codeField: "jobCd",
+    nameField: "jobName",
+    optionCodeField: "jobCd",
+    optionNameField: "codeName",
+  },
+};
 
-const schoolOptions = computed(() =>
-  schoolList.value.map((item) => ({
-    code: item.schoolCd,
-    name: item.codeName,
-    raw: item,
-  })),
-);
+const currentConfig = computed(() => filterConfigs[activeSheet.value] ?? null);
 
 const sheetOpen = computed({
   get: () => Boolean(activeSheet.value),
   set: (open) => {
-    if (!open) activeSheet.value = "";
+    if (!open) {
+      activeSheet.value = "";
+    }
   },
 });
 
-const sheetTitle = computed(() => ({
-  category: "카테고리 선택",
-  major: "전공 선택",
-  school: "학력 선택",
-})[activeSheet.value] || "선택");
+const sheetTitle = computed(() => currentConfig.value?.title ?? "선택");
 
-const sheetOptions = computed(() => ({
-  category: categoryOptions.value,
-  major: majorOptions.value,
-  school: schoolOptions.value,
-})[activeSheet.value] || []);
+const sheetOptions = computed(() => {
+  const config = currentConfig.value;
 
-const sheetSelectedCode = computed(() => ({
-  category: draft.categoryCode,
-  major: draft.plcyMajorCd,
-  school: draft.schoolCd,
-})[activeSheet.value] || "");
+  if (!config) {
+    return [];
+  }
+
+  return optionLists[activeSheet.value].map((item) => ({
+    code: item[config.optionCodeField],
+    name: item[config.optionNameField],
+    raw: item,
+  }));
+});
+
+const sheetSelectedCode = computed(() => {
+  const config = currentConfig.value;
+
+  if (!config) {
+    return "";
+  }
+
+  return draft[config.codeField] ?? "";
+});
 
 const openSheet = (type) => {
+  if (!filterConfigs[type]) {
+    return;
+  }
+
   activeSheet.value = type;
 };
 
 const selectOption = ({ code, name }) => {
-  if (activeSheet.value === "category") {
-    draft.categoryCode = code;
-    draft.categoryName = name;
+  const config = currentConfig.value;
+
+  if (!config) {
+    return;
   }
-  if (activeSheet.value === "major") {
-    draft.plcyMajorCd = code;
-    draft.majorName = name;
-  }
-  if (activeSheet.value === "school") {
-    draft.schoolCd = code;
-    draft.schoolName = name;
-  }
+
+  draft[config.codeField] = code;
+  draft[config.nameField] = name;
 };
 
 const applyRegionDraft = (region) => Object.assign(draft, region);
@@ -193,6 +253,8 @@ const resetFilter = () => {
     majorName: "전체",
     schoolCd: "",
     schoolName: "전체",
+    jobCd: "",
+    jobName: "전체",
   });
 };
 
@@ -205,24 +267,38 @@ const closeModal = () => emit("update:modelValue", false);
 
 const restore = () => Object.assign(draft, createDraft());
 
-watch(() => props.modelValue, (open) => {
-  if (open) restore();
-});
+watch(
+  () => props.modelValue,
+  (open) => {
+    if (open) restore();
+  },
+);
 
 onMounted(async () => {
-  const [categories, majors, schools] = await Promise.allSettled([
+  const [categories, majors, schools, jobs] = await Promise.allSettled([
     getBenefitCategories(),
     getBenefitMajors(),
     getBenefitSchools(),
+    getBenefitJobs(),
   ]);
 
-  categoryList.value = categories.status === "fulfilled" ? categories.value : [];
-  majorList.value = majors.status === "fulfilled" ? majors.value : [];
-  schoolList.value = schools.status === "fulfilled" ? schools.value : [];
-
-  if (categories.status === "rejected") console.error("카테고리 조회 실패:", categories.reason);
-  if (majors.status === "rejected") console.error("전공 목록 조회 실패:", majors.reason);
-  if (schools.status === "rejected") console.error("학력 목록 조회 실패:", schools.reason);
+  optionLists.category =
+    categories.status === "fulfilled" ? categories.value : [];
+  optionLists.major = majors.status === "fulfilled" ? majors.value : [];
+  optionLists.school = schools.status === "fulfilled" ? schools.value : [];
+  optionLists.job = jobs.status === "fulfilled" ? jobs.value : [];
+  if (categories.status === "rejected") {
+    console.error("카테고리 조회 실패:", categories.reason);
+  }
+  if (majors.status === "rejected") {
+    console.error("전공 목록 조회 실패:", majors.reason);
+  }
+  if (schools.status === "rejected") {
+    console.error("학력 목록 조회 실패:", schools.reason);
+  }
+  if (jobs.status === "rejected") {
+    console.error("직업 목록 조회 실패:", jobs.reason);
+  }
 });
 </script>
 
@@ -261,9 +337,24 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.filter-header h2 { margin: 0; color: #2e2a24; font-size: 25px; }
-.filter-header p { margin: 10px 0 0; color: #666; font-size: 13px; }
-.close-button { width: 40px; height: 40px; border: 0; background: transparent; font-size: 29px; cursor: pointer; }
+.filter-header h2 {
+  margin: 0;
+  color: #2e2a24;
+  font-size: 25px;
+}
+.filter-header p {
+  margin: 10px 0 0;
+  color: #666;
+  font-size: 13px;
+}
+.close-button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  font-size: 29px;
+  cursor: pointer;
+}
 
 .filter-actions {
   position: sticky;
@@ -286,6 +377,14 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.reset-button { border: 1px solid #e5e0d8; background: #fff; color: #2e2a24; }
-.apply-button { border: 0; background: #ffbc00; color: #2e2a24; }
+.reset-button {
+  border: 1px solid #e5e0d8;
+  background: #fff;
+  color: #2e2a24;
+}
+.apply-button {
+  border: 0;
+  background: #ffbc00;
+  color: #2e2a24;
+}
 </style>
