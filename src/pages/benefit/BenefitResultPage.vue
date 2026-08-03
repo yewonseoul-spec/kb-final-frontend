@@ -74,6 +74,8 @@
       :school-name="filter.schoolName"
       :job-cd="filter.jobCd"
       :job-name="filter.jobName"
+      :mrg-stts-cd="filter.mrgSttsCd"
+      :marriage-name="filter.marriageName"
       @apply="handleApplyFilter"
     />
   </main>

@@ -60,6 +60,12 @@
           @open="openSheet('job')"
         />
 
+        <FilterSelectField
+          label="혼인 여부"
+          :value="draft.marriageName"
+          @open="openSheet('marriage')"
+        />
+
         <div class="filter-actions">
           <button
             type="button"
@@ -96,6 +102,7 @@ import {
   getBenefitMajors,
   getBenefitSchools,
   getBenefitJobs,
+  getBenefitMarriage,
 } from "@/api/benefitApi";
 import FilterOptionSheet from "./filter/FilterOptionSheet.vue";
 import FilterSelectField from "./filter/FilterSelectField.vue";
@@ -117,6 +124,8 @@ const props = defineProps({
   schoolName: { type: String, default: "전체" },
   jobCd: { type: String, default: "" },
   jobName: { type: String, default: "전체" },
+  mrgSttsCd: { type: String, default: "" },
+  marriageName: { type: String, default: "전체" },
 });
 
 const emit = defineEmits(["update:modelValue", "apply"]);
@@ -137,6 +146,8 @@ const createDraft = () => ({
   schoolName: props.schoolName,
   jobCd: props.jobCd,
   jobName: props.jobName,
+  mrgSttsCd: props.mrgSttsCd,
+  marriageName: props.marriageName,
 });
 
 const draft = reactive(createDraft());
@@ -147,6 +158,7 @@ const optionLists = reactive({
   major: [],
   school: [],
   job: [],
+  marriage: [],
 });
 
 const filterConfigs = {
@@ -176,6 +188,14 @@ const filterConfigs = {
     codeField: "jobCd",
     nameField: "jobName",
     optionCodeField: "jobCd",
+    optionNameField: "codeName",
+  },
+
+  marriage: {
+    title: "혼인 여부 선택",
+    codeField: "mrgSttsCd",
+    nameField: "marriageName",
+    optionCodeField: "mrgSttsCd",
     optionNameField: "codeName",
   },
 };
@@ -255,6 +275,8 @@ const resetFilter = () => {
     schoolName: "전체",
     jobCd: "",
     jobName: "전체",
+    mrgSttsCd: "",
+    marriageName: "전체",
   });
 };
 
@@ -275,18 +297,23 @@ watch(
 );
 
 onMounted(async () => {
-  const [categories, majors, schools, jobs] = await Promise.allSettled([
-    getBenefitCategories(),
-    getBenefitMajors(),
-    getBenefitSchools(),
-    getBenefitJobs(),
-  ]);
+  const [categories, majors, schools, jobs, marriages] =
+    await Promise.allSettled([
+      getBenefitCategories(),
+      getBenefitMajors(),
+      getBenefitSchools(),
+      getBenefitJobs(),
+      getBenefitMarriage(),
+    ]);
 
   optionLists.category =
     categories.status === "fulfilled" ? categories.value : [];
   optionLists.major = majors.status === "fulfilled" ? majors.value : [];
   optionLists.school = schools.status === "fulfilled" ? schools.value : [];
   optionLists.job = jobs.status === "fulfilled" ? jobs.value : [];
+  optionLists.marriage =
+    marriages.status === "fulfilled" ? marriages.value : [];
+
   if (categories.status === "rejected") {
     console.error("카테고리 조회 실패:", categories.reason);
   }
@@ -298,6 +325,9 @@ onMounted(async () => {
   }
   if (jobs.status === "rejected") {
     console.error("직업 목록 조회 실패:", jobs.reason);
+  }
+  if (marriages.status === "rejected") {
+    console.error("혼인 여부 목록 조회 실패:", marriages.reason);
   }
 });
 </script>

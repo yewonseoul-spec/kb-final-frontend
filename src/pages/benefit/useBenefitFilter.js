@@ -16,6 +16,8 @@ const defaults = () => ({
   schoolName: "전체",
   jobCd: "",
   jobName: "전체",
+  mrgSttsCd: "",
+  marriageName: "전체",
 });
 
 export const useBenefitFilter = (route) => {
@@ -35,6 +37,8 @@ export const useBenefitFilter = (route) => {
     schoolName: route.query.schoolName ?? "전체",
     jobCd: route.query.jobCd ?? "",
     jobName: route.query.jobName ?? "전체",
+    mrgSttsCd: route.query.mrgSttsCd ?? "",
+    marriageName: route.query.marriageName ?? "전체",
   });
 
   const regionLabel = computed(() => {
@@ -56,6 +60,8 @@ export const useBenefitFilter = (route) => {
     if (filter.schoolCd)
       items.push({ key: "school", label: filter.schoolName });
     if (filter.jobCd) items.push({ key: "job", label: filter.jobName });
+    if (filter.mrgSttsCd)
+      items.push({ key: "marriage", label: filter.marriageName });
     return items;
   });
 
@@ -65,6 +71,7 @@ export const useBenefitFilter = (route) => {
     plcyMajorCd: filter.plcyMajorCd || undefined,
     schoolCd: filter.schoolCd || undefined,
     jobCd: filter.jobCd || undefined,
+    mrgSttsCd: filter.mrgSttsCd || undefined,
   }));
 
   const queryParams = computed(() => ({
@@ -83,6 +90,7 @@ export const useBenefitFilter = (route) => {
     schoolName: filter.schoolCd ? filter.schoolName : undefined,
     jobCd: filter.jobCd || undefined,
     jobName: filter.jobCd ? filter.jobName : undefined,
+    marriageName: filter.mrgSttsCd ? filter.marriageName : undefined,
   }));
 
   const apply = (next) => Object.assign(filter, next);
@@ -98,12 +106,18 @@ export const useBenefitFilter = (route) => {
         majorName: filter.majorName,
         schoolCd: filter.schoolCd,
         schoolName: filter.schoolName,
+        jobCd: filter.jobCd,
+        jobName: filter.jobName,
+        mrgSttsCd: filter.mrgSttsCd,
+        marriageName: filter.marriageName,
       });
     if (key === "major")
       Object.assign(filter, { plcyMajorCd: "", majorName: "전체" });
     if (key === "school")
       Object.assign(filter, { schoolCd: "", schoolName: "전체" });
     if (key === "job") Object.assign(filter, { jobCd: "", jobName: "전체" });
+    if (key === "marriage")
+      Object.assign(filter, { mrgSttsCd: "", marriageName: "전체" });
   };
 
   return { filter, activeFilters, apiParams, queryParams, apply, clear };

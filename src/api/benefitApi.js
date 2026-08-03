@@ -47,3 +47,9 @@ export const getBenefitJobs = async () => {
   const response = await api.get('/jobs')
   return response.data
 }
+
+// 혼인 여부 조회
+export const getBenefitMarriage = async () => {
+  const response = await api.get('/marriage')
+  return response.data
+}
