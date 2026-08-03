@@ -59,7 +59,11 @@ const checkId = async () => {
   idAvailable.value = !(await authApi.checkId(member.loginId));
 };
 
+const EMAIL_RULE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const emailValid = computed(() => EMAIL_RULE.test(member.email));
+
 const checkEmail = async () => {
+  if (!emailValid.value) return;
   emailAvailable.value = !(await authApi.checkEmail(member.email));
 };
 
@@ -195,22 +199,29 @@ const signup = async () => {
           <KbInput
             v-model="member.email"
             class="field-input"
-            type="email"
             label="이메일"
             placeholder="name@example.com"
-            :is-error="emailAvailable === false"
+            :is-error="
+              (!!member.email && !emailValid) || emailAvailable === false
+            "
           />
           <button
             type="button"
             class="check-btn"
-            :disabled="!member.email"
+            :disabled="!emailValid"
             @click="checkEmail"
           >
             중복 확인
           </button>
         </div>
         <p class="field-msg">알림 수신에 사용돼요</p>
-        <p v-if="member.email && emailAvailable === null" class="field-msg">
+        <p v-if="member.email && !emailValid" class="field-msg err">
+          이메일 형식이 올바르지 않아요
+        </p>
+        <p
+          v-if="member.email && emailValid && emailAvailable === null"
+          class="field-msg"
+        >
           중복 확인을 해주세요
         </p>
         <p v-if="emailAvailable === true" class="field-msg ok">
