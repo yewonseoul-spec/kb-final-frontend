@@ -1,6 +1,7 @@
 <script setup>
 import KbInput from '@/components/common/KbInput.vue';
 import ProfileSelect from './ProfileSelect.vue';
+import RegionSelect from './RegionSelect.vue';
 
 defineProps({
   profile: { type: Object, required: true },
@@ -55,7 +56,6 @@ const MARITAL_OPTIONS = [
 
 <template>
   <div class="profile-form">
-    <!-- 거주지역(2단 셀렉트)은 지역 조회 API 가 나온 뒤 별도 커밋에서 이 자리에 넣는다 -->
     <KbInput
       v-model="profile.birthDate"
       type="date"
@@ -63,6 +63,8 @@ const MARITAL_OPTIONS = [
       :is-error="!!errors.birthDate"
       :error-message="errors.birthDate"
     />
+
+    <RegionSelect v-model="profile.regionCode" />
 
     <KbInput
       v-model="profile.income"
