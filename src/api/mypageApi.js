@@ -56,4 +56,28 @@ export default {
     const { data } = await instance.delete(BASE_URL);
     return data;
   },
+
+  // 목표 조회 — 404 는 오류가 아니라 '미설정' 이므로 호출부에서 분기할 것
+  async getGoal() {
+    const { data } = await instance.get(`${BASE_URL}/goal`);
+    return data;
+  },
+
+  // 목표 최초 저장 — 이미 있으면 409
+  async createGoal(goalType) {
+    const { data } = await instance.post(`${BASE_URL}/goal`, { goalType });
+    return data;
+  },
+
+  // 목표 변경 — 목표가 없으면 404
+  async updateGoal(goalType) {
+    const { data } = await instance.put(`${BASE_URL}/goal`, { goalType });
+    return data;
+  },
+
+  // 목표 해제 — 이미 없어도 200(멱등)이라 호출부가 조건을 볼 필요 없다
+  async deleteGoal() {
+    const { data } = await instance.delete(`${BASE_URL}/goal`);
+    return data;
+  },
 };
