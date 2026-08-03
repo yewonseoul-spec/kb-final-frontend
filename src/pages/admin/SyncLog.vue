@@ -104,12 +104,14 @@
                 <tr class="small text-muted">
                   <th style="width:90px">구분</th>
                   <th style="width:150px">실행 시각</th>
+                  <th style="width:190px">동기화 대상 기간</th>
                   <th style="width:100px">결과</th>
                   <th class="text-end" style="width:90px">처리</th>
                   <th class="text-end" style="width:100px">신규(추정)</th>
                   <th class="text-end" style="width:100px">갱신(추정)</th>
                   <th class="text-end" style="width:80px">소요</th>
                   <th style="min-width:280px">오류 내용</th>
+                  <th style="width:80px">내역</th>
                 </tr>
               </thead>
               <tbody>
@@ -120,6 +122,7 @@
                     </span>
                   </td>
                   <td class="small">{{ formatDateTime(log.executedAt) }}</td>
+                  <td class="small text-muted">{{ periodText(log) }}</td>
                   <td>
                     <span class="badge" :class="statusBadge(log.resultStatus)">
                       {{ statusLabel(log.resultStatus) }}
@@ -142,10 +145,15 @@
                     </template>
                     <span v-else class="text-muted">-</span>
                   </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-secondary"
+                            :disabled="log.totalCnt === 0"
+                            @click="openDetails(log)">보기</button>
+                  </td>
                 </tr>
 
                 <tr v-if="data.logs.length === 0">
-                  <td colspan="8" class="text-center text-muted small py-5">
+                  <td colspan="10" class="text-center text-muted small py-5">
                     조건에 맞는 실행 기록이 없습니다. 기간이나 필터를 바꿔보세요.
                   </td>
                 </tr>
@@ -171,6 +179,90 @@
         </template>
       </div>
     </div>
+
+    <!-- 갱신 내역 -->
+    <div v-if="detailTarget" class="modal-backdrop-custom" @click.self="closeDetails">
+      <div class="modal-box">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="fw-bold mb-1">동기화 갱신 내역</h6>
+            <small class="text-muted">
+              {{ formatDateTime(detailTarget.executedAt) }}
+              <template v-if="periodText(detailTarget)"> · {{ periodText(detailTarget) }}</template>
+            </small>
+          </div>
+          <button class="btn-close" @click="closeDetails"></button>
+        </div>
+
+        <div v-if="detailLoading" class="text-center py-5">
+          <div class="spinner-border spinner-border-sm text-secondary" role="status">
+            <span class="visually-hidden">불러오는 중</span>
+          </div>
+        </div>
+
+        <div v-else-if="detailError" class="alert alert-danger py-2 small mb-0">
+          {{ detailError }}
+        </div>
+
+        <template v-else>
+          <div class="d-flex gap-3 mb-3 small">
+            <span>전체 <strong>{{ details.length }}</strong>건</span>
+            <span class="text-success">신규 <strong>{{ insertCount }}</strong></span>
+            <span class="text-primary">갱신 <strong>{{ updateCount }}</strong></span>
+            <span class="text-warning-emphasis">내용 변경 <strong>{{ changedCount }}</strong></span>
+          </div>
+
+          <!-- 건수가 많을 수 있어 목록만 스크롤한다 -->
+          <div class="detail-scroll">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light sticky-head">
+                <tr class="small text-muted">
+                  <th style="width:60px">구분</th>
+                  <th style="width:80px">카테고리</th>
+                  <th style="min-width:200px">혜택명</th>
+                  <th style="min-width:200px">변경 내용</th>
+                  <th style="width:130px">주관기관</th>
+                  <th class="text-end" style="width:70px">조회수</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="d in details" :key="d.benefitNo">
+                  <td>
+                    <span class="badge"
+                          :class="d.actionType === 'I' ? 'bg-success-subtle text-success' : 'bg-primary-subtle text-primary'">
+                      {{ d.actionType === 'I' ? '신규' : '갱신' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-muted border">
+                      {{ categoryName(d.categoryCode) }}
+                    </span>
+                  </td>
+                  <td class="small">{{ d.plcyNm }}</td>
+                  <td class="small">
+                    <span v-if="d.changedSummary" class="text-warning-emphasis">
+                      {{ d.changedSummary }}
+                    </span>
+                    <span v-else class="text-muted">
+                      {{ d.actionType === 'I' ? '신규 등록' : '변경 없음' }}
+                    </span>
+                  </td>
+                  <td class="small text-muted">{{ d.sprvsnInstCdNm }}</td>
+                  <td class="text-end small">{{ (d.inqCnt ?? 0).toLocaleString() }}</td>
+                </tr>
+                <tr v-if="details.length === 0">
+                  <td colspan="6" class="text-center text-muted small py-5">
+                    기록된 처리 내역이 없습니다.
+                    <div class="mt-1">기간별 동기화만 내역을 남깁니다.</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -212,6 +304,20 @@ const expanded = ref({});
 // 조회 화면이라 미래 날짜는 허용한다 — 결과가 0건으로 나올 뿐 문제가 없다.
 const isPeriodValid = computed(() =>
     !filters.startDate || !filters.endDate || filters.startDate <= filters.endDate);
+
+const CATEGORY = {
+  1: '일자리', 2: '주거', 3: '교육', 4: '복지·문화', 5: '참여·권리',
+};
+
+const detailTarget = ref(null);   // 내역을 보고 있는 로그
+const details = ref([]);
+const detailLoading = ref(false);
+const detailError = ref('');
+
+const insertCount = computed(() => details.value.filter((d) => d.actionType === 'I').length);
+const updateCount = computed(() => details.value.filter((d) => d.actionType === 'U').length);
+// 갱신 대상이어도 내용이 그대로인 경우가 많아 실제로 값이 바뀐 건수를 따로 센다
+const changedCount = computed(() => details.value.filter((d) => d.changedSummary).length);
 
 const statCards = computed(() => {
   if (!data.value) return [];
@@ -319,6 +425,52 @@ function statusBadge(status) {
   return 'bg-danger-subtle text-danger';
 }
 
+function categoryName(code) {
+  return CATEGORY[code] || '기타';
+}
+
+/**
+ * 동기화 갱신 내역 조회.
+ * 로그에는 건수만 남아 어떤 혜택이 처리됐는지 알 수 없으므로 건별로 확인한다.
+ * 기간별 동기화만 내역을 기록하므로 예전 로그는 비어 있을 수 있다.
+ */
+async function openDetails(log) {
+  detailTarget.value = log;
+  details.value = [];
+  detailError.value = '';
+  detailLoading.value = true;
+
+  try {
+    const res = await axios.get(`/api/admin/synclog/${log.logNo}/details`);
+    details.value = res.data;
+  } catch (e) {
+    detailError.value = '갱신 내역을 불러오지 못했습니다.';
+    console.error(e);
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+function closeDetails() {
+  detailTarget.value = null;
+  details.value = [];
+  detailError.value = '';
+}
+
+// 어떤 기간을 대상으로 돌렸는지 표시한다.
+// 페이지 범위 동기화나 스케줄러 자동 실행은 대상 기간이 없어 빈 값이다.
+function periodText(log) {
+  if (!log.syncStartDate || !log.syncEndDate) return '';
+  return `${formatDate(log.syncStartDate)} ~ ${formatDate(log.syncEndDate)}`;
+}
+
+function formatDate(ms) {
+  if (!ms) return '-';
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 function formatDateTime(ms) {
   if (!ms) return '-';
   const d = new Date(ms);
@@ -335,5 +487,40 @@ onMounted(() => load(1));
 </script>
 
 <style scoped>
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 20px;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 24px;
+  width: 100%;
+  max-width: 980px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 수백 건까지 나올 수 있어 목록만 스크롤한다 */
+.detail-scroll {
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.sticky-head th {
+  position: sticky;
+  top: 0;
+  background: #f8f9fa;
+  z-index: 1;
+}
+
 .table td { word-break: keep-all; }
 </style>
