@@ -41,6 +41,8 @@
           :district-name="draft.districtName"
           @change="applyRegionDraft"
         />
+        
+        <br>
         <section class="age-filter-section">
           <p class="filter-label">연령</p>
 
@@ -127,6 +129,7 @@ import {
 import FilterOptionSheet from "./filter/FilterOptionSheet.vue";
 import FilterSelectField from "./filter/FilterSelectField.vue";
 import RegionFilterField from "./filter/RegionFilterField.vue";
+
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -491,5 +494,12 @@ const handleAgeInput = (event) => {
 .age-input::placeholder {
   color: #aaa39a;
   font-weight: 400;
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 10px;
+  color: #908980;
+  font-size: 13px;
 }
 </style>

@@ -64,8 +64,12 @@ export const useBenefitFilter = (route) => {
     if (filter.jobCd) items.push({ key: "job", label: filter.jobName });
     if (filter.mrgSttsCd)
       items.push({ key: "marriage", label: filter.marriageName });
-    if (filter.age !== "")
-      items.push({ key: "age", label: `만 ${filter.age}세` });
+    if (filter.age !== "" && filter.age !== null) {
+      items.push({
+        key: "age",
+        label: `만 ${filter.age}세`,
+      });
+    }
 
     return items;
   });
@@ -117,7 +121,7 @@ export const useBenefitFilter = (route) => {
         jobName: filter.jobName,
         mrgSttsCd: filter.mrgSttsCd,
         marriageName: filter.marriageName,
-        age: filter.age,
+        age : filter.age,
       });
     if (key === "major")
       Object.assign(filter, { plcyMajorCd: "", majorName: "전체" });
@@ -126,7 +130,8 @@ export const useBenefitFilter = (route) => {
     if (key === "job") Object.assign(filter, { jobCd: "", jobName: "전체" });
     if (key === "marriage")
       Object.assign(filter, { mrgSttsCd: "", marriageName: "전체" });
-    if (key === "age") {filter.age = "";}
+    if (key === "age") {filter.age = "";
+    }
   };
 
   return { filter, activeFilters, apiParams, queryParams, apply, clear };

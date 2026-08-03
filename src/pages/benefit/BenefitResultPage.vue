@@ -1,5 +1,30 @@
 <template>
   <main class="result-page">
+    <form
+      class="result-search-form"
+      @submit.prevent="submitKeyword"
+    >
+      <span class="search-icon">⌕</span>
+
+      <input
+         v-model.trim="keyword"
+        type="search"
+        class="result-search-input"
+        placeholder="혜택을 검색해보세요"
+        aria-label="혜택 검색어"
+      />
+
+         <button
+      v-if="keyword"
+      type="button"
+      class="search-clear-button"
+      aria-label="검색어 지우기"
+      @click="clearKeyword"
+    >
+      ×
+    </button>
+    </form>
+
     <header class="result-header">
       <div>
         <p class="result-eyebrow">청년혜택</p>
@@ -138,6 +163,15 @@ const removeFilter = async (key) => {
   await syncQueryAndReload();
 };
 
+const submitKeyword = async () => {
+  await syncQueryAndReload();
+};
+
+const clearKeyword = async () => {
+  keyword.value = "";
+  await syncQueryAndReload();
+};
+
 onMounted(loadBenefit);
 </script>
 
@@ -242,5 +276,84 @@ onMounted(loadBenefit);
     align-items: flex-start;
     flex-direction: column;
   }
+}
+
+.result-search-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 48px;
+  margin-bottom: 18px;
+  padding: 0 42px;
+  border-radius: 16px;
+  background: #f7f5ef;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  color: #4f4b44;
+  font-size: 18px;
+  transform: translateY(-50%);
+}
+
+.result-search-input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #2d2923;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.result-search-input::placeholder {
+  color: #9d978d;
+  font-weight: 400;
+}
+
+.result-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #716b62;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.result-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.result-summary-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #2d2923;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.result-summary-text strong {
+  font-size: 16px;
 }
 </style>
