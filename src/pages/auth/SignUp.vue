@@ -23,6 +23,7 @@ const member = reactive({
 
 const terms = ref([]);
 const agreed = reactive({});
+const expanded = reactive({});
 
 const idAvailable = ref(null);
 const emailAvailable = ref(null);
@@ -52,7 +53,10 @@ Object.entries(LENGTH_LIMIT).forEach(([field, limit]) => {
 
 onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
-  terms.value.forEach((t) => (agreed[t.termsNo] = false));
+  terms.value.forEach((t) => {
+    agreed[t.termsNo] = false;
+    expanded[t.termsNo] = false;
+  });
 });
 
 const checkId = async () => {
@@ -256,13 +260,37 @@ const signup = async () => {
 
         <hr class="terms-divider" />
 
-        <div v-for="t in terms" :key="t.termsNo" class="terms-row">
-          <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
-            {{ t.title }}
-          </KbCheckbox>
-          <KbBadge :variant="t.required ? 'danger' : 'gray'">
-            {{ t.required ? '필수' : '선택' }}
-          </KbBadge>
+        <div v-for="t in terms" :key="t.termsNo" class="terms-item">
+          <div class="terms-row">
+            <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
+              {{ t.title }}
+            </KbCheckbox>
+            <KbBadge :variant="t.required ? 'danger' : 'gray'">
+              {{ t.required ? '필수' : '선택' }}
+            </KbBadge>
+            <!-- KbCheckbox 루트가 label 이라 안에 넣으면 화살표 클릭에 동의가 토글된다 -->
+            <button
+              type="button"
+              class="terms-toggle"
+              :class="{ open: expanded[t.termsNo] }"
+              :aria-expanded="!!expanded[t.termsNo]"
+              :aria-label="t.title + ' 전문 보기'"
+              @click="expanded[t.termsNo] = !expanded[t.termsNo]"
+            >
+              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                <path
+                  d="M1 1.5L6 6.5L11 1.5"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
+          <p v-if="expanded[t.termsNo]" class="terms-content">
+            {{ t.content }}
+          </p>
         </div>
       </KbCard>
 
@@ -361,6 +389,12 @@ const signup = async () => {
   border-top: 1px solid #efece4;
 }
 
+.terms-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .terms-row {
   display: flex;
   align-items: center;
@@ -369,6 +403,40 @@ const signup = async () => {
 
 .terms-check {
   flex: 1;
+}
+
+.terms-toggle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 4px;
+  background: none;
+  border: 0;
+  color: #908980;
+  cursor: pointer;
+}
+
+.terms-toggle svg {
+  transition: transform 0.2s;
+}
+
+.terms-toggle.open svg {
+  transform: rotate(180deg);
+}
+
+/* content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
+.terms-content {
+  margin: 0;
+  max-height: 160px;
+  padding: 12px;
+  overflow-y: auto;
+  background-color: #f8f7f2;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #908980;
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .signup-error {
