@@ -76,6 +76,7 @@
       :job-name="filter.jobName"
       :mrg-stts-cd="filter.mrgSttsCd"
       :marriage-name="filter.marriageName"
+      :age="filter.age"
       @apply="handleApplyFilter"
     />
   </main>

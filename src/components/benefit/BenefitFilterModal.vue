@@ -41,6 +41,26 @@
           :district-name="draft.districtName"
           @change="applyRegionDraft"
         />
+        <section class="age-filter-section">
+          <p class="filter-label">연령</p>
+
+          <div class="age-input-row">
+            <strong> 만 </strong>
+
+            <input
+              :value="draft.age"
+              type="text"
+              inputmode="numeric"
+              maxlength="3"
+              class="age-input"
+              placeholder="입력"
+              aria-label="만 나이 입력"
+              @input="handleAgeInput"
+            />
+
+            <strong> 세 </strong>
+          </div>
+        </section>
 
         <FilterSelectField
           label="전공"
@@ -126,6 +146,7 @@ const props = defineProps({
   jobName: { type: String, default: "전체" },
   mrgSttsCd: { type: String, default: "" },
   marriageName: { type: String, default: "전체" },
+  age: { type: [Number, String], default: "" },
 });
 
 const emit = defineEmits(["update:modelValue", "apply"]);
@@ -148,6 +169,7 @@ const createDraft = () => ({
   jobName: props.jobName,
   mrgSttsCd: props.mrgSttsCd,
   marriageName: props.marriageName,
+  age: props.age ?? "",
 });
 
 const draft = reactive(createDraft());
@@ -277,6 +299,7 @@ const resetFilter = () => {
     jobName: "전체",
     mrgSttsCd: "",
     marriageName: "전체",
+    age: '',
   });
 };
 
@@ -330,6 +353,21 @@ onMounted(async () => {
     console.error("혼인 여부 목록 조회 실패:", marriages.reason);
   }
 });
+
+const handleAgeInput = (event) => {
+  const onlyNumbers = event.target.value.replace(/\D/g, "");
+
+  if (onlyNumbers === "") {
+    draft.age = "";
+    event.target.value = "";
+    return;
+  }
+
+  const age = Math.min(100, Math.max(0, Number(onlyNumbers)));
+
+  draft.age = age;
+  event.target.value = String(age);
+};
 </script>
 
 <style scoped>
@@ -416,5 +454,42 @@ onMounted(async () => {
   border: 0;
   background: #ffbc00;
   color: #2e2a24;
+}
+
+.age-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.age-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.age-input {
+  width: 72px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #ded9cf;
+  border-radius: 10px;
+  background: #fff;
+  color: #2e2a24;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+}
+
+.age-input:focus {
+  border-color: #b49b52;
+  box-shadow: 0 0 0 2px rgba(180, 155, 82, 0.12);
+}
+
+.age-input::placeholder {
+  color: #aaa39a;
+  font-weight: 400;
 }
 </style>

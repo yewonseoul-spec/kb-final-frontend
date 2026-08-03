@@ -18,6 +18,7 @@ const defaults = () => ({
   jobName: "전체",
   mrgSttsCd: "",
   marriageName: "전체",
+  age: "",
 });
 
 export const useBenefitFilter = (route) => {
@@ -39,6 +40,7 @@ export const useBenefitFilter = (route) => {
     jobName: route.query.jobName ?? "전체",
     mrgSttsCd: route.query.mrgSttsCd ?? "",
     marriageName: route.query.marriageName ?? "전체",
+    age: route.query.age ?? "",
   });
 
   const regionLabel = computed(() => {
@@ -62,6 +64,9 @@ export const useBenefitFilter = (route) => {
     if (filter.jobCd) items.push({ key: "job", label: filter.jobName });
     if (filter.mrgSttsCd)
       items.push({ key: "marriage", label: filter.marriageName });
+    if (filter.age !== "")
+      items.push({ key: "age", label: `만 ${filter.age}세` });
+
     return items;
   });
 
@@ -72,6 +77,7 @@ export const useBenefitFilter = (route) => {
     schoolCd: filter.schoolCd || undefined,
     jobCd: filter.jobCd || undefined,
     mrgSttsCd: filter.mrgSttsCd || undefined,
+    age: filter.age !== "" ? Number(filter.age) : undefined,
   }));
 
   const queryParams = computed(() => ({
@@ -91,6 +97,7 @@ export const useBenefitFilter = (route) => {
     jobCd: filter.jobCd || undefined,
     jobName: filter.jobCd ? filter.jobName : undefined,
     marriageName: filter.mrgSttsCd ? filter.marriageName : undefined,
+    age: filter.age !== "" ? filter.age : undefined,
   }));
 
   const apply = (next) => Object.assign(filter, next);
@@ -110,6 +117,7 @@ export const useBenefitFilter = (route) => {
         jobName: filter.jobName,
         mrgSttsCd: filter.mrgSttsCd,
         marriageName: filter.marriageName,
+        age: filter.age,
       });
     if (key === "major")
       Object.assign(filter, { plcyMajorCd: "", majorName: "전체" });
@@ -118,6 +126,7 @@ export const useBenefitFilter = (route) => {
     if (key === "job") Object.assign(filter, { jobCd: "", jobName: "전체" });
     if (key === "marriage")
       Object.assign(filter, { mrgSttsCd: "", marriageName: "전체" });
+    if (key === "age") {filter.age = "";}
   };
 
   return { filter, activeFilters, apiParams, queryParams, apply, clear };
