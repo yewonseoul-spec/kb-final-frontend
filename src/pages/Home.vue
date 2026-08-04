@@ -3,7 +3,8 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import KbCard from '@/components/common/KbCard.vue';
 import KbButton from '@/components/common/KbButton.vue';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import homeApi from '@/api/homeApi';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -60,6 +61,22 @@ const goTo = (i) => {
   const el = track.value;
   el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
 };
+
+const popular = ref([]);
+const loading = ref(true);
+
+// 인기 혜택 실패 시에도 멈추지 않게 처리.
+// 빈 배열이면 섹션을 통째로 숨긴다.
+onMounted(async () => {
+  try {
+    const data = await homeApi.getSummary();
+    popular.value = data.popularBenefits ?? [];
+  } catch (e) {
+    console.error('홈 요약을 불러오지 못했어요', e);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <template>
@@ -68,9 +85,6 @@ const goTo = (i) => {
     <section class="section">
       <div class="section-head">
         <h2 class="section-title">지금 받을 수 있는 혜택</h2>
-        <RouterLink class="section-more" :to="{ name: 'BenefitSearch' }">
-          전체보기 ›
-        </RouterLink>
       </div>
 
       <KbCard yellow-bg>
@@ -81,6 +95,44 @@ const goTo = (i) => {
         <div class="cta-row">
           <KbButton type="primary" @click="onCta">{{ ctaLabel }}</KbButton>
         </div>
+      </KbCard>
+    </section>
+
+    <!-- 혜택 상세 페이지가 없어 지금은 클릭 불가로 둔다 -->
+    <section v-if="loading || popular.length" class="section popular">
+      <div class="section-head">
+        <h2 class="section-title">요즘 많이 보는 혜택</h2>
+      </div>
+
+      <KbCard>
+        <ol v-if="popular.length" class="popular-list">
+          <li v-for="(b, i) in popular" :key="b.benefitNo" class="popular-item">
+            <span class="popular-rank">{{ i + 1 }}</span>
+            <div class="popular-body">
+              <p class="popular-name">{{ b.plcyNm }}</p>
+              <p class="popular-meta">
+                {{ b.categoryName }}
+                <template v-if="b.sprvsnInstCdNm">
+                  · {{ b.sprvsnInstCdNm }}</template
+                >
+              </p>
+            </div>
+          </li>
+        </ol>
+
+        <!-- 응답 전 자리를 잡아 두어 섹션이 튀어나오지 않게 한다 -->
+        <ol v-else class="popular-list" aria-hidden="true">
+          <li v-for="n in 3" :key="n" class="popular-item">
+            <span class="popular-rank">{{ n }}</span>
+            <div class="popular-body">
+              <div class="skeleton-name">
+                <span class="skeleton skeleton-line"></span>
+                <span class="skeleton skeleton-line short"></span>
+              </div>
+              <span class="skeleton skeleton-meta"></span>
+            </div>
+          </li>
+        </ol>
       </KbCard>
     </section>
 
@@ -178,6 +230,102 @@ const goTo = (i) => {
 .cta-row {
   display: grid;
   margin-top: 8px;
+}
+
+.popular {
+  margin-top: 28px;
+}
+
+.popular-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.popular-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 66px;
+}
+
+.popular-rank {
+  flex-shrink: 0;
+  width: 22px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffbc00;
+  text-align: center;
+}
+
+/* 스켈레톤 막대는 내용이 없어 폭을 못 잡으므로 부모가 폭을 정해준다 */
+.popular-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skeleton {
+  display: block;
+  border-radius: 6px;
+  background-color: #efece4;
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+/* 실제 텍스트 한 줄(15px × 1.4 = 21px)과 같은 자리를 차지하게 막대 15px + 위아래 3px */
+.skeleton-name {
+  display: flex;
+  flex-direction: column;
+  min-height: 2.8em;
+  font-size: 15px;
+}
+
+.skeleton-line {
+  height: 15px;
+  margin: 3px 0;
+}
+
+.skeleton-line.short {
+  width: 62%;
+}
+
+/* 13px × 1.4 = 18.2px */
+.skeleton-meta {
+  width: 45%;
+  height: 13px;
+  margin: 2.6px 0;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* plcy_nm 이 TEXT 컬럼이라 정책명이 매우 길다. 2줄까지만 보여주고 나머지는 자른다 */
+.popular-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: #2e2a24;
+  word-break: keep-all;
+}
+
+.popular-meta {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #908980;
 }
 
 .banners {
