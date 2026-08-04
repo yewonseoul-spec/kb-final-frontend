@@ -32,6 +32,13 @@ export default [
         meta: { requiresAuth: true, title: '목표 설정', hideTabBar: true },
         component: () => import('../pages/mypage/GoalSetup.vue'),
       },
+
+      {
+        path: 'password',
+        name: 'ChangePassword',
+        meta: { requiresAuth: true, title: '비밀번호 변경' },
+        component: () => import('../pages/mypage/ChangePassword.vue'),
+      },
     ],
   },
 ];

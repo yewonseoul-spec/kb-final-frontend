@@ -170,6 +170,14 @@ const onWithdrawDone = () => {
 
     <button
       type="button"
+      class="password-link"
+      @click="router.push({ name: 'ChangePassword' })"
+    >
+      비밀번호 변경
+    </button>
+
+    <button
+      type="button"
       class="withdraw-link"
       @click="showWithdrawConfirm = true"
     >
@@ -339,7 +347,8 @@ const onWithdrawDone = () => {
   grid-template-columns: 1fr 1fr;
 }
 
-.goal-link {
+.goal-link,
+.password-link {
   align-self: center;
   background: none;
   border: none;
