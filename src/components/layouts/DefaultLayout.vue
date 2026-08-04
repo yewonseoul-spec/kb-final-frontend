@@ -20,7 +20,7 @@ const onLogout = async () => {
     // 토큰이 이미 만료된 경우 등 — 로컬 정리는 그대로 진행한다
   }
   auth.logout();
-  router.push('/login');
+  router.push({ name: 'Login' });
 };
 </script>
 
@@ -29,7 +29,10 @@ const onLogout = async () => {
     <header
       class="d-flex justify-content-between align-items-center py-3 border-bottom"
     >
-      <RouterLink to="/" class="fw-bold fs-5 text-decoration-none text-dark">
+      <RouterLink
+        :to="{ name: 'Home' }"
+        class="fw-bold fs-5 text-decoration-none text-dark"
+      >
         {{ pageTitle }}
       </RouterLink>
 
@@ -46,7 +49,7 @@ const onLogout = async () => {
         </button>
       </div>
 
-      <RouterLink v-else to="/login" class="btn btn-sm btn-warning"
+      <RouterLink v-else :to="{ name: 'Login' }" class="btn btn-sm btn-warning"
         >로그인</RouterLink
       >
 

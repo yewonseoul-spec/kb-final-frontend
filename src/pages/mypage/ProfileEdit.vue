@@ -14,6 +14,7 @@ const auth = useAuthStore();
 // 보낼 때는 mypageApi 의 sanitize 가 다시 null 로 되돌린다.
 const FIELDS = [
   'birthDate',
+  'regionCode',
   'income',
   'employStatus',
   'major',
@@ -89,9 +90,9 @@ const onCancel = () => {
     router.back();
     return;
   }
-  // TODO: 마이페이지 요약 화면이 생기면 '/mypage' 로 바꾼다.
-  //       지금은 /mypage 가 이 화면으로 리다이렉트돼서 제자리걸음이 된다.
-  router.push('/');
+  // TODO: 마이페이지 요약 화면이 생기면 { name: 'MyPage' } 로 바꾼다.
+  //       지금 MyPage 로 보내면 이 화면으로 다시 리다이렉트돼 제자리걸음이라 Home 으로 둔다.
+  router.push({ name: 'Home' });
 };
 
 // 회원 탈퇴 — 재확인 절차
@@ -134,7 +135,7 @@ const onWithdrawDone = () => {
         <p class="empty-sub">입력하면 받을 수 있는 혜택을 골라드려요.</p>
       </KbCard>
       <div class="button-row">
-        <KbButton type="primary" @click="router.push('/mypage/infosetup')">
+        <KbButton type="primary" @click="router.push({ name: 'ProfileSetup' })">
           프로필 입력하러 가기
         </KbButton>
       </div>
@@ -158,6 +159,14 @@ const onWithdrawDone = () => {
         </KbButton>
       </div>
     </template>
+
+    <button
+      type="button"
+      class="goal-link"
+      @click="router.push({ name: 'GoalEdit' })"
+    >
+      목표 설정
+    </button>
 
     <button
       type="button"
@@ -238,6 +247,7 @@ const onWithdrawDone = () => {
   margin: 0;
   font-size: 13px;
   color: #43a047;
+  word-break: keep-all;
 }
 
 .message.error {
@@ -327,5 +337,16 @@ const onWithdrawDone = () => {
 
 .modal-actions.two {
   grid-template-columns: 1fr 1fr;
+}
+
+.goal-link {
+  align-self: center;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2e2a24;
+  cursor: pointer;
 }
 </style>
