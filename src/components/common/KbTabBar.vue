@@ -29,7 +29,7 @@
       </svg>
     </router-link>
 
-    <router-link to="/benefits" class="tab-item" active-class="active">
+    <router-link to="/benefit" class="tab-item" active-class="active">
       <svg
         width="20"
         height="34"
