@@ -136,6 +136,35 @@ onMounted(async () => {
       </KbCard>
     </section>
 
+    <!-- 자산 백엔드가 없고 소비는 memberNo 가 하드코딩이라 금액은 띄우지 않는다.
+         비로그인에게는 '내 자산'이 어색하고, /consumption 은 requiresAuth 가 없어
+         비로그인이 들어가면 2번 회원 소비가 그대로 보이므로 로그인 시에만 노출한다 -->
+    <template v-if="auth.isLogin">
+      <section class="section box">
+        <div class="section-head">
+          <h2 class="section-title">내 자산</h2>
+          <RouterLink to="/asset" class="section-more">전체보기 ›</RouterLink>
+        </div>
+
+        <KbCard>
+          <p class="box-text">계좌 연동을 준비하고 있어요</p>
+        </KbCard>
+      </section>
+
+      <section class="section box">
+        <div class="section-head">
+          <h2 class="section-title">내 소비</h2>
+          <RouterLink to="/consumption" class="section-more"
+            >전체보기 ›</RouterLink
+          >
+        </div>
+
+        <KbCard>
+          <p class="box-text">달력에서 이번 달 소비를 확인해 보세요</p>
+        </KbCard>
+      </section>
+    </template>
+
     <section class="banners">
       <div ref="track" class="banner-track" @scroll="onScroll">
         <article v-for="b in banners" :key="b.key" class="banner">
@@ -326,6 +355,18 @@ onMounted(async () => {
   font-size: 13px;
   line-height: 1.4;
   color: #908980;
+}
+
+.box {
+  margin-top: 28px;
+}
+
+.box-text {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: #908980;
+  word-break: keep-all;
 }
 
 .banners {
