@@ -3,14 +3,35 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import KbCard from '@/components/common/KbCard.vue';
 import KbButton from '@/components/common/KbButton.vue';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 const auth = useAuthStore();
 const router = useRouter();
 
-// TODO 추천 혜택 페이지가 생기면 목적지를 그쪽으로 바꾼다
-// 지금은 엔진 프론트 화면·라우트가 없어 혜택 검색으로 보낸다
-const goRecommend = () => router.push({ name: 'BenefitSearch' });
+const greeting = computed(() =>
+  auth.isLogin
+    ? `${auth.realName} 님, 오늘의 혜택 챙겨봐요 👋`
+    : '청년타파에 오신 걸 환영해요 👋',
+);
+
+const cardTitle = computed(() =>
+  auth.isLogin
+    ? '맞춤 청년혜택을 찾아드려요'
+    : '로그인하고 맞춤 혜택을 받아보세요',
+);
+
+const ctaLabel = computed(() =>
+  auth.isLogin ? '맞춤 혜택 보기' : '로그인하기',
+);
+
+const onCta = () => {
+  if (!auth.isLogin) {
+    router.push({ name: 'Login' });
+    return;
+  }
+  // TODO 추천 혜택 페이지가 생기면 목적지를 그쪽으로 바꾼다
+  router.push({ name: 'BenefitSearch' });
+};
 
 // TODO ENGINE·STRESS 화면이 생기면 각 배너에 이동을 붙인다
 const banners = [
@@ -43,10 +64,7 @@ const goTo = (i) => {
 
 <template>
   <div class="home">
-    <p v-if="auth.isLogin" class="greeting">
-      {{ auth.realName }} 님, 오늘의 혜택 챙겨봐요 👋
-    </p>
-
+    <p class="greeting">{{ greeting }}</p>
     <section class="section">
       <div class="section-head">
         <h2 class="section-title">지금 받을 수 있는 혜택</h2>
@@ -59,11 +77,9 @@ const goTo = (i) => {
         <p v-if="auth.isLogin" class="card-lead">
           {{ auth.realName }} 님 조건에 맞는
         </p>
-        <p class="card-title">맞춤 청년혜택을 찾아드려요</p>
+        <p class="card-title">{{ cardTitle }}</p>
         <div class="cta-row">
-          <KbButton type="primary" @click="goRecommend"
-            >맞춤 혜택 보기</KbButton
-          >
+          <KbButton type="primary" @click="onCta">{{ ctaLabel }}</KbButton>
         </div>
       </KbCard>
     </section>
