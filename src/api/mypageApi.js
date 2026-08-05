@@ -102,4 +102,16 @@ export default {
     const { data } = await instance.delete(`${BASE_URL}/applied/${benefitNo}`);
     return data;
   },
+
+  // 관심 혜택 목록 — 없으면 빈 배열(404 아님)
+  async getFavoriteBenefits() {
+    const { data } = await instance.get(`${BASE_URL}/favorite`);
+    return data;
+  },
+
+  // 관심 혜택 해제 — 이미 없으면 404. 목록이 낡았다는 뜻이므로 재조회할 것
+  async deleteFavoriteBenefit(benefitNo) {
+    const { data } = await instance.delete(`${BASE_URL}/favorite/${benefitNo}`);
+    return data;
+  },
 };

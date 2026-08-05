@@ -46,6 +46,13 @@ export default [
         meta: { requiresAuth: true, title: '마이페이지' },
         component: () => import('../pages/mypage/AppliedBenefits.vue'),
       },
+
+      {
+        path: 'favorite',
+        name: 'FavoriteBenefits',
+        meta: { requiresAuth: true, title: '마이페이지' },
+        component: () => import('../pages/mypage/FavoriteBenefits.vue'),
+      },
     ],
   },
 ];
