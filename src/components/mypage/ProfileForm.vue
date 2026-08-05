@@ -113,7 +113,10 @@ const MARITAL_OPTIONS = [
 <style scoped>
 .profile-form {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  /* 1fr 은 minmax(auto, 1fr) 이라 최솟값이 칸 내용의 min-content 다.
+       input 은 size 기본값(20자) 때문에 약 175px 아래로 안 줄어들어
+       2칸이 400px 미만 화면에서 부모를 뚫는다. 최솟값을 0 으로 열어준다. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px 12px;
 }
 </style>
