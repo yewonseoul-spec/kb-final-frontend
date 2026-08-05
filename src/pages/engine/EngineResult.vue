@@ -149,19 +149,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { useAuthStore } from '@/stores/auth';
+import engineApi from '@/api/engineApi';
 import KbCard from '@/components/common/KbCard.vue';
 import KbBadge from '@/components/common/KbBadge.vue';
 import KbButton from '@/components/common/KbButton.vue';
 
 const router = useRouter();
-const auth = useAuthStore();
-
-// 로그인 스토어에 memberNo가 아직 없을 수 있어 시연용 값으로 떨어뜨린다.
-// TODO: 재훈님 스토어 필드 확정되면 fallback 제거
-const FALLBACK_MEMBER_NO = 2;
-const memberNo = computed(() => auth.memberNo ?? FALLBACK_MEMBER_NO);
 
 const CATEGORY = {
   1: '일자리', 2: '주거', 3: '교육', 4: '복지·문화', 5: '참여·권리',
@@ -206,8 +199,8 @@ async function load() {
   loading.value = true;
   loadError.value = '';
   try {
-    const { data } = await axios.get(`/api/engine/benefits/${memberNo.value}`);
-    result.value = data;
+      const data = await engineApi.getEligibleBenefits();
+      result.value = data;
   } catch (e) {
     loadError.value = '추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
     console.error(e);
