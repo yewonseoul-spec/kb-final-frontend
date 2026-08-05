@@ -35,3 +35,65 @@ export const getBenefitMajors = async () => {
   const response = await api.get("/majors");
   return response.data;
 };
+
+//학력 조회
+export const getBenefitSchools = async () => {
+  const response = await api.get("/schools");
+  return response.data;
+};
+
+// 직업 조회
+export const getBenefitJobs = async () => {
+  const response = await api.get('/jobs')
+  return response.data
+}
+
+// 혼인 여부 조회
+export const getBenefitMarriage = async () => {
+  const response = await api.get('/marriage')
+  return response.data
+}
+
+// 추천 검색어 조회
+export const getRecommendedKeywords = async () => {
+  const response = await api.get(
+    "/search/recommended",
+  );
+
+  return response.data;
+};
+
+// 최근 검색어 조회
+export const getRecentKeywords = async () => {
+  const response = await api.get(
+    "/search/recent",
+  );
+
+  return response.data;
+};
+
+// 최근 검색어 저장
+export const saveRecentKeyword = async (
+  keyword,
+) => {
+  await api.post("/search/recent", {
+    keyword,
+  });
+};
+
+// 최근 검색어 한 개 삭제
+export const deleteRecentKeyword = async (
+  keyword,
+) => {
+  await api.delete("/search/recent", {
+    params: {
+      keyword,
+    },
+  });
+};
+
+// 최근 검색어 전체 삭제
+export const deleteAllRecentKeywords =
+  async () => {
+    await api.delete("/search/recent/all");
+  };
