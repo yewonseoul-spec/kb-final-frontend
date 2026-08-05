@@ -285,7 +285,7 @@ const onWithdrawDone = () => {
 }
 
 .button-row.two {
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
