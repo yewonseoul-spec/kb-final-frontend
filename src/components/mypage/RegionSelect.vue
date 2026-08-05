@@ -212,14 +212,6 @@ watch(
           >
             선택 안 함
           </button>
-          <button
-            v-else
-            type="button"
-            class="sheet-item"
-            @click="commit(parent)"
-          >
-            {{ parent.label }} 전체
-          </button>
 
           <button
             v-for="option in options"

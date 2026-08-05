@@ -80,4 +80,14 @@ export default {
     const { data } = await instance.delete(`${BASE_URL}/goal`);
     return data;
   },
+
+  // 비밀번호 변경 — 현재 비밀번호가 틀리면 400
+  // loginId 는 보내지 않는다. 서버가 토큰에서 채운다.
+  async changePassword(oldPassword, newPassword) {
+    const { data } = await instance.patch(`${BASE_URL}/password`, {
+      oldPassword,
+      newPassword,
+    });
+    return data;
+  },
 };
