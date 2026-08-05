@@ -146,7 +146,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import axios from 'axios';
+import adminApi from '@/api/adminApi';
 import SyncPanel from '@/components/admin/SyncPanel.vue';
 
 const CATEGORY = {
@@ -183,8 +183,7 @@ async function loadDashboard() {
   loading.value = true;
   loadError.value = '';
   try {
-    const res = await axios.get('/api/admin/dashboard');
-    data.value = res.data;
+      data.value = await adminApi.getDashboard();
   } catch (e) {
     loadError.value = '운영 현황을 불러오지 못했습니다. 서버 상태를 확인해 주세요.';
     console.error(e);

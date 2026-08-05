@@ -86,13 +86,11 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import axios from 'axios';
-
+import adminApi from '@/api/adminApi';
 // 동기화가 끝나면 부모(대시보드)가 통계를 다시 불러올 수 있게 알린다
 const emit = defineEmits(['synced']);
 
-// TODO: 로그인 관리자 member_no로 교체 (현재는 테스트값)
-const memberNo = 1;
+
 
 const loading = ref(false);
 const result = ref(null);
@@ -144,10 +142,7 @@ async function executeSync() {
   result.value = null;
 
   try {
-    const { data } = await axios.post('/api/admin/sync/period', null, {
-      params: { startDate: startDate.value, endDate: endDate.value, memberNo },
-    });
-    result.value = data;
+    result.value = await adminApi.syncByPeriod(startDate.value, endDate.value);
     emit('synced');
   } catch (e) {
     requestError.value = '동기화 요청에 실패했습니다. 서버 상태를 확인해 주세요.';

@@ -268,7 +268,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import axios from 'axios';
+import adminApi from '@/api/adminApi';
 
 // 오류 메시지에 외부 서버의 HTML 에러 페이지가 통째로 들어오는 경우가 있어
 // 기본은 잘라 보여주고 '더보기'로 펼친다.
@@ -349,17 +349,14 @@ async function load(page = 1) {
   loading.value = true;
   loadError.value = '';
   try {
-    const res = await axios.get('/api/admin/synclog', {
-      params: {
-        startDate: filters.startDate || undefined,
-        endDate: filters.endDate || undefined,
-        resultStatus: filters.resultStatus || undefined,
-        execType: filters.execType || undefined,
-        page,
-        size: PAGE_SIZE,
-      },
+      data.value = await adminApi.getSyncLogs({
+      startDate: filters.startDate || undefined,
+      endDate: filters.endDate || undefined,
+      resultStatus: filters.resultStatus || undefined,
+      execType: filters.execType || undefined,
+      page,
+      size: PAGE_SIZE,
     });
-    data.value = res.data;
     expanded.value = {};
   } catch (e) {
     loadError.value = '실행 기록을 불러오지 못했습니다. 서버 상태를 확인해 주세요.';
@@ -441,8 +438,7 @@ async function openDetails(log) {
   detailLoading.value = true;
 
   try {
-    const res = await axios.get(`/api/admin/synclog/${log.logNo}/details`);
-    details.value = res.data;
+      details.value = await adminApi.getSyncLogDetails(log.logNo);
   } catch (e) {
     detailError.value = '갱신 내역을 불러오지 못했습니다.';
     console.error(e);

@@ -3,6 +3,7 @@ export default [
   {
     path: '/admin',
     component: () => import('../pages/admin/AdminLayout.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true },
     children: [
       {
         path: '',

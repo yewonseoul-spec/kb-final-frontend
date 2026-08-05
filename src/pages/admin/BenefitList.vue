@@ -260,7 +260,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import axios from 'axios';
+import adminApi from '@/api/adminApi';
 
 const route = useRoute();
 
@@ -318,18 +318,15 @@ async function load(page = 1) {
   loading.value = true;
   loadError.value = '';
   try {
-    const res = await axios.get('/api/admin/benefits', {
-      params: {
-        keyword: filters.keyword || undefined,
-        isActive: filters.isActive || undefined,
-        categoryCode: filters.categoryCode || undefined,
-        deadlineSoon: filters.deadlineSoon || undefined,
-        hasConflict: filters.hasConflict || undefined,
-        page,
-        size: PAGE_SIZE,
-      },
+    data.value = await adminApi.getBenefits({
+      keyword: filters.keyword || undefined,
+      isActive: filters.isActive || undefined,
+      categoryCode: filters.categoryCode || undefined,
+      deadlineSoon: filters.deadlineSoon || undefined,
+      hasConflict: filters.hasConflict || undefined,
+      page,
+      size: PAGE_SIZE,
     });
-    data.value = res.data;
   } catch (e) {
     loadError.value = '혜택 목록을 불러오지 못했습니다. 서버 상태를 확인해 주세요.';
     console.error(e);
@@ -379,8 +376,7 @@ function goPage(page) {
 
 async function openDetail(benefitNo) {
   try {
-    const res = await axios.get(`/api/admin/benefits/${benefitNo}`);
-    detail.value = res.data;
+      detail.value = await adminApi.getBenefitDetail(benefitNo);
   } catch (e) {
     loadError.value = '혜택 상세를 불러오지 못했습니다.';
     console.error(e);
@@ -400,9 +396,7 @@ async function confirmToggle() {
   togglingNo.value = b.benefitNo;
 
   try {
-    await axios.patch(`/api/admin/benefits/${b.benefitNo}/active`, null, {
-      params: { isActive: next },
-    });
+    await adminApi.changeBenefitActive(b.benefitNo, next);
     // 목록 전체를 다시 부르지 않고 해당 행만 갱신한다
     b.isActive = next;
   } catch (e) {
