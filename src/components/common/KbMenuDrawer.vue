@@ -67,7 +67,7 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage('/benefits')">
+          <div class="menu-item" @click="goPage('/benefit')">
             <div class="menu-main">
               <span class="icon">
                 <svg
