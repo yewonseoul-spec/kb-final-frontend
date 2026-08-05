@@ -17,16 +17,8 @@ const formatWon = (value) => {
   return Number(value).toLocaleString('ko-KR') + '원'
 }
 
-// 계좌번호 뒤 4자리만 노출 (예: 110-123-456789 -> 110-***-**6789)
-const maskAccountNo = (accountNo) => {
-  if (!accountNo) return ''
-  const visibleTail = accountNo.slice(-4)
-  const prefix = accountNo.slice(0, -4).replace(/[0-9]/g, '*')
-  return prefix + visibleTail
-}
-
 const fetchDashboard = async () => {
-  loading.value = true
+  // loading.value = true
   try {
     const { data } = await getAssetDashboard()
     dashboard.totalAsset = data.totalAsset
@@ -48,16 +40,6 @@ onMounted(fetchDashboard)
 
 <template>
   <div class="asset-dashboard">
-    <!-- 상단 헤더 -->
-    <header class="header">
-      <h1>자산 관리</h1>
-      <button class="icon-btn" aria-label="메뉴">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path d="M3 6h18M3 12h18M3 18h18" stroke="#222" stroke-width="2" stroke-linecap="round" />
-        </svg>
-      </button>
-    </header>
-
     <!-- 총 자산 카드 -->
     <section class="total-card">
       <p class="label">총 자산</p>
@@ -80,8 +62,8 @@ onMounted(fetchDashboard)
       <ul v-else class="account-list">
         <li v-for="acc in dashboard.accounts" :key="acc.accountId" class="account-item">
           <div class="account-info">
-            <p class="account-name">{{ acc.bankName }}</p>
-            <p class="bank-name">{{ maskAccountNo(acc.accountNo) }}</p>
+            <p class="bank-name">{{ acc.bankName }}</p>
+            <p class="account-no">{{ acc.accountNo }}</p>
           </div>
           <p class="balance">{{ formatWon(acc.balance) }}</p>
         </li>
@@ -115,26 +97,6 @@ onMounted(fetchDashboard)
   background: #f7f7f8;
   min-height: 100vh;
   box-sizing: border-box;
-}
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.header h1 {
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0;
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
 }
 
 .total-card {
@@ -229,13 +191,13 @@ onMounted(fetchDashboard)
   border-bottom: none;
 }
 
-.account-name {
+.bank-name {
   font-size: 15px;
   font-weight: 600;
   margin: 0 0 4px;
 }
 
-.bank-name {
+.account-no {
   font-size: 13px;
   color: #999;
   margin: 0;
