@@ -90,4 +90,16 @@ export default {
     });
     return data;
   },
+
+  // 신청 혜택 목록 — 없으면 빈 배열(404 아님)
+  async getAppliedBenefits() {
+    const { data } = await instance.get(`${BASE_URL}/applied`);
+    return data;
+  },
+
+  // 신청 혜택 삭제 — 이미 없으면 404. 목록이 낡았다는 뜻이므로 재조회할 것
+  async deleteAppliedBenefit(benefitNo) {
+    const { data } = await instance.delete(`${BASE_URL}/applied/${benefitNo}`);
+    return data;
+  },
 };
