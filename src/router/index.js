@@ -8,6 +8,7 @@ import consumption from './consumption.js';
 import auth from './auth.js';
 import guide from './guide.js';
 import { useAuthStore } from '@/stores/auth.js';
+import stress from './stress.js';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,7 @@ const router = createRouter({
     ...consumption,
     ...auth,
     ...guide,
+    ...stress,
   ],
 });
 
