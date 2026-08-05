@@ -1,8 +1,8 @@
 <script setup>
-import { RouterView, useRoute } from 'vue-router';
-import DefaultLayout from './components/layouts/DefaultLayout.vue';
-import KbTabBar from './components/common/KbTabBar.vue';
-import KbMenuDrawer from './components/common/KbMenuDrawer.vue';
+import { RouterView, useRoute } from "vue-router";
+import DefaultLayout from "./components/layouts/DefaultLayout.vue";
+import KbTabBar from "./components/common/KbTabBar.vue";
+import KbMenuDrawer from "./components/common/KbMenuDrawer.vue";
 
 const route = useRoute();
 </script>
