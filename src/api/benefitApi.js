@@ -97,3 +97,14 @@ export const deleteAllRecentKeywords =
   async () => {
     await api.delete("/search/recent/all");
   };
+
+  // 혜택 상세 조회
+export const getBenefitDetail = async (
+  benefitNo,
+) => {
+  const response = await api.get(
+    `/${benefitNo}`,
+  );
+
+  return response.data;
+};

@@ -7,22 +7,22 @@
       <span class="search-icon">⌕</span>
 
       <input
-         v-model.trim="keyword"
+        v-model.trim="keyword"
         type="search"
         class="result-search-input"
         placeholder="혜택을 검색해보세요"
         aria-label="혜택 검색어"
       />
 
-         <button
-      v-if="keyword"
-      type="button"
-      class="search-clear-button"
-      aria-label="검색어 지우기"
-      @click="clearKeyword"
-    >
-      ×
-    </button>
+      <button
+        v-if="keyword"
+        type="button"
+        class="search-clear-button"
+        aria-label="검색어 지우기"
+        @click="clearKeyword"
+      >
+        ×
+      </button>
     </form>
 
     <header class="result-header">
@@ -80,6 +80,10 @@
         v-for="item in benefit"
         :key="item.benefitNo"
         :benefit="item"
+        role="button"
+        tabindex="0"
+        @click="moveToDetail(item.benefitNo)"
+        @keydown.enter="moveToDetail(item.benefitNo)"
       />
     </section>
 
@@ -127,6 +131,8 @@ const benefit = ref([]);
 const { filter, activeFilters, apiParams, queryParams, apply, clear } =
   useBenefitFilter(route);
 
+
+  
 const loadBenefit = async () => {
   isLoading.value = true;
   try {
@@ -170,6 +176,18 @@ const submitKeyword = async () => {
 const clearKeyword = async () => {
   keyword.value = "";
   await syncQueryAndReload();
+};
+
+// 혜톅 생세 페이지 
+const moveToDetail = async (
+  benefitNo,
+) => {
+  await router.push({
+    name: "benefit-detail",
+    params: {
+      benefitNo,
+    },
+  });
 };
 
 onMounted(loadBenefit);
