@@ -1,9 +1,6 @@
 <template>
   <main class="result-page">
-    <form
-      class="result-search-form"
-      @submit.prevent="submitKeyword"
-    >
+    <form class="result-search-form" @submit.prevent="submitKeyword">
       <span class="search-icon">⌕</span>
 
       <input
@@ -31,11 +28,7 @@
         <h1>검색 결과</h1>
       </div>
 
-      <KbButton
-        type="secondary"
-        size="small"
-        @click="isFilterOpen = true"
-      >
+      <KbButton type="secondary" size="small" @click="isFilterOpen = true">
         필터
       </KbButton>
     </header>
@@ -50,32 +43,19 @@
       <strong class="result-count">{{ benefit.length }}건</strong>
     </section>
 
-    <AppliedFilterChips
-      :filters="activeFilters"
-      @remove="removeFilter"
-    />
+    <AppliedFilterChips :filters="activeFilters" @remove="removeFilter" />
 
-    <section
-      v-if="isLoading"
-      class="state-card"
-    >
+    <section v-if="isLoading" class="state-card">
       <div class="loading-spinner" />
       <p>혜택을 불러오고 있어요.</p>
     </section>
 
-    <section
-      v-else-if="benefit.length === 0"
-      class="state-card"
-    >
+    <section v-else-if="benefit.length === 0" class="state-card">
       <p class="empty-title">조건에 맞는 혜택이 없어요.</p>
       <p>검색어나 필터 조건을 변경해서 다시 확인해 보세요.</p>
     </section>
 
-    <section
-      v-else
-      class="benefit-list"
-      aria-label="혜택 검색 결과"
-    >
+    <section v-else class="benefit-list" aria-label="혜택 검색 결과">
       <BenefitCard
         v-for="item in benefit"
         :key="item.benefitNo"
@@ -84,7 +64,24 @@
         tabindex="0"
         @click="moveToDetail(item.benefitNo)"
         @keydown.enter="moveToDetail(item.benefitNo)"
-      />
+      >
+        <template #action>
+          <button
+            type="button"
+            class="favorite-button"
+            :class="{ 'is-on': favoriteNos.has(item.benefitNo) }"
+            :aria-label="
+              favoriteNos.has(item.benefitNo)
+                ? '관심 혜택 해제'
+                : '관심 혜택 등록'
+            "
+            :aria-pressed="favoriteNos.has(item.benefitNo)"
+            @click="toggleFavorite(item.benefitNo)"
+          >
+            {{ favoriteNos.has(item.benefitNo) ? '♥' : '♡' }}
+          </button>
+        </template>
+      </BenefitCard>
     </section>
 
     <BenefitFilterModal
@@ -112,27 +109,71 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { getBenefit } from "@/api/benefitApi";
-import KbButton from "@/components/common/KbButton.vue";
-import BenefitCard from "@/components/benefit/BenefitCard.vue";
-import BenefitFilterModal from "@/components/benefit/BenefitFilterModal.vue";
-import AppliedFilterChips from "@/components/benefit/filter/AppliedFilterChips.vue";
-import { useBenefitFilter } from "./useBenefitFilter";
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { getBenefit } from '@/api/benefitApi';
+import KbButton from '@/components/common/KbButton.vue';
+import BenefitCard from '@/components/benefit/BenefitCard.vue';
+import BenefitFilterModal from '@/components/benefit/BenefitFilterModal.vue';
+import AppliedFilterChips from '@/components/benefit/filter/AppliedFilterChips.vue';
+import { useBenefitFilter } from './useBenefitFilter';
+import mypageApi from '@/api/mypageApi';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
 const router = useRouter();
-const keyword = ref(route.query.keyword ?? "");
+const keyword = ref(route.query.keyword ?? '');
 const isFilterOpen = ref(false);
 const isLoading = ref(false);
 const benefit = ref([]);
+const auth = useAuthStore();
 
 const { filter, activeFilters, apiParams, queryParams, apply, clear } =
   useBenefitFilter(route);
 
+// 하트 상태는 검색 API 응답에 넣지 않는다(도메인이 섞인다).
+// 대신 내 관심 목록을 한 번 받아 benefitNo 집합으로 대조한다.
+const favoriteNos = ref(new Set());
+const pendingNos = ref(new Set());
 
-  
+const loadFavorites = async () => {
+  // 비로그인이면 호출 자체를 하지 않는다. 401 이 나면 인터셉터가 로그인 화면으로
+  // 보내버려서, 공개 화면인 검색 결과를 로그인 없이 못 보게 된다.
+  if (!auth.isLogin) return;
+  try {
+    const list = await mypageApi.getFavoriteBenefits();
+    favoriteNos.value = new Set(list.map((item) => item.benefitNo));
+  } catch (error) {
+    // 목록을 못 받아도 검색 결과는 보여야 한다. 하트만 빈 상태로 둔다.
+    favoriteNos.value = new Set();
+  }
+};
+
+const toggleFavorite = async (benefitNo) => {
+  // 연타로 요청이 겹치는 것을 막는다. 서버는 멱등이지만 화면 상태가 흔들린다.
+  if (pendingNos.value.has(benefitNo)) return;
+  pendingNos.value.add(benefitNo);
+
+  const wasFavorite = favoriteNos.value.has(benefitNo);
+
+  // 낙관적 갱신 — 하트는 즉각 반응해야 한다. 실패하면 아래에서 되돌린다.
+  if (wasFavorite) favoriteNos.value.delete(benefitNo);
+  else favoriteNos.value.add(benefitNo);
+
+  try {
+    if (wasFavorite) await mypageApi.deleteFavoriteBenefit(benefitNo);
+    else await mypageApi.createFavoriteBenefit(benefitNo);
+  } catch (error) {
+    // 404 는 이미 해제돼 있었다는 뜻이라 원하던 결과와 같다. 되돌리지 않는다.
+    if (error.response?.status !== 404) {
+      if (wasFavorite) favoriteNos.value.add(benefitNo);
+      else favoriteNos.value.delete(benefitNo);
+    }
+  } finally {
+    pendingNos.value.delete(benefitNo);
+  }
+};
+
 const loadBenefit = async () => {
   isLoading.value = true;
   try {
@@ -141,7 +182,7 @@ const loadBenefit = async () => {
       ...apiParams.value,
     });
   } catch (error) {
-    console.error("혜택 조회 실패:", error);
+    console.error('혜택 조회 실패:', error);
     benefit.value = [];
   } finally {
     isLoading.value = false;
@@ -174,23 +215,24 @@ const submitKeyword = async () => {
 };
 
 const clearKeyword = async () => {
-  keyword.value = "";
+  keyword.value = '';
   await syncQueryAndReload();
 };
 
-// 혜톅 생세 페이지 
-const moveToDetail = async (
-  benefitNo,
-) => {
+// 혜택 상세 페이지
+const moveToDetail = async (benefitNo) => {
   await router.push({
-    name: "benefit-detail",
+    name: 'benefit-detail',
     params: {
       benefitNo,
     },
   });
 };
 
-onMounted(loadBenefit);
+onMounted(() => {
+  loadBenefit();
+  loadFavorites();
+});
 </script>
 
 <style scoped>
@@ -201,7 +243,7 @@ onMounted(loadBenefit);
   padding: 28px 20px 112px;
   background: #fff;
   color: #2e2a24;
-  font-family: "Pretendard", sans-serif;
+  font-family: 'Pretendard', sans-serif;
 }
 
 .result-header {
@@ -250,6 +292,23 @@ onMounted(loadBenefit);
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.favorite-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6f685f;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.favorite-button.is-on {
+  color: #d64545;
 }
 .state-card {
   display: flex;
