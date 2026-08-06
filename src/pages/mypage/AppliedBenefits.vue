@@ -59,7 +59,17 @@ const onDelete = async () => {
 
 <template>
   <div class="applied-benefits">
-    <h1 class="page-title">신청 혜택</h1>
+    <header class="page-header">
+      <h1 class="page-title">신청 혜택</h1>
+
+      <KbButton
+        type="secondary"
+        size="small"
+        @click="router.push({ name: 'BenefitSearch' })"
+      >
+        추가
+      </KbButton>
+    </header>
 
     <p v-if="message" class="message">{{ message }}</p>
 
@@ -95,6 +105,11 @@ const onDelete = async () => {
       <div v-else class="empty">
         <p class="empty-main">아직 신청한 혜택이 없어요.</p>
         <p class="empty-sub">혜택을 신청하면 여기에서 관리할 수 있어요.</p>
+        <div class="empty-action">
+          <KbButton @click="router.push({ name: 'BenefitSearch' })">
+            청년혜택 보러 가기
+          </KbButton>
+        </div>
       </div>
     </template>
 
@@ -130,6 +145,13 @@ const onDelete = async () => {
   flex-direction: column;
   gap: 20px;
   padding-bottom: 96px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .page-title {
@@ -180,6 +202,12 @@ const onDelete = async () => {
   font-size: 13px;
   color: #908980;
   word-break: keep-all;
+}
+
+.empty-action {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 
 .modal-overlay {

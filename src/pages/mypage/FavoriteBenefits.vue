@@ -59,7 +59,17 @@ const onDelete = async () => {
 
 <template>
   <div class="favorite-benefits">
-    <h1 class="page-title">관심 혜택</h1>
+    <header class="page-header">
+      <h1 class="page-title">관심 혜택</h1>
+
+      <KbButton
+        type="secondary"
+        size="small"
+        @click="router.push({ name: 'BenefitSearch' })"
+      >
+        추가
+      </KbButton>
+    </header>
 
     <p v-if="message" class="message">{{ message }}</p>
 
@@ -101,8 +111,7 @@ const onDelete = async () => {
           여기에 모아서 보여드려요.
         </p>
         <div class="empty-action">
-          <!-- /benefit 랜딩이 아직 없어 동작하는 검색 화면으로 보낸다 -->
-          <KbButton @click="router.push('/benefit/search')">
+          <KbButton @click="router.push({ name: 'BenefitSearch' })">
             청년혜택 보러 가기
           </KbButton>
         </div>
@@ -141,6 +150,13 @@ const onDelete = async () => {
   flex-direction: column;
   gap: 20px;
   padding-bottom: 96px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .page-title {
