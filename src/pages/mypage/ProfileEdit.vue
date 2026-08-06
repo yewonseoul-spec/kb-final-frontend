@@ -6,6 +6,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import KbCard from '@/components/common/KbCard.vue';
 import ProfileForm from '@/components/mypage/ProfileForm.vue';
 import { useAuthStore } from '@/stores/auth';
+import KbModal from '@/components/common/KbModal.vue';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -94,7 +95,6 @@ const onCancel = () => {
 };
 
 // 회원 탈퇴 — 재확인 절차
-// 공통에 모달 컴포넌트가 없어 이 화면 안에 둔다. 공통 KbModal 이 생기면 교체할 것.
 const showWithdrawConfirm = ref(false);
 const isWithdrawing = ref(false);
 const isWithdrawn = ref(false);
@@ -182,42 +182,34 @@ const onWithdrawDone = () => {
       회원 탈퇴
     </button>
 
-    <div v-if="showWithdrawConfirm" class="modal-overlay">
-      <div class="modal-card">
-        <template v-if="isWithdrawn">
-          <h4 class="modal-title">탈퇴가 완료되었습니다</h4>
-          <p class="modal-desc">그동안 이용해 주셔서 감사합니다.</p>
-          <div class="modal-actions">
-            <KbButton type="primary" @click="onWithdrawDone">확인</KbButton>
-          </div>
+    <template v-if="showWithdrawConfirm">
+      <KbModal v-if="isWithdrawn" title="탈퇴가 완료되었습니다">
+        <p class="modal-desc">그동안 이용해 주셔서 감사합니다.</p>
+        <template #actions>
+          <KbButton type="primary" @click="onWithdrawDone">확인</KbButton>
         </template>
+      </KbModal>
 
-        <template v-else>
-          <h4 class="modal-title">회원 탈퇴</h4>
-          <p class="modal-desc">
-            탈퇴하면 같은 아이디로 다시 로그인할 수 없어요.<br />
-            정말 탈퇴하시겠어요?
-          </p>
-          <p v-if="withdrawError" class="modal-error">{{ withdrawError }}</p>
-          <div class="modal-actions two">
-            <KbButton
-              type="secondary"
-              :disabled="isWithdrawing"
-              @click="showWithdrawConfirm = false"
-            >
-              취소
-            </KbButton>
-            <KbButton
-              type="danger"
-              :disabled="isWithdrawing"
-              @click="onWithdraw"
-            >
-              {{ isWithdrawing ? '처리 중…' : '탈퇴' }}
-            </KbButton>
-          </div>
+      <KbModal v-else title="회원 탈퇴" :columns="2">
+        <p class="modal-desc">
+          탈퇴하면 같은 아이디로 다시 로그인할 수 없어요.<br />
+          정말 탈퇴하시겠어요?
+        </p>
+        <p v-if="withdrawError" class="modal-error">{{ withdrawError }}</p>
+        <template #actions>
+          <KbButton
+            type="secondary"
+            :disabled="isWithdrawing"
+            @click="showWithdrawConfirm = false"
+          >
+            취소
+          </KbButton>
+          <KbButton type="danger" :disabled="isWithdrawing" @click="onWithdraw">
+            {{ isWithdrawing ? '처리 중…' : '탈퇴' }}
+          </KbButton>
         </template>
-      </div>
-    </div>
+      </KbModal>
+    </template>
   </div>
 </template>
 
@@ -285,64 +277,6 @@ const onWithdrawDone = () => {
   font-weight: 700;
   color: #d64545;
   cursor: pointer;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 3000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-card {
-  width: 90%;
-  max-width: 300px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  margin: 0 0 8px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e2a24;
-}
-
-.modal-desc {
-  margin: 0 0 24px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #908980;
-  word-break: keep-all; /* 한글을 음절이 아니라 어절(띄어쓰기) 단위로 끊는다 */
-}
-
-.modal-error {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: #d64545;
-}
-
-/* KbButton 이 inline-flex 라 grid 아이템으로 두어 폭을 채운다 (.button-row 와 같은 방식) */
-.modal-actions {
-  display: grid;
-  width: 100%;
-  gap: 10px;
-}
-
-.modal-actions.two {
-  grid-template-columns: 1fr 1fr;
 }
 
 .goal-link,
