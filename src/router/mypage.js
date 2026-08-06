@@ -39,6 +39,20 @@ export default [
         meta: { requiresAuth: true, title: '비밀번호 변경' },
         component: () => import('../pages/mypage/ChangePassword.vue'),
       },
+
+      {
+        path: 'applied',
+        name: 'AppliedBenefits',
+        meta: { requiresAuth: true, title: '마이페이지' },
+        component: () => import('../pages/mypage/AppliedBenefits.vue'),
+      },
+
+      {
+        path: 'favorite',
+        name: 'FavoriteBenefits',
+        meta: { requiresAuth: true, title: '마이페이지' },
+        component: () => import('../pages/mypage/FavoriteBenefits.vue'),
+      },
     ],
   },
 ];

@@ -160,6 +160,25 @@ const onWithdrawDone = () => {
       </div>
     </template>
 
+    <!-- TODO: 마이페이지 요약 화면(MYP-03)이 생기면 이 링크는 그쪽으로 옮긴다.
+           관심 혜택도 같은 자리에 들어간다.
+           목표 설정·비밀번호 변경·회원 탈퇴는 계정 관리라 이 화면에 남는다. -->
+    <button
+      type="button"
+      class="favorite-link"
+      @click="router.push({ name: 'FavoriteBenefits' })"
+    >
+      관심 혜택
+    </button>
+
+    <button
+      type="button"
+      class="applied-link"
+      @click="router.push({ name: 'AppliedBenefits' })"
+    >
+      신청 혜택
+    </button>
+
     <button
       type="button"
       class="goal-link"
@@ -274,7 +293,7 @@ const onWithdrawDone = () => {
 }
 
 .button-row.two {
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -348,7 +367,9 @@ const onWithdrawDone = () => {
 }
 
 .goal-link,
-.password-link {
+.password-link,
+.applied-link,
+.favorite-link {
   align-self: center;
   background: none;
   border: none;
