@@ -13,7 +13,7 @@
                 ><svg
                   width="20"
                   height="36"
-                  viewBox="0 0 20 36"
+                  viewBox="0 -3 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -41,7 +41,7 @@
                 <svg
                   width="20"
                   height="32"
-                  viewBox="0 0 20 32"
+                  viewBox="0 -4 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -73,7 +73,7 @@
                 <svg
                   width="20"
                   height="34"
-                  viewBox="0 0 20 34"
+                  viewBox="0 -3 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -110,13 +110,13 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage('/interest')">
+          <div class="menu-item" @click="goPage({ name: 'FavoriteBenefits' })">
             <div class="menu-main">
               <span class="icon"
                 ><svg
                   width="14"
                   height="14"
-                  viewBox="0 0 14 14"
+                  viewBox="-3 -3 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -134,13 +134,13 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage('/applied')">
+          <div class="menu-item" @click="goPage({ name: 'AppliedBenefits' })">
             <div class="menu-main">
               <span class="icon"
                 ><svg
                   width="14"
                   height="14"
-                  viewBox="0 0 14 14"
+                  viewBox="-3 -3 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -158,44 +158,13 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage('/notice')">
-            <div class="menu-main">
-              <span class="icon"
-                ><svg
-                  width="15"
-                  height="17"
-                  viewBox="0 0 15 17"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2.50039 5.90002C2.50039 4.57394 3.02717 3.30217 3.96486 2.36449C4.90254 1.42681 6.17431 0.900024 7.50039 0.900024C8.82647 0.900024 10.0982 1.42681 11.0359 2.36449C11.9736 3.30217 12.5004 4.57394 12.5004 5.90002C12.5004 9.90002 14.1004 10.9 14.1004 10.9H0.900391C0.900391 10.9 2.50039 9.90002 2.50039 5.90002Z"
-                    stroke="#2E2A24"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="M5.70117 14.1C5.70117 14.5774 5.89081 15.0353 6.22838 15.3728C6.56595 15.7104 7.02378 15.9 7.50117 15.9C7.97856 15.9 8.4364 15.7104 8.77396 15.3728C9.11153 15.0353 9.30117 14.5774 9.30117 14.1"
-                    stroke="#2E2A24"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <span class="title">알림</span>
-            </div>
-            <span class="arrow">></span>
-          </div>
-
-          <div class="menu-item" @click="goPage('/mypage')">
+          <div class="menu-item" @click="goPage({ name: 'MyPage' })">
             <div class="menu-main">
               <span class="icon"
                 ><svg
                   width="20"
                   height="36"
-                  viewBox="0 0 20 36"
+                  viewBox="0 -3 20 20"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                 >
@@ -269,8 +238,11 @@ const auth = useAuthStore();
 // 🌟 3. 로그아웃 확인 모달창 열림/닫힘 상태 변수
 const showLogoutConfirm = ref(false);
 
-const goPage = (path) => {
-  router.push(path);
+// 마이페이지 도메인은 name으로 연결 — 없는 이름이면 vue-router 가 즉시 터져서
+// 링크가 조용히 죽는 것을 막는다.
+// consumption, asset, benefit은 우선 이름으로 연결하면 수정 시 깨질 수 있어서 변경 대기
+const goPage = (to) => {
+  router.push(to);
   emit('close');
 };
 
@@ -355,10 +327,21 @@ const handleLogout = async () => {
 .menu-main {
   display: flex;
   gap: 12px;
+  align-items: flex-start; /* 아이콘 박스를 제목 첫 줄에 맞춘다 */
 }
 
+/* 아이콘 크기는 여기서만 정한다. SVG 의 width/height 속성은 CSS 가 이긴다 */
 .icon {
-  font-size: 20px;
+  flex: 0 0 24px;
+  height: 24px; /* .title 의 한 줄 높이(16px × 1.5)와 같게 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .text-group {
@@ -368,9 +351,10 @@ const handleLogout = async () => {
 }
 
 .title {
-  font-size: 16px;
+  font-sizwe: 16px;
   font-weight: 700;
   color: #2e2a24;
+  line-height: 1.5; /* 24px — .icon 높이와 짝을 이룬다 */
 }
 
 .sub {
