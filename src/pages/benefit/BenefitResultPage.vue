@@ -1,5 +1,30 @@
 <template>
   <main class="result-page">
+    <form
+      class="result-search-form"
+      @submit.prevent="submitKeyword"
+    >
+      <span class="search-icon">⌕</span>
+
+      <input
+        v-model.trim="keyword"
+        type="search"
+        class="result-search-input"
+        placeholder="혜택을 검색해보세요"
+        aria-label="혜택 검색어"
+      />
+
+      <button
+        v-if="keyword"
+        type="button"
+        class="search-clear-button"
+        aria-label="검색어 지우기"
+        @click="clearKeyword"
+      >
+        ×
+      </button>
+    </form>
+
     <header class="result-header">
       <div>
         <p class="result-eyebrow">청년혜택</p>
@@ -9,7 +34,6 @@
       <KbButton
         type="secondary"
         size="small"
-        class="filter-button"
         @click="isFilterOpen = true"
       >
         필터
@@ -18,63 +42,18 @@
 
     <section class="search-summary">
       <p class="summary-text">
-        <template v-if="keyword">
-          <strong>“{{ keyword }}”</strong> 검색 결과
-        </template>
-        <template v-else> 전체 검색 결과 </template>
+        <template v-if="keyword"
+          ><strong>“{{ keyword }}”</strong> 검색 결과</template
+        >
+        <template v-else>전체 검색 결과</template>
       </p>
-
       <strong class="result-count">{{ benefit.length }}건</strong>
     </section>
 
-    <section
-      v-if="hasActiveFilter"
-      class="active-filter-list"
-      aria-label="적용된 필터"
-    >
-      <div
-        v-if="selectedCategoryName !== '전체'"
-        class="filter-chip"
-      >
-        <span>{{ selectedCategoryName }}</span>
-        <button
-          type="button"
-          aria-label="카테고리 필터 해제"
-          @click="clearCategory"
-        >
-          ×
-        </button>
-      </div>
-
-      <div
-        v-if="selectedZipCd"
-        class="filter-chip"
-      >
-        <span>{{ selectedRegionLabel }}</span>
-        <button
-          type="button"
-          aria-label="지역 필터 해제"
-          @click="clearRegion"
-        >
-          ×
-        </button>
-      </div>
-
-      <div
-        v-if="selectedPlcyMajorCd"
-        class="filter-chip"
-      >
-        <span>{{ selectedMajorName }}</span>
-
-        <button
-          type="button"
-          aria-label="전공 필터 해제"
-          @click="clearMajor"
-        >
-          ×
-        </button>
-      </div>
-    </section>
+    <AppliedFilterChips
+      :filters="activeFilters"
+      @remove="removeFilter"
+    />
 
     <section
       v-if="isLoading"
@@ -86,12 +65,10 @@
 
     <section
       v-else-if="benefit.length === 0"
-      class="state-card empty-state"
+      class="state-card"
     >
       <p class="empty-title">조건에 맞는 혜택이 없어요.</p>
-      <p class="empty-description">
-        검색어나 필터 조건을 변경해서 다시 확인해 보세요.
-      </p>
+      <p>검색어나 필터 조건을 변경해서 다시 확인해 보세요.</p>
     </section>
 
     <section
@@ -99,209 +76,69 @@
       class="benefit-list"
       aria-label="혜택 검색 결과"
     >
-      <KbCard
+      <BenefitCard
         v-for="item in benefit"
         :key="item.benefitNo"
-        class="benefit-card"
-        :class="{ 'is-closed': item.benefitStatus === 'CLOSED' }"
-      >
-        <template #top>
-          <div class="card-top">
-            <div class="card-badges">
-              <KbBadge
-                class="d-day-badge"
-                :class="getDDayClass(item)"
-              >
-                {{ getDDayText(item) }}
-              </KbBadge>
-            </div>
-          </div>
-        </template>
-
-        <h2 class="benefit-title">
-          {{ item.plcyNm }}
-        </h2>
-
-        <p class="benefit-provider">
-          {{ item.sprvsnInstCdNm || "제공 기관 미정" }}
-        </p>
-
-        <p
-          v-if="item.benefitStatus === 'ALWAYS'"
-          class="benefit-period"
-        >
-          상시 신청
-        </p>
-        <p
-          v-else-if="item.applyStartDate || item.applyEndDate"
-          class="benefit-period"
-        >
-          {{ formatDate(item.applyStartDate) || "시작일 미정" }}
-          <span>~</span>
-          {{ formatDate(item.applyEndDate) || "종료일 미정" }}
-        </p>
-      </KbCard>
+        :benefit="item"
+        role="button"
+        tabindex="0"
+        @click="moveToDetail(item.benefitNo)"
+        @keydown.enter="moveToDetail(item.benefitNo)"
+      />
     </section>
 
     <BenefitFilterModal
       v-model="isFilterOpen"
-      :category-code="selectedCategoryCode"
-      :category-name="selectedCategoryName"
-      :province-code="selectedProvinceCode"
-      :province-name="selectedProvinceName"
-      :city-code="selectedCityCode"
-      :city-name="selectedCityName"
-      :district-code="selectedDistrictCode"
-      :district-name="selectedDistrictName"
-      :plcy-major-cd="selectedPlcyMajorCd"
-      :major-name="selectedMajorName"
+      :category-code="filter.categoryCode"
+      :category-name="filter.categoryName"
+      :province-code="filter.provinceCode"
+      :province-name="filter.provinceName"
+      :city-code="filter.cityCode"
+      :city-name="filter.cityName"
+      :district-code="filter.districtCode"
+      :district-name="filter.districtName"
+      :plcy-major-cd="filter.plcyMajorCd"
+      :major-name="filter.majorName"
+      :school-cd="filter.schoolCd"
+      :school-name="filter.schoolName"
+      :job-cd="filter.jobCd"
+      :job-name="filter.jobName"
+      :mrg-stts-cd="filter.mrgSttsCd"
+      :marriage-name="filter.marriageName"
+      :age="filter.age"
       @apply="handleApplyFilter"
     />
   </main>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import BenefitFilterModal from "@/components/benefit/BenefitFilterModal.vue";
-import KbBadge from "@/components/common/KbBadge.vue";
-import KbButton from "@/components/common/KbButton.vue";
-import KbCard from "@/components/common/KbCard.vue";
 import { getBenefit } from "@/api/benefitApi";
+import KbButton from "@/components/common/KbButton.vue";
+import BenefitCard from "@/components/benefit/BenefitCard.vue";
+import BenefitFilterModal from "@/components/benefit/BenefitFilterModal.vue";
+import AppliedFilterChips from "@/components/benefit/filter/AppliedFilterChips.vue";
+import { useBenefitFilter } from "./useBenefitFilter";
 
 const route = useRoute();
 const router = useRouter();
-
 const keyword = ref(route.query.keyword ?? "");
 const isFilterOpen = ref(false);
 const isLoading = ref(false);
 const benefit = ref([]);
 
-// 카테고리
-const selectedCategoryCode = ref(route.query.categoryCode ?? "");
-const selectedCategoryName = ref(route.query.categoryName ?? "전체");
+const { filter, activeFilters, apiParams, queryParams, apply, clear } =
+  useBenefitFilter(route);
 
-// 지역
-const selectedZipCd = ref(route.query.zipCd ?? "");
-const selectedProvinceCode = ref(route.query.provinceCode ?? "");
-const selectedProvinceName = ref(route.query.provinceName ?? "전국");
-const selectedCityCode = ref(route.query.cityCode ?? "");
-const selectedCityName = ref(route.query.cityName ?? "중분류");
-const selectedDistrictCode = ref(route.query.districtCode ?? "");
-const selectedDistrictName = ref(route.query.districtName ?? "분류");
 
-//전공
-const selectedPlcyMajorCd = ref(route.query.plcyMajorCd ?? "");
-const selectedMajorName = ref(route.query.majorName ?? "전체");
-
-const hasActiveFilter = computed(() => {
-  return (
-    selectedCategoryName.value !== "전체" ||
-    Boolean(selectedZipCd.value) ||
-    Boolean(selectedPlcyMajorCd.value)
-  );
-});
-
-const selectedRegionLabel = computed(() => {
-  const names = [
-    selectedProvinceCode.value ? selectedProvinceName.value : "",
-    selectedCityCode.value ? selectedCityName.value : "",
-    selectedDistrictCode.value ? selectedDistrictName.value : "",
-  ].filter(Boolean);
-
-  return names.length > 0 ? names.join(" ") : "전국";
-});
-
-const getDDayClass = (item) => {
-  const text = getDDayText(item);
-
-  if (text === "마감") {
-    return "is-closed";
-  }
-
-  if (text === "상시") {
-    return "is-always";
-  }
-
-  if (text === "D-Day") {
-    return "is-urgent";
-  }
-
-  const match = text.match(/^D-(\d+)$/);
-
-  if (match) {
-    const remainingDays = Number(match[1]);
-
-    if (remainingDays <= 7) {
-      return "is-urgent";
-    }
-  }
-
-  return "is-open";
-};
-
-const getStatusText = (status) => {
-  switch (status) {
-    case "OPEN":
-      return "진행 중";
-    case "ALWAYS":
-      return "상시";
-    case "CLOSED":
-      return "마감";
-    default:
-      return "상태 미정";
-  }
-};
-
-const getDDayText = (item) => {
-  if (item.benefitStatus === "ALWAYS" || !item.applyEndDate) {
-    return "상시";
-  }
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const endDate = new Date(`${item.applyEndDate}T00:00:00`);
-  const difference = endDate.getTime() - today.getTime();
-
-  const remainingDays = Math.ceil(difference / (1000 * 60 * 60 * 24));
-
-  if (remainingDays < 0) {
-    return "마감";
-  }
-
-  if (remainingDays === 0) {
-    return "D-Day";
-  }
-
-  return `D-${remainingDays}`;
-};
-
-const getStatusVariant = (status) => {
-  switch (status) {
-    case "CLOSED":
-      return "gray";
-    case "OPEN":
-      return "info";
-    default:
-      return "default";
-  }
-};
-
-const formatDate = (date) => {
-  if (!date) return "";
-  return String(date).replaceAll("-", ".");
-};
-
+  
 const loadBenefit = async () => {
   isLoading.value = true;
-
   try {
     benefit.value = await getBenefit({
       keyword: keyword.value || undefined,
-      categoryCode: selectedCategoryCode.value || undefined,
-      zipCd: selectedZipCd.value || undefined,
-      plcyMajorCd: selectedPlcyMajorCd.value || undefined,
+      ...apiParams.value,
     });
   } catch (error) {
     console.error("혜택 조회 실패:", error);
@@ -311,105 +148,46 @@ const loadBenefit = async () => {
   }
 };
 
-const handleApplyFilter = async ({
-  categoryCode,
-  categoryName,
-  plcyMajorCd,
-  majorName,
-  zipCd,
-  provinceCode,
-  provinceName,
-  cityCode,
-  cityName,
-  districtCode,
-  districtName,
-}) => {
-  selectedCategoryCode.value = categoryCode;
-  selectedCategoryName.value = categoryName;
-
-  selectedZipCd.value = zipCd;
-  selectedProvinceCode.value = provinceCode;
-  selectedProvinceName.value = provinceName;
-  selectedCityCode.value = cityCode;
-  selectedCityName.value = cityName;
-  selectedDistrictCode.value = districtCode;
-  selectedDistrictName.value = districtName;
-  selectedPlcyMajorCd.value = plcyMajorCd;
-  selectedMajorName.value = majorName;
+const syncQueryAndReload = async () => {
   await router.replace({
     query: {
       ...route.query,
       keyword: keyword.value || undefined,
-      categoryCode: categoryCode || undefined,
-      categoryName: categoryCode ? categoryName : undefined,
-      zipCd: zipCd || undefined,
-      provinceCode: provinceCode || undefined,
-      provinceName: provinceCode ? provinceName : undefined,
-      cityCode: cityCode || undefined,
-      cityName: cityCode ? cityName : undefined,
-      districtCode: districtCode || undefined,
-      districtName: districtCode ? districtName : undefined,
-      plcyMajorCd: plcyMajorCd || undefined,
-      majorName: plcyMajorCd ? majorName : undefined,
+      ...queryParams.value,
     },
   });
-
   await loadBenefit();
 };
 
-const clearCategory = async () => {
-  selectedCategoryCode.value = "";
-  selectedCategoryName.value = "전체";
-
-  await router.replace({
-    query: {
-      ...route.query,
-      categoryCode: undefined,
-      categoryName: undefined,
-    },
-  });
-
-  await loadBenefit();
+const handleApplyFilter = async (nextFilter) => {
+  apply(nextFilter);
+  await syncQueryAndReload();
 };
 
-const clearRegion = async () => {
-  selectedZipCd.value = "";
-  selectedProvinceCode.value = "";
-  selectedProvinceName.value = "전국";
-  selectedCityCode.value = "";
-  selectedCityName.value = "중분류";
-  selectedDistrictCode.value = "";
-  selectedDistrictName.value = "분류";
-
-  await router.replace({
-    query: {
-      ...route.query,
-      zipCd: undefined,
-      provinceCode: undefined,
-      provinceName: undefined,
-      cityCode: undefined,
-      cityName: undefined,
-      districtCode: undefined,
-      districtName: undefined,
-    },
-  });
-
-  await loadBenefit();
+const removeFilter = async (key) => {
+  clear(key);
+  await syncQueryAndReload();
 };
 
-const clearMajor = async () => {
-  selectedPlcyMajorCd.value = "";
-  selectedMajorName.value = "전체";
+const submitKeyword = async () => {
+  await syncQueryAndReload();
+};
 
-  await router.replace({
-    query: {
-      ...route.query,
-      plcyMajorCd: undefined,
-      majorName: undefined,
+const clearKeyword = async () => {
+  keyword.value = "";
+  await syncQueryAndReload();
+};
+
+// 혜톅 생세 페이지 
+const moveToDetail = async (
+  benefitNo,
+) => {
+  await router.push({
+    name: "benefit-detail",
+    params: {
+      benefitNo,
     },
   });
-
-  await loadBenefit();
 };
 
 onMounted(loadBenefit);
@@ -421,7 +199,7 @@ onMounted(loadBenefit);
   width: 100%;
   min-height: 100%;
   padding: 28px 20px 112px;
-  background: #ffffff;
+  background: #fff;
   color: #2e2a24;
   font-family: "Pretendard", sans-serif;
 }
@@ -433,14 +211,12 @@ onMounted(loadBenefit);
   gap: 16px;
   margin-bottom: 24px;
 }
-
 .result-eyebrow {
   margin: 0 0 5px;
   color: #b6964d;
   font-size: 12px;
   font-weight: 700;
 }
-
 .result-header h1 {
   margin: 0;
   font-size: 27px;
@@ -448,11 +224,6 @@ onMounted(loadBenefit);
   line-height: 1.25;
   letter-spacing: -0.04em;
 }
-
-.filter-button {
-  flex-shrink: 0;
-}
-
 .search-summary {
   display: flex;
   align-items: center;
@@ -463,131 +234,23 @@ onMounted(loadBenefit);
   border-radius: 14px;
   background: #f8f7f2;
 }
-
 .summary-text {
   margin: 0;
   color: #696158;
   font-size: 13px;
-  line-height: 1.5;
 }
-
 .summary-text strong {
   color: #2e2a24;
 }
-
 .result-count {
   flex-shrink: 0;
-  color: #2e2a24;
   font-size: 16px;
 }
-
-.active-filter-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 7px 10px 7px 12px;
-  border: 1px solid #efe4bd;
-  border-radius: 999px;
-  background: #fffaf0;
-  color: #675a37;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.filter-chip span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.filter-chip button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #908980;
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-}
-
 .benefit-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
-.benefit-card {
-  cursor: pointer;
-}
-
-.benefit-card.is-closed {
-  background: #fafafa;
-}
-
-.card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.card-badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.end-date {
-  flex-shrink: 0;
-  color: #908980;
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.benefit-title {
-  margin: 2px 0 0;
-  color: #2e2a24;
-  font-size: 18px;
-  font-weight: 750;
-  line-height: 1.42;
-  letter-spacing: -0.035em;
-  word-break: keep-all;
-}
-
-.benefit-provider {
-  margin: 0;
-  color: #696158;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.benefit-period {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 2px 0 0;
-  color: #908980;
-  font-size: 12px;
-}
-
-.is-closed .benefit-title,
-.is-closed .benefit-provider {
-  color: #908980;
-}
-
 .state-card {
   display: flex;
   min-height: 220px;
@@ -597,16 +260,18 @@ onMounted(loadBenefit);
   padding: 28px;
   border: 1px solid #efece4;
   border-radius: 14px;
-  background: #ffffff;
   text-align: center;
 }
-
 .state-card p {
   margin: 12px 0 0;
   color: #908980;
   font-size: 13px;
 }
-
+.empty-title {
+  color: #2e2a24 !important;
+  font-size: 16px !important;
+  font-weight: 700;
+}
 .loading-spinner {
   width: 28px;
   height: 28px;
@@ -615,57 +280,98 @@ onMounted(loadBenefit);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-
-.empty-title {
-  color: #2e2a24 !important;
-  font-size: 16px !important;
-  font-weight: 700;
-}
-
-.empty-description {
-  max-width: 240px;
-  line-height: 1.6;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
 }
-
 @media (max-width: 360px) {
   .result-page {
     padding-right: 16px;
     padding-left: 16px;
   }
-
   .search-summary {
     align-items: flex-start;
     flex-direction: column;
   }
-
-  .card-top {
-    flex-direction: column;
-  }
 }
 
-.d-day-badge.is-open {
-  background: #eaf3ff;
-  color: #1769d2;
+.result-search-form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 48px;
+  margin-bottom: 18px;
+  padding: 0 42px;
+  border-radius: 16px;
+  background: #f7f5ef;
 }
 
-.d-day-badge.is-urgent {
-  background: #fff0ee;
-  color: #e34a3e;
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  color: #4f4b44;
+  font-size: 18px;
+  transform: translateY(-50%);
 }
 
-.d-day-badge.is-always {
-  background: #fff7df;
-  color: #9a7100;
+.result-search-input {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #2d2923;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.d-day-badge.is-closed {
-  background: #f2f2f2;
-  color: #908980;
+.result-search-input::placeholder {
+  color: #9d978d;
+  font-weight: 400;
+}
+
+.result-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #716b62;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.result-heading-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.result-summary-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: #2d2923;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.result-summary-text strong {
+  font-size: 16px;
 }
 </style>

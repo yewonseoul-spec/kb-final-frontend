@@ -33,7 +33,7 @@ export const useConsumptionStore = defineStore('consumption', {
 
     async addExpectedSpending({ expectedDate, categoryNo, expectedAmount, merchant, memo }) {
       try {
-        await axios.post('/consumption/expected', {
+        await axios.post(`${baseURL}/consumption/expected`, {
           expectedDate,
           categoryNo,
           expectedAmount,
@@ -46,12 +46,12 @@ export const useConsumptionStore = defineStore('consumption', {
       }
     },
 
-    async updateExpectedSpending(expectedNo, { date, categoryNo, amount, merchant, memo }) {
+    async updateExpectedSpending(expectedNo, { expectedDate, categoryNo, expectedAmount, merchant, memo }) {
       try {
-        await axios.put(`/consumption/expected/${expectedNo}`, {
-          expectedDate: date,
+        await axios.put(`${baseURL}/consumption/expected/${expectedNo}`, {
+          expectedDate,
           categoryNo,
-          expectedAmount: amount,
+          expectedAmount,
           merchant,
           memo,
         });
@@ -63,7 +63,7 @@ export const useConsumptionStore = defineStore('consumption', {
 
     async deleteExpectedSpending(expectedNo) {
       try {
-        await axios.delete(`/consumption/expected/${expectedNo}`);
+        await axios.delete(`${baseURL}/consumption/expected/${expectedNo}`);
       } catch (err) {
         console.error('예상 소비 삭제 실패:', err);
         throw err;

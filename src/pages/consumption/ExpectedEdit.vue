@@ -2,7 +2,9 @@
 import { ref, computed } from 'vue';
 import { useConsumptionStore } from '@/stores/consumptionStore';
 
-// 부모(CalendarView)가 넘겨주는 값 - targetDate: 이 예상 소비가 속한 날짜 ("2026-07-27" 형태), editingItem: 수정할 예상 소비 객체
+// 부모(CalendarView)가 넘겨주는 값
+// - targetDate: 이 예상 소비가 속한 날짜 ("2026-07-27" 형태)
+// - editingItem: 수정할 예상 소비 객체 (categoryNo, categoryName, amount, merchant, memo, expectedNo 등)
 const props = defineProps({
     targetDate: {
         type: String,
@@ -27,24 +29,20 @@ function todayStr() {
     return `${year}-${month}-${day}`;
 }
 
-// 두 날짜 문자열에서 "몇 년 몇 월 며칠"만 비교할 수 있게 Date로 변환
 function toDateOnly(dateStr) {
     const date = new Date(dateStr);
     date.setHours(0, 0, 0, 0);
     return date;
 }
 
-// 예상 소비는 오늘 자 날짜부터 수정/삭제 가능
 function canAddExpected(dateStr) {
     return toDateOnly(dateStr) >= toDateOnly(todayStr());
 }
 
-// "2026-07-27" 같은 문자열이 오늘 날짜인지 확인(미니 달력에서 오늘 표시용)
 function isToday(dateStr) {
     return dateStr === todayStr();
 }
 
-// 카테고리 관련 값
 const CATEGORY_LIST = [
     '식비', '카페·간식', '교통', '쇼핑', '문화·여가',
     '생활', '마트·편의점', '주거·공과금', '통신', '의료·건강',
@@ -113,9 +111,13 @@ function getCategoryColor(name) {
     return CATEGORY_COLORS[name] || '#9E9E9E';
 }
 
-// 폼 상태 (수정 화면이라 처음부터 editingItem 값으로 채워서 시작)
+// ── 폼 상태 (수정 화면이라 처음부터 editingItem 값으로 채워서 시작한다) ─────
 const selectedDate = ref(props.targetDate);
-const newCategory = ref(props.editingItem.categoryName);
+
+// ★ 여기가 핵심 ★ : 카테고리는 "이름"이 아니라 "번호"로 관리한다.
+// editingItem.categoryNo는 백엔드가 이제 같이 내려주는 값이라 그대로 쓰면 된다.
+const newCategoryNo = ref(props.editingItem.categoryNo);
+
 const newAmount = ref(String(props.editingItem.amount));
 const newMerchant = ref(props.editingItem.merchant || '');
 const newMemo = ref(props.editingItem.memo || '');
@@ -131,19 +133,19 @@ function onAmountInput(event) {
 const canSubmit = computed(() => {
     return (
         Number(newAmount.value) > 0 &&
-        newCategory.value !== '' &&
+        newCategoryNo.value !== null &&
         canAddExpected(selectedDate.value)
     );
 });
 
-// 수정 버튼: 바뀐 값들을 저장
+// "수정" 버튼: 바뀐 값들을 저장한다.
 async function submit() {
     if (!canSubmit.value) return;
 
     await consumptionStore.updateExpectedSpending(props.editingItem.expectedNo, {
-        date: selectedDate.value,
-        categoryNo: CATEGORY_MAP[newCategory.value],
-        amount: Number(newAmount.value),
+        expectedDate: selectedDate.value,
+        categoryNo: newCategoryNo.value,
+        expectedAmount: Number(newAmount.value),
         merchant: newMerchant.value,
         memo: newMemo.value
     });
@@ -151,10 +153,9 @@ async function submit() {
     emit('saved');
 }
 
-// 삭제 버튼: 삭제 여부를 물어보고 사용자가 "확인"을 누르면 삭제
+// "삭제" 버튼: 정말 지울 건지 한 번 물어보고, "확인"을 눌러야만 진짜로 지운다.
 async function remove() {
     const isSure = window.confirm('해당 내역을 삭제하시겠습니까?');
-    // 사용자가 확인을 누르면 true, 취소를 누르면 false 리턴
     if (!isSure) return;
 
     await consumptionStore.deleteExpectedSpending(props.editingItem.expectedNo);
@@ -165,10 +166,9 @@ function close() {
     emit('close');
 }
 
-// 예정일 미니 달력
+// ── "예정일" 미니 달력 ──────────────────────────────────────────
 const showDatePicker = ref(false);
 
-// 미니 달력도 처음 열 때부터 targetDate가 속한 달로 맞춰서 시작
 const [startYear, startMonth] = props.targetDate.split('-').map(Number);
 const pickerYear = ref(startYear);
 const pickerMonth = ref(startMonth - 1);
@@ -245,9 +245,9 @@ function pickDate(day) {
                 <label>카테고리</label>
                 <div class="category-grid">
                     <button v-for="name in CATEGORY_LIST" :key="name" type="button" class="category-tile"
-                        :class="{ selected: newCategory === name }" :style="newCategory === name
+                        :class="{ selected: newCategoryNo === CATEGORY_MAP[name] }" :style="newCategoryNo === CATEGORY_MAP[name]
                             ? { borderColor: getCategoryColor(name), background: `${getCategoryColor(name)}1a` }
-                            : {}" @click="newCategory = name">
+                            : {}" @click="newCategoryNo = CATEGORY_MAP[name]">
                         <span class="category-tile-icon" :style="{ background: getCategoryColor(name) }">
                             {{ getIcon(name) }}
                         </span>
@@ -286,6 +286,8 @@ function pickDate(day) {
                     </div>
                 </div>
 
+                <!-- 취소 버튼 대신 삭제/수정 두 버튼으로 구성했다.
+             (그냥 닫기만 하고 싶으면 위쪽 ✕ 버튼을 누르면 된다) -->
                 <div class="sheet-actions">
                     <button class="delete" @click="remove">삭제</button>
                     <button class="save" :disabled="!canSubmit" @click="submit">수정</button>
@@ -358,7 +360,6 @@ input {
     font-size: 14px;
 }
 
-/* 금액 입력줄 */
 .amount-row {
     display: flex;
     align-items: baseline;
@@ -389,7 +390,6 @@ input {
     color: #999;
 }
 
-/* 카테고리 선택 */
 .category-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -425,7 +425,6 @@ input {
     white-space: nowrap;
 }
 
-/* 예정일 입력칸 */
 .date-field {
     width: 100%;
     display: flex;
@@ -443,7 +442,6 @@ input {
     margin-right: 6px;
 }
 
-/* 예정일을 고르는 달력 */
 .mini-calendar {
     margin-top: 8px;
     padding: 10px;
