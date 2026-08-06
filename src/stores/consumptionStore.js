@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import axios from '@/api';
 
 
-const baseURL =  'http://localhost:8080'
+const baseURL =  '/api'
 const headers = {
     'Content-Type': 'application/json'
 }
