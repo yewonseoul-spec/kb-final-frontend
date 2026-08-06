@@ -29,7 +29,7 @@ const router = createRouter({
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('../pages/NotFound.vue'),
-      meta: { title: '페이지를 찾을 수 없음' },
+      meta: { title: '청년타파', headerType: 'root' },
     },
   ],
 });

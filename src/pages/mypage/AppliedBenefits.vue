@@ -60,47 +60,45 @@ const onDelete = async () => {
 
 <template>
   <div class="applied-benefits">
-    <header class="page-header">
-      <h1 class="page-title">신청 혜택</h1>
-
-      <KbButton
-        type="secondary"
-        size="small"
-        @click="router.push({ name: 'BenefitSearch' })"
-      >
-        추가
-      </KbButton>
-    </header>
-
     <p v-if="message" class="message">{{ message }}</p>
 
     <template v-if="!isLoading">
-      <section
-        v-if="list.length"
-        class="benefit-list"
-        aria-label="신청 혜택 목록"
-      >
-        <BenefitCard
-          v-for="benefit in list"
-          :key="benefit.benefitNo"
-          :benefit="benefit"
-          role="button"
-          tabindex="0"
-          @click="moveToDetail(benefit.benefitNo)"
-          @keydown.enter="moveToDetail(benefit.benefitNo)"
-        >
-          <template #action>
-            <button
-              type="button"
-              class="delete-btn"
-              aria-label="신청 혜택 삭제"
-              @click="target = benefit"
-            >
-              삭제
-            </button>
-          </template>
-        </BenefitCard>
-      </section>
+      <template v-if="list.length">
+        <div class="list-header">
+          <p class="list-count">신청한 혜택 {{ list.length }}건</p>
+
+          <KbButton
+            type="secondary"
+            size="small"
+            @click="router.push({ name: 'BenefitSearch' })"
+          >
+            추가
+          </KbButton>
+        </div>
+
+        <section class="benefit-list" aria-label="신청 혜택 목록">
+          <BenefitCard
+            v-for="benefit in list"
+            :key="benefit.benefitNo"
+            :benefit="benefit"
+            role="button"
+            tabindex="0"
+            @click="moveToDetail(benefit.benefitNo)"
+            @keydown.enter="moveToDetail(benefit.benefitNo)"
+          >
+            <template #action>
+              <button
+                type="button"
+                class="delete-btn"
+                aria-label="신청 혜택 삭제"
+                @click="target = benefit"
+              >
+                삭제
+              </button>
+            </template>
+          </BenefitCard>
+        </section>
+      </template>
 
       <!-- 등록한 신청 혜택이 없으면 안내 문구 -->
       <div v-else class="empty">
@@ -145,25 +143,25 @@ const onDelete = async () => {
   padding-bottom: 96px;
 }
 
-.page-header {
+.message {
+  margin: 0;
+  font-size: 13px;
+  color: #908980;
+  word-break: keep-all;
+}
+
+.list-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
-}
-
-.message {
+.list-count {
   margin: 0;
   font-size: 13px;
+  font-weight: 600;
   color: #908980;
-  word-break: keep-all;
 }
 
 .benefit-list {

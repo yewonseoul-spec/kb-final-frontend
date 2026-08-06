@@ -1,110 +1,63 @@
 <script setup>
-import { ref, computed } from "vue";
-import { RouterLink, useRouter, useRoute } from "vue-router";
+import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
-import { useAuthStore } from "@/stores/auth";
-import authApi from "@/api/authApi";
-import KbMenuDrawer from "@/components/common/KbMenuDrawer.vue";
+import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
 
 const router = useRouter();
 const route = useRoute();
-const auth = useAuthStore();
 
 const isMenuOpen = ref(false);
 
 /*
- * headerType이 back이면:
- * 뒤로가기 버튼 + 페이지 제목 표시
- *
- * 그 외에는:
- * 청년타파 로고 표시
+ * 탭바에 있는 최상위 화면 5개. 여기 없으면 하위 화면으로 보고 뒤로가기를 단다.
+ * 새 화면이 늘어도 기본값이 '뒤로가기 있음'이라 나갈 길이 막히지 않는다.
+ * 이름이 아니라 경로로 판정하는 이유: 라우트 name 작명이 아직 세 갈래로 갈려 있다.
  */
+const TAB_PATHS = ['/', '/benefit', '/asset', '/consumption', '/mypage'];
+
 const isBackHeader = computed(() => {
-  return route.meta.headerType === "back";
+  // 라우트가 직접 지정했으면 그걸 따른다
+  if (route.meta.headerType === 'back') return true;
+  if (route.meta.headerType === 'root') return false;
+  return !TAB_PATHS.includes(route.path);
 });
 
-const pageTitle = computed(() => {
-  return route.meta.headerTitle || route.meta.title || "청년타파";
-});
+const pageTitle = computed(
+  () => route.meta.headerTitle || route.meta.title || '청년타파',
+);
 
+// 히스토리가 없으면(주소창 직접 진입·새로고침 직후) back() 이 앱 밖으로 나간다.
+// 마이페이지 화면들의 '취소' 와 같은 방식으로 막는다.
 const goBack = () => {
-  router.back();
-};
-
-const onLogout = async () => {
-  try {
-    await authApi.logout();
-  } catch (e) {
-    /*
-     * 토큰이 이미 만료된 경우에도
-     * 로컬 로그인 정보는 정리한다.
-     */
+  if (window.history.state?.back) {
+    router.back();
+    return;
   }
-
-  auth.logout();
-
-  router.push({
-    name: "Login",
-  });
+  router.push({ name: 'Home' });
 };
 </script>
 
 <template>
   <div class="container">
     <header class="common-header">
-      <!-- 왼쪽 영역 -->
       <div class="header-left">
-        <!-- 검색 페이지 등 뒤로가기 헤더 -->
-        <template v-if="isBackHeader">
-          <button
-            type="button"
-            class="back-button"
-            aria-label="뒤로 가기"
-            @click="goBack"
-          >
-            ‹
-          </button>
-
-          <h1 class="page-title">
-            {{ pageTitle }}
-          </h1>
-        </template>
-
-        <!-- 일반 페이지 헤더 -->
-        <RouterLink
-          v-else
-          :to="{ name: 'Home' }"
-          class="header-logo"
+        <button
+          v-if="isBackHeader"
+          type="button"
+          class="back-button"
+          aria-label="뒤로 가기"
+          @click="goBack"
         >
-          청년타파
-        </RouterLink>
+          ‹
+        </button>
+
+        <h1 class="header-title">
+          {{ pageTitle }}
+        </h1>
       </div>
 
-      <!-- 오른쪽 영역 -->
       <div class="header-right">
-        <template v-if="auth.isLogin">
-          <span class="member-name">
-            {{ auth.realName || auth.loginId }} 님
-          </span>
-
-          <button
-            type="button"
-            class="logout-button"
-            @click="onLogout"
-          >
-            로그아웃
-          </button>
-        </template>
-
-        <RouterLink
-          v-else
-          :to="{ name: 'Login' }"
-          class="login-button"
-        >
-          로그인
-        </RouterLink>
-
-        <!-- 햄버거 기능은 그대로 유지 -->
         <button
           type="button"
           class="hamburger-btn"
@@ -120,10 +73,7 @@ const onLogout = async () => {
       <slot></slot>
     </div>
 
-    <KbMenuDrawer
-      :isOpen="isMenuOpen"
-      @close="isMenuOpen = false"
-    />
+    <KbMenuDrawer :isOpen="isMenuOpen" @close="isMenuOpen = false" />
   </div>
 </template>
 
@@ -150,13 +100,6 @@ const onLogout = async () => {
   flex-shrink: 0;
 }
 
-.header-logo {
-  color: #2e2a24;
-  font-size: 18px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
 .back-button {
   display: flex;
   align-items: center;
@@ -176,42 +119,17 @@ const onLogout = async () => {
   transform: translateY(-1px);
 }
 
-.page-title {
+/* 마이페이지 페이지들의 .page-title 과 이름이 겹쳐 헷갈리므로 header- 로 구분한다 */
+.header-title {
   margin: 0;
+  min-width: 0;
   color: #2e2a24;
   font-size: 18px;
   font-weight: 700;
+  /* 제목이 모든 화면에 뜨게 됐으므로 긴 제목이 헤더를 밀지 않게 자른다 */
   white-space: nowrap;
-}
-
-.member-name {
-  color: #7f786e;
-  font-size: 13px;
-}
-
-.login-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 5px;
-  background: #ffbc00;
-  color: #2e2a24;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.logout-button {
-  height: 32px;
-  padding: 0 10px;
-  border: 1px solid #dc3545;
-  border-radius: 5px;
-  background: #ffffff;
-  color: #dc3545;
-  font-size: 12px;
-  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hamburger-btn {

@@ -3,11 +3,12 @@ export default [
   {
     path: '/admin',
     component: () => import('../pages/admin/AdminLayout.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true },
+    meta: { requiresAuth: true, requiresAdmin: true, title: '관리자' },
     children: [
       {
         path: '',
         name: 'adminDashboard',
+        meta: { headerType: 'root' },
         component: () => import('../pages/admin/AdminDashboard.vue'),
       },
       {

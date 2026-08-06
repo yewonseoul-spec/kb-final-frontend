@@ -68,8 +68,6 @@ const onCancel = () => {
 
 <template>
   <div v-if="!isLoading" class="goal-edit">
-    <h1 class="page-title">목표 수정</h1>
-
     <p class="guide">
       목표에 맞춰 해야 할 일과 혜택을 정리해 드려요.<br />
       바꾸면 맞춤 추천에 바로 반영돼요.
@@ -99,13 +97,6 @@ const onCancel = () => {
   flex-direction: column;
   gap: 20px;
   padding-bottom: 96px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
 }
 
 .guide {

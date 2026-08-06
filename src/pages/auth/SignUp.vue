@@ -148,8 +148,6 @@ const signup = async () => {
 
 <template>
   <div class="signup">
-    <h1 class="page-title">회원가입</h1>
-
     <form class="signup-form" @submit.prevent="signup">
       <KbInput
         v-model="member.realName"
@@ -309,13 +307,6 @@ const signup = async () => {
 .signup {
   max-width: 500px;
   margin: 0 auto;
-}
-
-.page-title {
-  margin: 0 0 32px;
-  font-size: 20px;
-  font-weight: 700;
-  color: #2e2a24;
 }
 
 .signup-form {
