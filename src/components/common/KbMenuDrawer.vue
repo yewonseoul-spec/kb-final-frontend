@@ -6,6 +6,53 @@
           <button class="close-btn" @click="$emit('close')">✕</button>
         </div>
 
+        <div class="profile-row">
+          <button
+            type="button"
+            class="avatar"
+            aria-label="마이페이지로 이동"
+            @click="goPage({ name: 'MyPage' })"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 -3 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10 6.94995C11.6569 6.94995 13 5.60681 13 3.94995C13 2.2931 11.6569 0.949951 10 0.949951C8.34315 0.949951 7 2.2931 7 3.94995C7 5.60681 8.34315 6.94995 10 6.94995Z"
+                stroke="#2E2A24"
+                stroke-width="1.9"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M4 13.95C4 10.75 6.7 8.94995 10 8.94995C13.3 8.94995 16 10.75 16 13.95"
+                stroke="#2E2A24"
+                stroke-width="1.9"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+
+          <div class="profile-text">
+            <template v-if="auth.isLogin">
+              <p class="profile-name">{{ auth.realName || auth.loginId }} 님</p>
+              <p v-if="regionName" class="profile-region">{{ regionName }}</p>
+            </template>
+            <p v-else class="profile-name">로그인이 필요해요</p>
+          </div>
+
+          <button
+            type="button"
+            class="auth-btn"
+            :class="auth.isLogin ? 'logout' : 'login'"
+            @click="onAuthAction"
+          >
+            {{ auth.isLogin ? '로그아웃' : '로그인' }}
+          </button>
+        </div>
+
         <div class="menu-list">
           <div class="menu-item" @click="goPage('/asset')">
             <div class="menu-main">
@@ -193,16 +240,6 @@
             <span class="arrow">></span>
           </div>
         </div>
-
-        <div class="drawer-footer">
-          <button
-            class="auth-btn"
-            :class="auth.isLogin ? 'logout' : 'login'"
-            @click="onAuthAction"
-          >
-            {{ auth.isLogin ? '로그아웃' : '로그인' }}
-          </button>
-        </div>
       </div>
     </div>
   </transition>
@@ -219,17 +256,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
 import KbModal from '@/components/common/KbModal.vue';
 import KbButton from '@/components/common/KbButton.vue';
+import mypageApi from '@/api/mypageApi';
 
-defineProps({
+const props = defineProps({
   isOpen: { type: Boolean, default: false },
 });
 
+const regionName = ref('');
 const emit = defineEmits(['close']);
 const router = useRouter();
 const auth = useAuthStore();
@@ -251,7 +290,7 @@ const onAuthAction = () => {
     showLogoutConfirm.value = true;
     return;
   }
-  goPage('/login');
+  goPage({ name: 'Login' });
 };
 
 const handleLogout = async () => {
@@ -261,10 +300,41 @@ const handleLogout = async () => {
     // 토큰이 이미 만료된 경우 등 — 로컬 정리는 그대로 진행한다
   }
   auth.logout();
+  regionName.value = '';
   showLogoutConfirm.value = false;
-  router.push('/login');
+  router.push({ name: 'Login' });
   emit('close');
 };
+
+/*
+ * 지역은 auth 스토어에 없어서(loginId·email·realName·roles 뿐) 프로필 API 를 따로 받는다.
+ * 🔴 캐시하지 않는다 — 드로어가 DefaultLayout 안에 상시 마운트돼 있어서,
+ *    한 번 받고 재사용하면 프로필을 수정해도 옛 지역이 계속 보인다.
+ * 🔴 auth.isLogin 일 때만 호출할 것 — 비로그인에서 401 을 받으면
+ *    api/index.js 인터셉터가 로그인 화면으로 튕겨버린다.
+ */
+const loadRegion = async () => {
+  if (!auth.isLogin) return;
+
+  try {
+    const profile = await mypageApi.getProfile();
+    // '경기도 수원시 장안구' 처럼 길어서 앞 두 토큰만 쓴다 (MyPage.vue 와 같은 규칙)
+    regionName.value = profile.regionName
+      ? profile.regionName.split(' ').slice(0, 2).join(' ')
+      : '';
+  } catch (e) {
+    // 404 = 프로필이 사라진 경우이므로 지역을 비운다.
+    // 그 외(네트워크 오류 등)는 이전 값을 그대로 둔다
+    if (e.response?.status === 404) regionName.value = '';
+  }
+};
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (open) loadRegion();
+  },
+);
 </script>
 
 <style scoped>
@@ -289,7 +359,6 @@ const handleLogout = async () => {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   overflow-y: auto;
   font-family: 'Pretendard', sans-serif;
 }
@@ -304,6 +373,50 @@ const handleLogout = async () => {
   border: none;
   font-size: 20px;
   cursor: pointer;
+  color: #908980;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #efece4;
+}
+
+/* 프로필 사진 자리. 업로드 API 가 없어 지금은 기본 아이콘 고정이다 */
+.avatar {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: #efece4;
+  cursor: pointer;
+}
+
+.profile-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2e2a24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-region {
+  margin: 2px 0 0;
+  font-size: 12px;
   color: #908980;
 }
 
@@ -368,17 +481,11 @@ const handleLogout = async () => {
   font-weight: bold;
 }
 
-.drawer-footer {
-  padding-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
 .auth-btn {
   background: none;
   border: none;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 13px; /* 15px → 13px, 한 줄에 들어가야 한다 */
+  flex-shrink: 0;
   cursor: pointer;
 }
 
