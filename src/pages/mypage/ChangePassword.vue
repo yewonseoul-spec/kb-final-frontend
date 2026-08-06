@@ -77,8 +77,6 @@ const onCancel = () => {
 
 <template>
   <div class="change-password">
-    <h1 class="page-title">비밀번호 변경</h1>
-
     <p class="guide">영문·숫자·특수문자를 포함해 8자 이상으로 정해 주세요.</p>
 
     <KbInput
@@ -134,13 +132,6 @@ const onCancel = () => {
   flex-direction: column;
   gap: 20px;
   padding-bottom: 96px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
 }
 
 .guide {

@@ -60,23 +60,21 @@ const onDelete = async () => {
 
 <template>
   <div class="favorite-benefits">
-    <header class="page-header">
-      <h1 class="page-title">관심 혜택</h1>
-
-      <KbButton
-        type="secondary"
-        size="small"
-        @click="router.push({ name: 'BenefitSearch' })"
-      >
-        추가
-      </KbButton>
-    </header>
-
     <p v-if="message" class="message">{{ message }}</p>
 
     <template v-if="!isLoading">
       <template v-if="list.length">
-        <p class="list-count">저장한 혜택 {{ list.length }}건</p>
+        <div class="list-header">
+          <p class="list-count">저장한 혜택 {{ list.length }}건</p>
+
+          <KbButton
+            type="secondary"
+            size="small"
+            @click="router.push({ name: 'BenefitSearch' })"
+          >
+            추가
+          </KbButton>
+        </div>
 
         <section class="benefit-list" aria-label="관심 혜택 목록">
           <BenefitCard
@@ -150,20 +148,6 @@ const onDelete = async () => {
   padding-bottom: 96px;
 }
 
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
-}
-
 .message {
   margin: 0;
   font-size: 13px;
@@ -205,6 +189,13 @@ const onDelete = async () => {
   line-height: 1;
   color: #d64545;
   cursor: pointer;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .list-count {

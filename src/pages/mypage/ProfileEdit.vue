@@ -125,8 +125,6 @@ const onWithdrawDone = () => {
 
 <template>
   <div v-if="!isLoading" class="profile-edit">
-    <h1 class="page-title">{{ isEmpty ? '프로필 입력' : '프로필 수정' }}</h1>
-
     <template v-if="isEmpty">
       <KbCard yellow-bg>
         <p class="empty-main">아직 프로필을 입력하지 않으셨어요.</p>
@@ -220,13 +218,6 @@ const onWithdrawDone = () => {
   gap: 20px;
   /* 하단 고정 탭바(80px)에 버튼이 가리지 않도록 */
   padding-bottom: 96px;
-}
-
-.page-title {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 700;
-  color: #2e2a24;
 }
 
 .empty-main {
