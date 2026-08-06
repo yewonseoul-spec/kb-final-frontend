@@ -91,6 +91,12 @@ export default {
     return data;
   },
 
+  // 신청 혜택 등록 — 이미 담겨 있으면 409. 관심 혜택과 달리 멱등이 아니다
+  async createAppliedBenefit(benefitNo) {
+    const { data } = await instance.post(`${BASE_URL}/applied`, { benefitNo });
+    return data;
+  },
+
   // 신청 혜택 목록 — 없으면 빈 배열(404 아님)
   async getAppliedBenefits() {
     const { data } = await instance.get(`${BASE_URL}/applied`);
@@ -100,6 +106,12 @@ export default {
   // 신청 혜택 삭제 — 이미 없으면 404. 목록이 낡았다는 뜻이므로 재조회할 것
   async deleteAppliedBenefit(benefitNo) {
     const { data } = await instance.delete(`${BASE_URL}/applied/${benefitNo}`);
+    return data;
+  },
+
+  // 관심 혜택 등록 — 이미 담겨 있어도 200(멱등)이라 호출부가 중복을 신경 쓸 필요 없다
+  async createFavoriteBenefit(benefitNo) {
+    const { data } = await instance.post(`${BASE_URL}/favorite`, { benefitNo });
     return data;
   },
 
