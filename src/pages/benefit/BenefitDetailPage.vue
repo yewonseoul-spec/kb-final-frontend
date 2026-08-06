@@ -1,42 +1,24 @@
 <template>
   <main class="benefit-detail-page">
-    <section
-      v-if="loading"
-      class="state-box"
-    >
+    <section v-if="loading" class="state-box">
       혜택 정보를 불러오는 중이에요.
     </section>
 
-    <section
-      v-else-if="errorMessage"
-      class="state-box error"
-    >
+    <section v-else-if="errorMessage" class="state-box error">
       <p>{{ errorMessage }}</p>
 
-      <button
-        type="button"
-        @click="loadDetail"
-      >
-        다시 불러오기
-      </button>
+      <button type="button" @click="loadDetail">다시 불러오기</button>
     </section>
 
     <template v-else-if="detail">
       <article class="detail-card">
         <div class="detail-card-header">
           <div class="badge-list">
-
-            <span
-              v-if="regionLabel"
-              class="detail-badge region"
-            >
+            <span v-if="regionLabel" class="detail-badge region">
               {{ regionLabel }}
             </span>
 
-            <span
-              class="detail-badge"
-              :class="dDayClass"
-            >
+            <span class="detail-badge" :class="dDayClass">
               {{ dDayText }}
             </span>
           </div>
@@ -46,10 +28,7 @@
           {{ detail.plcyNm }}
         </h1>
 
-        <p
-          v-if="summaryText"
-          class="benefit-summary"
-        >
+        <p v-if="summaryText" class="benefit-summary">
           {{ summaryText }}
         </p>
 
@@ -57,7 +36,7 @@
           <div class="summary-info-row">
             <dt>운영기관</dt>
             <dd>
-              {{ detail.sprvsnInstCdNm || "-" }}
+              {{ detail.sprvsnInstCdNm || '-' }}
             </dd>
           </div>
 
@@ -137,12 +116,22 @@
         </section>
       </article>
 
+      <p
+        v-if="addMessage"
+        class="add-message"
+        :class="{ 'is-error': addFailed }"
+      >
+        {{ addMessage }}
+      </p>
+
       <div class="detail-action-bar">
         <button
           type="button"
           class="detail-button secondary"
+          :disabled="isAdding || isAdded"
+          @click="addToApplied"
         >
-          {{ "신청한 혜택 추가" }}
+          {{ addButtonText }}
         </button>
 
         <button
@@ -159,20 +148,24 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from 'vue';
 
-import { useRoute } from "vue-router";
+import { useRoute } from 'vue-router';
 
-import { getBenefitDetail } from "@/api/benefitApi";
-import BenefitCard from
-  "@/components/benefit/BenefitCard.vue";
+import { getBenefitDetail } from '@/api/benefitApi';
+
+import mypageApi from '@/api/mypageApi';
 
 const route = useRoute();
 
 const detail = ref(null);
 const loading = ref(false);
-const errorMessage = ref("");
+const errorMessage = ref('');
 const showAdditionalInfo = ref(false);
+const isAdded = ref(false);
+const addFailed = ref(false);
+const isAdding = ref(false);
+const addMessage = ref('');
 
 const benefitNo = computed(() => {
   return Number(route.params.benefitNo);
@@ -221,12 +214,9 @@ const getRemainingDays = () => {
     return null;
   }
 
-  const difference =
-    endDate.getTime() - today.getTime();
+  const difference = endDate.getTime() - today.getTime();
 
-  return Math.ceil(
-    difference / (1000 * 60 * 60 * 24),
-  );
+  return Math.ceil(difference / (1000 * 60 * 60 * 24));
 };
 
 const dDayText = computed(() => {
@@ -256,28 +246,28 @@ const dDayText = computed(() => {
 });
 
 const dDayClass = computed(() => {
-  if (dDayText.value === "마감") {
-    return "closed";
+  if (dDayText.value === '마감') {
+    return 'closed';
   }
 
-  if (dDayText.value === "상시") {
-    return "always";
+  if (dDayText.value === '상시') {
+    return 'always';
   }
 
   const remainingDays = getRemainingDays();
 
   if (remainingDays !== null && remainingDays >= 0 && remainingDays <= 7) {
-    return "urgent";
+    return 'urgent';
   }
 
-  return "open";
+  return 'open';
 });
 
 const regionLabel = computed(() => {
   const names = detail.value?.regionNames ?? [];
 
   if (!names.length) {
-    return "";
+    return '';
   }
 
   if (names.length === 1) {
@@ -290,7 +280,7 @@ const regionLabel = computed(() => {
 });
 
 const summaryText = computed(() => {
-  return detail.value?.plcyExplnCn || detail.value?.targetDesc || "";
+  return detail.value?.plcyExplnCn || detail.value?.targetDesc || '';
 });
 
 const targetText = computed(() => {
@@ -313,17 +303,17 @@ const targetText = computed(() => {
   }
 
   return parts.length
-    ? parts.join(", ")
-    : "지원 대상은 공고 내용을 확인해 주세요.";
+    ? parts.join(', ')
+    : '지원 대상은 공고 내용을 확인해 주세요.';
 });
 
 const supportText = computed(() => {
-  return detail.value?.plcySprtCn || "지원 내용은 공고 내용을 확인해 주세요.";
+  return detail.value?.plcySprtCn || '지원 내용은 공고 내용을 확인해 주세요.';
 });
 
 const applyMethodText = computed(() => {
   return (
-    detail.value?.plcyAplyMthdCn || "신청 방법은 공고 내용을 확인해 주세요."
+    detail.value?.plcyAplyMthdCn || '신청 방법은 공고 내용을 확인해 주세요.'
   );
 });
 
@@ -333,11 +323,11 @@ const ageText = computed(() => {
   const maxAge = detail.value?.sprtTrgtMaxAge;
 
   if (minAge == null && maxAge == null) {
-    return "";
+    return '';
   }
 
   if (Number(minAge) === 0 && Number(maxAge) === 0) {
-    return "연령 제한 없음";
+    return '연령 제한 없음';
   }
 
   if (minAge != null && maxAge != null) {
@@ -352,35 +342,65 @@ const ageText = computed(() => {
 });
 
 const majorLabel = computed(() => {
-  return (detail.value?.majorNames ?? []).join(", ");
+  return (detail.value?.majorNames ?? []).join(', ');
 });
 
 const schoolLabel = computed(() => {
-  return (detail.value?.schoolNames ?? []).join(", ");
+  return (detail.value?.schoolNames ?? []).join(', ');
 });
 
 const jobLabel = computed(() => {
-  return (detail.value?.jobNames ?? []).join(", ");
+  return (detail.value?.jobNames ?? []).join(', ');
 });
 
 const loadDetail = async () => {
   if (!Number.isInteger(benefitNo.value) || benefitNo.value <= 0) {
-    errorMessage.value = "잘못된 혜택 번호입니다.";
+    errorMessage.value = '잘못된 혜택 번호입니다.';
 
     return;
   }
 
   loading.value = true;
-  errorMessage.value = "";
+  errorMessage.value = '';
 
   try {
     detail.value = await getBenefitDetail(benefitNo.value);
   } catch (error) {
-    console.error("혜택 상세 조회 실패:", error);
+    console.error('혜택 상세 조회 실패:', error);
 
-    errorMessage.value = "혜택 정보를 불러오지 못했어요.";
+    errorMessage.value = '혜택 정보를 불러오지 못했어요.';
   } finally {
     loading.value = false;
+  }
+};
+
+const addButtonText = computed(() => {
+  if (isAdded.value) return '✓ 추가됨';
+  if (isAdding.value) return '추가 중…';
+  return '신청한 혜택 추가';
+});
+
+const addToApplied = async () => {
+  if (isAdding.value || isAdded.value) return;
+  isAdding.value = true;
+  addMessage.value = '';
+  addFailed.value = false;
+
+  try {
+    await mypageApi.createAppliedBenefit(Number(benefitNo.value));
+    addMessage.value = '신청한 혜택에 추가했어요.';
+    isAdded.value = true;
+  } catch (error) {
+    // 관심 혜택과 달리 멱등이 아니다. 409 는 오류가 아니라 '이미 있다'는 안내다.
+    if (error.response?.status === 409) {
+      addMessage.value = '이미 추가한 혜택이에요.';
+      isAdded.value = true;
+    } else if (error.response) {
+      addMessage.value = '추가하지 못했어요. 잠시 후 다시 시도해 주세요.';
+      addFailed.value = true;
+    }
+  } finally {
+    isAdding.value = false;
   }
 };
 
@@ -391,7 +411,7 @@ const moveToApplyPage = () => {
     return;
   }
 
-  window.open(url, "_blank", "noopener,noreferrer");
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 watch(benefitNo, () => {
@@ -467,18 +487,6 @@ onMounted(() => {
 .detail-badge.always {
   background: #fff2cf;
   color: #9b6b00;
-}
-
-.favorite-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: #797268;
-  font-size: 28px;
-  line-height: 1;
-  cursor: pointer;
 }
 
 .benefit-title {
@@ -566,6 +574,23 @@ onMounted(() => {
   color: #514b43;
   font-size: 13px;
   line-height: 1.55;
+}
+
+.add-message {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eaf3ff;
+  color: #1769d2;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.add-message.is-error {
+  background: #fff0ee;
+  color: #e34a3e;
 }
 
 .detail-action-bar {
