@@ -34,8 +34,7 @@ const onCta = () => {
   router.push({ name: 'BenefitSearch' });
 };
 
-// 배너 to 는 각 라우터 파일의 path 와 정확히 같아야 한다.
-// 브랜치마다 라우터가 따로 있으니 머지 후 실제 path 를 확인할 것
+// Enigne,Stress 배너 클릭시 해당 페이지로 이동연결
 const banners = [
   {
     key: 'engine',
@@ -409,6 +408,7 @@ onMounted(async () => {
   border: 0;
   border-radius: 14px;
   background-color: #2e2a24;
+  border: 0;
   font: inherit;
   text-align: left;
   cursor: pointer;
