@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import KbButton from '@/components/common/KbButton.vue';
 import BenefitCard from '@/components/benefit/BenefitCard.vue';
 import mypageApi from '@/api/mypageApi';
+import KbModal from '@/components/common/KbModal.vue';
 
 const router = useRouter();
 const list = ref([]);
@@ -113,28 +114,25 @@ const onDelete = async () => {
       </div>
     </template>
 
-    <div v-if="target" class="modal-overlay">
-      <div class="modal-card">
-        <h4 class="modal-title">신청 혜택 삭제</h4>
-        <p class="modal-desc">
-          '{{ target.plcyNm }}' 을(를)<br />
-          신청 목록에서 삭제할까요?
-        </p>
-        <p v-if="deleteError" class="modal-error">{{ deleteError }}</p>
-        <div class="modal-actions two">
-          <KbButton
-            type="secondary"
-            :disabled="isDeleting"
-            @click="target = null"
-          >
-            취소
-          </KbButton>
-          <KbButton type="danger" :disabled="isDeleting" @click="onDelete">
-            {{ isDeleting ? '삭제 중…' : '삭제' }}
-          </KbButton>
-        </div>
-      </div>
-    </div>
+    <KbModal v-if="target" title="신청 혜택 삭제" :columns="2">
+      <p class="modal-desc">
+        '{{ target.plcyNm }}' 을(를)<br />
+        신청 목록에서 삭제할까요?
+      </p>
+      <p v-if="deleteError" class="modal-error">{{ deleteError }}</p>
+      <template #actions>
+        <KbButton
+          type="secondary"
+          :disabled="isDeleting"
+          @click="target = null"
+        >
+          취소
+        </KbButton>
+        <KbButton type="danger" :disabled="isDeleting" @click="onDelete">
+          {{ isDeleting ? '삭제 중…' : '삭제' }}
+        </KbButton>
+      </template>
+    </KbModal>
   </div>
 </template>
 
@@ -208,64 +206,5 @@ const onDelete = async () => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 3000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.modal-card {
-  width: 90%;
-  max-width: 300px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  margin: 0 0 8px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e2a24;
-}
-
-.modal-desc {
-  margin: 0 0 24px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #908980;
-  word-break: keep-all;
-  overflow-wrap: anywhere; /* 정책명이 TEXT 컬럼이라 길이 상한이 없다 */
-}
-
-.modal-error {
-  margin: 0 0 12px;
-  font-size: 13px;
-  color: #d64545;
-}
-
-/* KbButton 이 inline-flex 라 grid 아이템으로 두어 폭을 채운다 */
-.modal-actions {
-  display: grid;
-  width: 100%;
-  gap: 10px;
-}
-
-.modal-actions.two {
-  grid-template-columns: 1fr 1fr;
 }
 </style>
