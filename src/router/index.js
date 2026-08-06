@@ -24,6 +24,13 @@ const router = createRouter({
     ...guide,
     ...engine,
     ...stress,
+    // 매칭 실패한 모든 주소. name 이 있어야 App.vue 의 탭바 조건을 통과한다
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'NotFound',
+      component: () => import('../pages/NotFound.vue'),
+      meta: { title: '페이지를 찾을 수 없음' },
+    },
   ],
 });
 
