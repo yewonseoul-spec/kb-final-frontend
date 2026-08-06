@@ -1,6 +1,7 @@
 import BenefitSearchPage from "@/pages/benefit/BenefitSearchPage.vue";
 import BenefitResultPage from "@/pages/benefit/BenefitResultPage.vue";
 import BenefitDetailPage from "@/pages/benefit/BenefitDetailPage.vue";
+import BenefitMainPage from "@/pages/benefit/BenefitMainPage.vue";
 
 export default [
   {
@@ -33,6 +34,17 @@ export default [
       title: "혜택 상세",
       headerType: "back",
       headerTitle: "혜택 상세",
+    },
+  },
+
+    {
+    path: "/benefit",
+    name: "benefit-main",
+    component: BenefitMainPage,
+    meta: {
+        title: "혜택",
+      headerType: "back",
+      headerTitle: "혜택",
     },
   },
 ];

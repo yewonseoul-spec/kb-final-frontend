@@ -5,6 +5,35 @@ const api = axios.create({
   timeout: 10000,
 });
 
+api.interceptors.request.use(
+  (config) => {
+    const savedAuth =
+      localStorage.getItem("auth");
+
+    if (savedAuth) {
+      try {
+        const auth = JSON.parse(savedAuth);
+        const token = auth?.token;
+
+        if (token) {
+          config.headers.Authorization =
+            `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error(
+          "인증 정보 파싱 실패:",
+          error,
+        );
+      }
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
 //혜택목록 조회
 export const getBenefit = async (params = {}) => {
   const response = await api.get("", {
@@ -104,6 +133,15 @@ export const getBenefitDetail = async (
 ) => {
   const response = await api.get(
     `/${benefitNo}`,
+  );
+
+  return response.data;
+};
+
+//사용자 프로필 조건기반 혜택추천
+export const getBenefitProfileFilter = async () => {
+  const response = await api.get(
+    "/profile-filter",
   );
 
   return response.data;
