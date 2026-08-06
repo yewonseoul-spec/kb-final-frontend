@@ -21,6 +21,13 @@
       {{ benefit.sprvsnInstCdNm || '제공 기관 미정' }}
     </p>
 
+    <p
+  v-if="benefit.benefitStatus === 'CLOSED'"
+  class="benefit-period"
+>
+  신청 마감
+</p>
+
     <p v-if="benefit.benefitStatus === 'ALWAYS'" class="benefit-period">
       상시 신청
     </p>
@@ -48,6 +55,9 @@ const props = defineProps({
 });
 
 const dDayText = computed(() => {
+ if (props.benefit.benefitStatus === 'CLOSED') {
+    return '마감';
+  }
   const item = props.benefit;
   if (item.benefitStatus === 'ALWAYS' || !item.applyEndDate) return '상시';
 
