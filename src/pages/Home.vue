@@ -34,17 +34,19 @@ const onCta = () => {
   router.push({ name: 'BenefitSearch' });
 };
 
-// TODO ENGINE·STRESS 화면이 생기면 각 배너에 이동을 붙인다
+// Enigne,Stress 배너 클릭시 해당 페이지로 이동연결
 const banners = [
   {
     key: 'engine',
     title: 'AI 정책 조합 최적화',
     desc: '수혜액이 가장 큰 정책 3개를 찾아드려요',
+    to: '/engine',
   },
   {
     key: 'stress',
     title: '금융 스트레스 테스트',
     desc: '위기가 와도 몇 달 버틸 수 있는지 확인해요',
+    to: '/stress',
   },
 ];
 
@@ -167,7 +169,7 @@ onMounted(async () => {
 
     <section class="banners">
       <div ref="track" class="banner-track" @scroll="onScroll">
-        <article v-for="b in banners" :key="b.key" class="banner">
+        <button v-for="b in banners" :key="b.key" class="banner">
           <svg class="banner-icon" width="22" height="22" viewBox="0 0 24 24">
             <path
               d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z"
@@ -179,7 +181,7 @@ onMounted(async () => {
             <p class="banner-desc">{{ b.desc }}</p>
           </div>
           <span class="banner-arrow">›</span>
-        </article>
+        </button>
       </div>
 
       <div class="banner-dots">
@@ -396,6 +398,10 @@ onMounted(async () => {
   padding: 20px;
   border-radius: 14px;
   background-color: #2e2a24;
+  border: 0;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .banner-icon {
