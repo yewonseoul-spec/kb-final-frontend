@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import KbButton from '@/components/common/KbButton.vue';
-import BenefitListItem from '@/components/mypage/BenefitListItem.vue';
+import BenefitCard from '@/components/benefit/BenefitCard.vue';
 import mypageApi from '@/api/mypageApi';
 
+const router = useRouter();
 const list = ref([]);
 const isLoading = ref(true);
 const message = ref('');
@@ -25,6 +27,10 @@ const load = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const moveToDetail = (benefitNo) => {
+  router.push({ name: 'benefit-detail', params: { benefitNo } });
 };
 
 onMounted(load);
@@ -58,13 +64,19 @@ const onDelete = async () => {
     <p v-if="message" class="message">{{ message }}</p>
 
     <template v-if="!isLoading">
-      <ul v-if="list.length" class="benefit-list">
-        <BenefitListItem
+      <section
+        v-if="list.length"
+        class="benefit-list"
+        aria-label="신청 혜택 목록"
+      >
+        <BenefitCard
           v-for="benefit in list"
           :key="benefit.benefitNo"
-          :plcy-nm="benefit.plcyNm"
-          :category-name="benefit.categoryName"
-          :meta-text="`${benefit.appliedAt.slice(0, 10)} 신청`"
+          :benefit="benefit"
+          role="button"
+          tabindex="0"
+          @click="moveToDetail(benefit.benefitNo)"
+          @keydown.enter="moveToDetail(benefit.benefitNo)"
         >
           <template #action>
             <button
@@ -76,8 +88,8 @@ const onDelete = async () => {
               삭제
             </button>
           </template>
-        </BenefitListItem>
-      </ul>
+        </BenefitCard>
+      </section>
 
       <!-- 등록한 신청 혜택이 없으면 안내 문구 -->
       <div v-else class="empty">
@@ -135,9 +147,6 @@ const onDelete = async () => {
 }
 
 .benefit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;

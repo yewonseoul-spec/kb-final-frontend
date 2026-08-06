@@ -1,8 +1,8 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import KbButton from '@/components/common/KbButton.vue';
-import BenefitListItem from '@/components/mypage/BenefitListItem.vue';
+import BenefitCard from '@/components/benefit/BenefitCard.vue';
 import mypageApi from '@/api/mypageApi';
 
 const router = useRouter();
@@ -29,27 +29,11 @@ const load = async () => {
   }
 };
 
-onMounted(load);
-
-// 마감일은 거르지 않고 그대로 보여주므로 지난 것과 상시 모집(null)을 여기서 처리한다.
-const metaText = (benefit) => {
-  const raw = benefit.applyEndDate;
-  if (!raw) return '상시 모집';
-
-  const dotted = raw.replaceAll('-', '.');
-
-  // 'yyyy-MM-dd' 만 넘기면 UTC 자정으로 파싱돼 KST 에서 날짜가 밀린다.
-  // T00:00:00 을 붙이면 로컬 자정으로 파싱된다.
-  const end = new Date(`${raw}T00:00:00`);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const days = Math.round((end - today) / 86400000);
-
-  if (days < 0) return `${dotted} 마감됨`;
-  if (days === 0) return '오늘 마감';
-  return `D-${days} · ${dotted} 마감`;
+const moveToDetail = (benefitNo) => {
+  router.push({ name: 'benefit-detail', params: { benefitNo } });
 };
+
+onMounted(load);
 
 const onDelete = async () => {
   isDeleting.value = true;
@@ -83,13 +67,15 @@ const onDelete = async () => {
       <template v-if="list.length">
         <p class="list-count">저장한 혜택 {{ list.length }}건</p>
 
-        <ul class="benefit-list">
-          <BenefitListItem
+        <section class="benefit-list" aria-label="관심 혜택 목록">
+          <BenefitCard
             v-for="benefit in list"
             :key="benefit.benefitNo"
-            :plcy-nm="benefit.plcyNm"
-            :category-name="benefit.categoryName"
-            :meta-text="metaText(benefit)"
+            :benefit="benefit"
+            role="button"
+            tabindex="0"
+            @click="moveToDetail(benefit.benefitNo)"
+            @keydown.enter="moveToDetail(benefit.benefitNo)"
           >
             <template #action>
               <button
@@ -101,10 +87,10 @@ const onDelete = async () => {
                 ♥
               </button>
             </template>
-          </BenefitListItem>
-        </ul>
+          </BenefitCard>
+        </section>
 
-        <p class="list-hint">하트를 다시 누르면 저장이 해제됩니다.</p>
+        <p class="list-hint">하트를 누르면 관심 목록에서 해제됩니다.</p>
       </template>
 
       <!-- 저장한 관심 혜택이 없으면 안내 문구 (RQ-FAV-08) -->
@@ -172,23 +158,9 @@ const onDelete = async () => {
 }
 
 .benefit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.delete-btn {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  padding: 4px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #908980;
-  cursor: pointer;
 }
 
 .empty {
