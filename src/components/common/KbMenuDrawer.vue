@@ -351,7 +351,7 @@ const handleLogout = async () => {
 }
 
 .title {
-  font-sizwe: 16px;
+  font-size: 16px;
   font-weight: 700;
   color: #2e2a24;
   line-height: 1.5; /* 24px — .icon 높이와 짝을 이룬다 */
