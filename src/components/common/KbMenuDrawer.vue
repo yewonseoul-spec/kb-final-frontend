@@ -207,18 +207,15 @@
     </div>
   </transition>
 
-  <div v-if="showLogoutConfirm" class="modal-overlay">
-    <div class="modal-card">
-      <h4 class="modal-title">로그아웃</h4>
-      <p class="modal-desc">정말 로그아웃 하시겠습니까?</p>
-      <div class="modal-actions">
-        <button class="btn-cancel" @click="showLogoutConfirm = false">
-          취소
-        </button>
-        <button class="btn-confirm" @click="handleLogout">확인</button>
-      </div>
-    </div>
-  </div>
+  <KbModal v-if="showLogoutConfirm" title="로그아웃" :columns="2">
+    <p class="modal-desc">정말 로그아웃 하시겠습니까?</p>
+    <template #actions>
+      <KbButton type="secondary" @click="showLogoutConfirm = false">
+        취소
+      </KbButton>
+      <KbButton type="primary" @click="handleLogout">확인</KbButton>
+    </template>
+  </KbModal>
 </template>
 
 <script setup>
@@ -226,6 +223,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import authApi from '@/api/authApi';
+import KbModal from '@/components/common/KbModal.vue';
+import KbButton from '@/components/common/KbButton.vue';
 
 defineProps({
   isOpen: { type: Boolean, default: false },
@@ -388,74 +387,6 @@ const handleLogout = async () => {
 }
 
 .auth-btn.login {
-  color: #2e2a24;
-}
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 3000;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: 'Pretendard', sans-serif;
-}
-
-.modal-card {
-  width: 90%;
-  max-width: 300px;
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 24px 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.modal-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e2a24;
-  margin-bottom: 8px;
-}
-
-.modal-desc {
-  font-size: 14px;
-  color: #908980;
-  margin-bottom: 24px;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.btn-cancel,
-.btn-confirm {
-  flex: 1;
-  height: 44px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-cancel {
-  background-color: #efece4;
-  color: #908980;
-}
-
-.btn-confirm {
-  background-color: #ffbc00;
   color: #2e2a24;
 }
 
