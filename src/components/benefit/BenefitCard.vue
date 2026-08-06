@@ -3,20 +3,13 @@
     class="benefit-card"
     :class="{ 'is-closed': benefit.benefitStatus === 'CLOSED' }"
   >
-    <button
-      type="button"
-      class="favorite-button"
-      aria-label="관심 혜택 등록"
-    >
-      ♡
-    </button>
+    <div v-if="$slots.action" class="card-action" @click.stop>
+      <slot name="action" />
+    </div>
 
     <template #top>
       <div class="card-badges">
-        <KbBadge
-          class="d-day-badge"
-          :class="dDayClass"
-        >
+        <KbBadge class="d-day-badge" :class="dDayClass">
           {{ dDayText }}
         </KbBadge>
       </div>
@@ -25,30 +18,27 @@
     <h2 class="benefit-title">{{ benefit.plcyNm }}</h2>
 
     <p class="benefit-provider">
-      {{ benefit.sprvsnInstCdNm || "제공 기관 미정" }}
+      {{ benefit.sprvsnInstCdNm || '제공 기관 미정' }}
     </p>
 
-    <p
-      v-if="benefit.benefitStatus === 'ALWAYS'"
-      class="benefit-period"
-    >
+    <p v-if="benefit.benefitStatus === 'ALWAYS'" class="benefit-period">
       상시 신청
     </p>
     <p
       v-else-if="benefit.applyStartDate || benefit.applyEndDate"
       class="benefit-period"
     >
-      {{ formatDate(benefit.applyStartDate) || "시작일 미정" }}
+      {{ formatDate(benefit.applyStartDate) || '시작일 미정' }}
       <span>~</span>
-      {{ formatDate(benefit.applyEndDate) || "종료일 미정" }}
+      {{ formatDate(benefit.applyEndDate) || '종료일 미정' }}
     </p>
   </KbCard>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import KbBadge from "@/components/common/KbBadge.vue";
-import KbCard from "@/components/common/KbCard.vue";
+import { computed } from 'vue';
+import KbBadge from '@/components/common/KbBadge.vue';
+import KbCard from '@/components/common/KbCard.vue';
 
 const props = defineProps({
   benefit: {
@@ -59,7 +49,7 @@ const props = defineProps({
 
 const dDayText = computed(() => {
   const item = props.benefit;
-  if (item.benefitStatus === "ALWAYS" || !item.applyEndDate) return "상시";
+  if (item.benefitStatus === 'ALWAYS' || !item.applyEndDate) return '상시';
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -68,27 +58,28 @@ const dDayText = computed(() => {
     (endDate.getTime() - today.getTime()) / 86400000,
   );
 
-  if (remainingDays < 0) return "마감";
-  if (remainingDays === 0) return "D-Day";
+  if (remainingDays < 0) return '마감';
+  if (remainingDays === 0) return 'D-Day';
   return `D-${remainingDays}`;
 });
 
 const dDayClass = computed(() => {
   const text = dDayText.value;
-  if (text === "마감") return "is-closed";
-  if (text === "상시") return "is-always";
-  if (text === "D-Day") return "is-urgent";
+  if (text === '마감') return 'is-closed';
+  if (text === '상시') return 'is-always';
+  if (text === 'D-Day') return 'is-urgent';
 
   const match = text.match(/^D-(\d+)$/);
-  if (match && Number(match[1]) <= 7) return "is-urgent";
-  return "is-open";
+  if (match && Number(match[1]) <= 7) return 'is-urgent';
+  return 'is-open';
 });
 
-const formatDate = (date) => (date ? String(date).replaceAll("-", ".") : "");
+const formatDate = (date) => (date ? String(date).replaceAll('-', '.') : '');
 </script>
 
 <style scoped>
 .benefit-card {
+  position: relative;
   cursor: pointer;
 }
 .benefit-card.is-closed {
@@ -142,31 +133,11 @@ const formatDate = (date) => (date ? String(date).replaceAll("-", ".") : "");
 .is-closed .benefit-provider {
   color: #908980;
 }
-.benefit-card {
-  position: relative;
-  cursor: pointer;
-}
-
-.favorite-button {
+.card-action {
   position: absolute;
   top: 50%;
   right: 18px;
   transform: translateY(-50%);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 36px;
-  height: 36px;
-  padding: 0;
-
-  border: 0;
-  background: transparent;
-  color: #6f685f;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
   z-index: 2;
 }
 </style>
