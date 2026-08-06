@@ -90,9 +90,7 @@ const onCancel = () => {
     router.back();
     return;
   }
-  // TODO: 마이페이지 요약 화면이 생기면 { name: 'MyPage' } 로 바꾼다.
-  //       지금 MyPage 로 보내면 이 화면으로 다시 리다이렉트돼 제자리걸음이라 Home 으로 둔다.
-  router.push({ name: 'Home' });
+  router.push({ name: 'MyPage' });
 };
 
 // 회원 탈퇴 — 재확인 절차
@@ -159,25 +157,6 @@ const onWithdrawDone = () => {
         </KbButton>
       </div>
     </template>
-
-    <!-- TODO: 마이페이지 요약 화면(MYP-03)이 생기면 이 링크는 그쪽으로 옮긴다.
-           관심 혜택도 같은 자리에 들어간다.
-           목표 설정·비밀번호 변경·회원 탈퇴는 계정 관리라 이 화면에 남는다. -->
-    <button
-      type="button"
-      class="favorite-link"
-      @click="router.push({ name: 'FavoriteBenefits' })"
-    >
-      관심 혜택
-    </button>
-
-    <button
-      type="button"
-      class="applied-link"
-      @click="router.push({ name: 'AppliedBenefits' })"
-    >
-      신청 혜택
-    </button>
 
     <button
       type="button"
@@ -367,9 +346,7 @@ const onWithdrawDone = () => {
 }
 
 .goal-link,
-.password-link,
-.applied-link,
-.favorite-link {
+.password-link {
   align-self: center;
   background: none;
   border: none;
