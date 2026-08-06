@@ -200,6 +200,7 @@ async function load() {
   loadError.value = '';
   try {
       const data = await engineApi.getEligibleBenefits();
+      console.log('엔진 응답', data.benefits[0]);
       result.value = data;
   } catch (e) {
     loadError.value = '추천 결과를 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
@@ -251,13 +252,30 @@ function toggleDetail(benefitNo) {
   openDetails.value = { ...openDetails.value, [benefitNo]: !openDetails.value[benefitNo] };
 }
 
+// 온통청년 데이터가 지저분해서 그대로 쓰면 안 된다.
+//   - 대부분 빈 문자열이고 NULL 이 아니다
+//   - https:// 없이 www 로 시작하는 값이 많다
+//   - '-', '전화문의' 처럼 링크가 아닌 값이 있다
+//   - & 가 &amp; 로 저장돼 파라미터가 깨진다
+//   - 앞뒤 공백이 붙은 값이 있다
+function normalizeUrl(raw) {
+  if (!raw) return null;
+
+  const url = raw.trim().replace(/&amp;/g, '&');
+  if (!url) return null;
+
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('www.')) return `https://${url}`;
+
+  return null;
+}
+
+// plcyNo 로 온통청년 주소를 만들지 않고, DB 에 저장된 실제 신청 URL 을 연다
 function openApply(b) {
-  if (!b.plcyNo) return;
-  window.open(
-      `https://www.youthcenter.go.kr/gourde/details.do?plcyNo=${b.plcyNo}`,
-      '_blank',
-      'noopener',
-  );
+  const url = normalizeUrl(b.aplyUrlAddr);
+  if (!url) return;
+
+  window.open(url, '_blank', 'noopener');
 }
 
 function goProfile() {

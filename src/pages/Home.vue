@@ -34,17 +34,20 @@ const onCta = () => {
   router.push({ name: 'BenefitSearch' });
 };
 
-// TODO ENGINE·STRESS 화면이 생기면 각 배너에 이동을 붙인다
+// 배너 to 는 각 라우터 파일의 path 와 정확히 같아야 한다.
+// 브랜치마다 라우터가 따로 있으니 머지 후 실제 path 를 확인할 것
 const banners = [
   {
     key: 'engine',
     title: 'AI 정책 조합 최적화',
     desc: '수혜액이 가장 큰 정책 3개를 찾아드려요',
+    to: '/engine',
   },
   {
     key: 'stress',
     title: '금융 스트레스 테스트',
     desc: '위기가 와도 몇 달 버틸 수 있는지 확인해요',
+    to: '/stress',
   },
 ];
 
@@ -167,7 +170,14 @@ onMounted(async () => {
 
     <section class="banners">
       <div ref="track" class="banner-track" @scroll="onScroll">
-        <article v-for="b in banners" :key="b.key" class="banner">
+        <!-- article 이 아니라 button 이어야 키보드 접근과 스크린 리더가 동작한다 -->
+        <button
+          v-for="b in banners"
+          :key="b.key"
+          type="button"
+          class="banner"
+          @click="router.push(b.to)"
+        >
           <svg class="banner-icon" width="22" height="22" viewBox="0 0 24 24">
             <path
               d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z"
@@ -179,7 +189,7 @@ onMounted(async () => {
             <p class="banner-desc">{{ b.desc }}</p>
           </div>
           <span class="banner-arrow">›</span>
-        </article>
+        </button>
       </div>
 
       <div class="banner-dots">
@@ -340,6 +350,7 @@ onMounted(async () => {
 .popular-name {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin: 0;
@@ -386,6 +397,7 @@ onMounted(async () => {
   display: none;
 }
 
+/* button 기본 스타일(테두리·글꼴·가운데정렬)을 지워 기존 배너 모양을 유지한다 */
 .banner {
   box-sizing: border-box;
   display: flex;
@@ -394,8 +406,12 @@ onMounted(async () => {
   gap: 14px;
   scroll-snap-align: start;
   padding: 20px;
+  border: 0;
   border-radius: 14px;
   background-color: #2e2a24;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .banner-icon {
