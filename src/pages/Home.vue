@@ -30,8 +30,8 @@ const onCta = () => {
     router.push({ name: 'Login' });
     return;
   }
-  // TODO 추천 혜택 페이지가 생기면 목적지를 그쪽으로 바꾼다
-  router.push({ name: 'BenefitSearch' });
+  // 이름 대신 경로 문자열: benefit-main 만 kebab-case 라 담당자가 정리하면 깨진다
+  router.push('/benefit');
 };
 
 // Enigne,Stress 배너 클릭시 해당 페이지로 이동연결
