@@ -232,7 +232,7 @@ const daysMap = computed(() => {
   return map;
 });
 
-// 카테고리별 소비 내역('전체'면 그대로 리턴)
+// 카테고리별 소비 내역(전체면 그대로 리턴)
 function filterItems(items) {
   if (selectedCategories.value.includes('전체')) return items;
   return items.filter(item => selectedCategories.value.includes(item.categoryName));
@@ -394,6 +394,13 @@ function closeAddSheet() {
 async function onAddSaved() {
   showAddSheet.value = false;
   await loadCalendar();
+
+  if (selectedDay.value) {
+    const refreshedDay = calendarDays.value.find(
+      d => d && d.date === selectedDay.value.date
+    );
+    selectedDay.value = refreshedDay || null;
+  }
 }
 
 // 예상 소비 수정 (ExpectedEdit.vue)
@@ -410,6 +417,13 @@ function closeEditSheet() {
 async function onEditSaved() {
   editingItem.value = null;
   await loadCalendar();
+
+  if (selectedDay.value) {
+    const refreshedDay = calendarDays.value.find(
+      d => d && d.date === selectedDay.value.date
+    );
+    selectedDay.value = refreshedDay || null;
+  }
 }
 
 </script>
@@ -543,10 +557,10 @@ async function onEditSaved() {
 
       <button class="fab" @click="openAddSheet">+</button>
 
-      <!-- 예상 소비 "추가" 화면 (ExpectedCreate.vue) -->
+      <!-- 예상 소비 추가 화면 (ExpectedCreate.vue) -->
       <ExpectedCreate v-if="showAddSheet" :target-date="addSheetDate" @close="closeAddSheet" @saved="onAddSaved" />
 
-      <!-- 예상 소비 "수정" 화면 (ExpectedEdit.vue).
+      <!-- 예상 소비 수정 화면 (ExpectedEdit.vue).
          targetDate는 selectedDay(지금 펼쳐서 보고 있는 날짜)에서 그대로 가져온다. -->
       <ExpectedEdit v-if="editingItem" :target-date="selectedDay?.date" :editing-item="editingItem"
         @close="closeEditSheet" @saved="onEditSaved" />
