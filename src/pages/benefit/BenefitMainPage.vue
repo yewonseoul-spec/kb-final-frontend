@@ -357,16 +357,27 @@ const loadBenefits = async () => {
      * 한 가지를 사용하면 된다.
      */
     if (Array.isArray(response)) {
-      benefitList.value = response;
-      totalCount.value = response.length;
-      return;
-    }
+  const activeBenefits = response.filter(
+    (item) => item.benefitStatus !== "CLOSED"
+  );
 
-    benefitList.value =
-      response.content || response.list || response.benefits || [];
+  benefitList.value = activeBenefits;
+  totalCount.value = activeBenefits.length;
+  return;
+}
 
-    totalCount.value =
-      response.totalElements ?? response.totalCount ?? benefitList.value.length;
+const benefits =
+  response.content
+  || response.list
+  || response.benefits
+  || [];
+
+const activeBenefits = benefits.filter(
+  (item) => item.benefitStatus !== "CLOSED"
+);
+
+benefitList.value = activeBenefits;
+totalCount.value = activeBenefits.length;
   } catch (error) {
     console.error("맞춤 혜택 조회 실패:", error);
 
