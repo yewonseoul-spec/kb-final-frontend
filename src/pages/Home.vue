@@ -307,7 +307,7 @@ onMounted(async () => {
 
 .greeting {
   margin: 0 0 28px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -348,7 +348,7 @@ onMounted(async () => {
 
 .card-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -472,21 +472,22 @@ onMounted(async () => {
      홈 배너(#2e2a24)와 같은 계열이라 톤이 어긋나지 않는다 */
 .total-card {
   box-sizing: border-box;
-  padding: 24px 20px;
+  padding: 18px 20px;
   border-radius: 16px;
   background: linear-gradient(135deg, #4a4340 0%, #2b2725 100%);
   color: #ffffff;
+  cursor: pointer;
 }
 
 .total-label {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 14px;
   opacity: 0.8;
 }
 
 .total-amount {
-  margin: 0 0 20px;
-  font-size: 28px;
+  font-size: 24px;
+  margin: 0 0 14px;
   font-weight: 700;
 }
 
@@ -499,7 +500,7 @@ onMounted(async () => {
      Pretendard 를 쓰는 나머지 홈 요소와 어긋난다 */
 .asset-btn {
   flex: 1;
-  padding: 12px 0;
+  padding: 10px 0;
   border: none;
   border-radius: 10px;
   font: inherit;
@@ -664,5 +665,15 @@ onMounted(async () => {
 
 .dot.on::before {
   background-color: #ffbc00;
+}
+
+/* KbCard 의 padding 은 공통 컴포넌트 값(20px)이라 홈 안에서만 줄인다 */
+.home :deep(.kb-card) {
+  padding: 16px;
+}
+
+/* KbCard 루트에 붙는다. 자식 컴포넌트 루트는 부모 스코프도 함께 받는다 */
+.clickable {
+  cursor: pointer;
 }
 </style>
