@@ -15,27 +15,31 @@
       </div>
 
       <div v-else class="scenario-grid">
+        <!-- 계산할 수 없는 시나리오도 누를 수 있게 두고, 누르면 사유를 보여준다.
+             disabled 로 막으면 왜 못 쓰는지 확인할 방법이 없다. -->
         <button v-for="s in scenarios" :key="s.scenarioCode"
                 class="scenario-card"
-                :class="{ 'is-selected': selectedCode === s.scenarioCode, 'is-disabled': !s.available }"
-                :disabled="!s.available"
+                :class="{ 'is-selected': selectedCode === s.scenarioCode, 'is-locked': !s.available }"
+                :aria-pressed="selectedCode === s.scenarioCode"
                 @click="selectScenario(s)">
           <span class="scenario-name">{{ s.scenarioName }}</span>
           <span class="scenario-target">{{ s.targetCategory === 'ALL' ? '전체' : s.targetCategory }}</span>
+          <span v-if="!s.available" class="lock-tag">준비 중</span>
         </button>
       </div>
 
-      <p v-if="unavailableReason" class="hint-warn">{{ unavailableReason }}</p>
+      <p v-if="blockedNotice" class="hint-warn">{{ blockedNotice }}</p>
     </section>
 
     <!-- 강도 선택 -->
-    <section v-if="selectedScenario" class="section">
+    <section v-if="selectedScenario && selectedScenario.available" class="section">
       <h3 class="section-title">충격 강도</h3>
 
       <div class="level-row">
         <button v-for="lv in selectedScenario.levels" :key="lv.shockLevel"
                 class="level-btn"
                 :class="{ 'is-selected': selectedLevel === lv.shockLevel }"
+                :aria-pressed="selectedLevel === lv.shockLevel"
                 @click="selectLevel(lv.shockLevel)">
           <span class="level-label">{{ lv.label }}</span>
           <span class="level-value">{{ lv.displayText }}</span>
@@ -43,8 +47,17 @@
       </div>
     </section>
 
-    <!-- 로딩 -->
-    <div v-if="calculating" class="state-box">
+    <!-- 오류 안내.
+         결과가 이미 있으면 지우지 않고 위에 배너로만 알린다 -->
+    <div v-if="loadError" class="error-banner">
+      <span>{{ loadError }}</span>
+      <button class="retry-btn" @click="retry">다시 시도</button>
+    </div>
+
+    <!-- 첫 계산 중에만 전체를 대체한다.
+         이미 결과가 있으면 그대로 두고 흐리게만 처리해,
+         시나리오를 바꿀 때마다 화면이 접혔다 펴지는 것을 막는다. -->
+    <div v-if="calculating && !result" class="state-box">
       <div class="spinner"></div>
       <p class="state-text">방어력을 계산하는 중이에요</p>
     </div>
@@ -61,13 +74,8 @@
       </KbButton>
     </KbCard>
 
-    <div v-else-if="loadError" class="state-box">
-      <p class="state-text">{{ loadError }}</p>
-      <KbButton type="secondary" size="small" @click="calculate">다시 시도</KbButton>
-    </div>
-
     <!-- 결과 -->
-    <template v-else-if="result">
+    <div v-else-if="result" class="result-wrap" :class="{ 'is-dim': calculating }">
 
       <!-- 점수 -->
       <KbCard yellow-bg class="score-card">
@@ -140,10 +148,10 @@
 
           <ul v-if="showBreakdown" class="cat-list">
             <li v-for="b in result.breakdown" :key="b.categoryName"
-                :class="{ 'is-affected': b.affected }">
+                :class="{ 'is-affected': isAffected(b) }">
               <span class="cat-name">
                 {{ b.categoryName }}
-                <em v-if="b.affected" class="affected-tag">영향</em>
+                <em v-if="isAffected(b)" class="affected-tag">영향</em>
               </span>
               <span class="cat-type">{{ b.spendingType }}</span>
               <span class="cat-amount">{{ won(b.monthlyAmount) }}</span>
@@ -159,15 +167,18 @@
         <KbCard>
           <p class="reduce-main">
             월 <strong>{{ won(result.reduction.reducedSpending) }}</strong>까지 줄이면
-            <strong>{{ result.reduction.reducedSurvivalMonths }}개월</strong>
+            <strong>{{ result.reduction.reducedSurvivalMonths }}개월</strong>까지 버틸 수 있어요.
+          </p>
+          <p class="reduce-grade-line">
+            이때 등급은
             <span class="reduce-grade" :class="gradeClassOf(result.reduction.reducedGrade)">
               {{ result.reduction.reducedGrade }}
             </span>
-            까지 버틸 수 있어요
+            입니다.
           </p>
 
           <ul class="save-list">
-            <li v-for="s in result.reduction.topSavings" :key="s">{{ s }}</li>
+            <li v-for="(s, i) in result.reduction.topSavings" :key="i">{{ s }}</li>
           </ul>
 
           <p class="basis-note">
@@ -185,11 +196,11 @@
         </button>
 
         <ul v-if="showBasis" class="basis-list">
-          <li v-for="b in result.basis" :key="b">{{ b }}</li>
+          <li v-for="(b, i) in result.basis" :key="i">{{ b }}</li>
         </ul>
       </section>
 
-    </template>
+    </div>
   </div>
 </template>
 
@@ -202,26 +213,26 @@ import KbButton from '@/components/common/KbButton.vue';
 
 const router = useRouter();
 
-
 const scenarios = ref([]);
 const loadingScenarios = ref(false);
 const selectedCode = ref('');
 const selectedLevel = ref('');
+const blockedNotice = ref('');
 
 const result = ref(null);
 const calculating = ref(false);
 const loadError = ref('');
+const failedStage = ref('');   // 'scenarios' | 'result'
 
 const showBreakdown = ref(false);
 const showBasis = ref(false);
 
+// 응답 역전 방지용 요청 순번.
+// 시나리오를 빠르게 여러 번 누르면 늦게 도착한 이전 응답이 최신 결과를 덮는다.
+let reqId = 0;
+
 const selectedScenario = computed(() =>
     scenarios.value.find((s) => s.scenarioCode === selectedCode.value) || null);
-
-const unavailableReason = computed(() => {
-  const s = scenarios.value.find((x) => !x.available);
-  return s ? s.unavailableReason : '';
-});
 
 const gradeClass = computed(() => gradeClassOf(result.value?.grade));
 
@@ -231,11 +242,33 @@ function gradeClassOf(grade) {
   return 'is-danger';
 }
 
-// 지출 구성 막대의 비율. 합계가 0이면 0%로 둔다
+/**
+ * 영향 카테고리 판정.
+ * 백엔드가 affected 를 안 내려주면 선택한 시나리오의 대상 카테고리로 대신 판정한다.
+ * 의료비는 카테고리 무관 고정 금액이고 복합 위기는 대상이 'ALL' 이라 표시되지 않는다.
+ */
+function isAffected(b) {
+  if (b.affected !== undefined && b.affected !== null) return b.affected;
+
+  const target = selectedScenario.value?.targetCategory;
+  if (!target || target === 'ALL') return false;
+  return b.categoryName === target;
+}
+
+/**
+ * 지출 구성 막대의 비율.
+ * 분모를 monthlySpending 이 아니라 세 구간의 합으로 둔다.
+ * 의료비를 통계 기대값으로 대체하는 계산 때문에 둘이 어긋나면
+ * 막대가 100%를 넘거나 모자라기 때문이다.
+ */
 function pct(amount) {
-  const total = (result.value?.monthlySpending) || 0;
+  const r = result.value;
+  if (!r) return '0%';
+
+  const total = (r.fixedTotal || 0) + (r.variableTotal || 0) + (r.adjustableTotal || 0);
   if (!total) return '0%';
-  return `${(amount / total * 100).toFixed(1)}%`;
+
+  return `${((amount || 0) / total * 100).toFixed(1)}%`;
 }
 
 function won(v) {
@@ -244,6 +277,8 @@ function won(v) {
 
 async function loadScenarios() {
   loadingScenarios.value = true;
+  loadError.value = '';
+
   try {
     const data = await stressApi.getScenarios();
     scenarios.value = data;
@@ -256,6 +291,7 @@ async function loadScenarios() {
       await calculate();
     }
   } catch (e) {
+    failedStage.value = 'scenarios';
     loadError.value = '시나리오를 불러오지 못했어요.';
     console.error(e);
   } finally {
@@ -264,7 +300,20 @@ async function loadScenarios() {
 }
 
 function selectScenario(s) {
+  // 계산할 수 없는 시나리오는 사유만 보여주고 요청하지 않는다
+  if (!s.available) {
+    blockedNotice.value = s.unavailableReason || '아직 준비 중인 시나리오예요.';
+    return;
+  }
+
+  blockedNotice.value = '';
   selectedCode.value = s.scenarioCode;
+
+  // 시나리오마다 강도 구성이 다를 수 있어 없는 강도면 보통으로 되돌린다
+  if (!s.levels?.some((lv) => lv.shockLevel === selectedLevel.value)) {
+    selectedLevel.value = 'MID';
+  }
+
   calculate();
 }
 
@@ -276,17 +325,35 @@ function selectLevel(level) {
 async function calculate() {
   if (!selectedCode.value || !selectedLevel.value) return;
 
+  const myReq = ++reqId;
   calculating.value = true;
   loadError.value = '';
 
   try {
     const data = await stressApi.getResult(selectedCode.value, selectedLevel.value);
+    if (myReq !== reqId) return;   // 늦게 온 이전 응답은 버린다
     result.value = data;
   } catch (e) {
+    if (myReq !== reqId) return;
+
+    failedStage.value = 'result';
     loadError.value = '계산에 실패했어요. 잠시 후 다시 시도해주세요.';
     console.error(e);
   } finally {
-    calculating.value = false;
+    if (myReq === reqId) calculating.value = false;
+  }
+}
+
+/**
+ * 실패한 지점에 따라 다시 부를 대상이 다르다.
+ * 시나리오 조회가 실패하면 selectedCode 가 비어 있어 calculate 가 그냥 return 하므로,
+ * '다시 시도'를 눌러도 아무 일이 일어나지 않는다.
+ */
+function retry() {
+  if (failedStage.value === 'scenarios' || scenarios.value.length === 0) {
+    loadScenarios();
+  } else {
+    calculate();
   }
 }
 
@@ -308,7 +375,20 @@ onMounted(loadScenarios);
   display: flex;
   flex-direction: column;
   gap: 20px;
+  max-width: 480px;
+  margin: 0 auto;
 }
+
+/* 결과를 div 로 감싸면 부모의 flex gap 이 안 먹으므로 같은 간격을 다시 준다.
+   재계산 중에는 결과를 지우지 않고 흐리게만 해서 화면이 튀지 않게 한다 */
+.result-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: opacity 0.15s ease;
+}
+
+.result-wrap.is-dim { opacity: 0.45; }
 
 /* ---- 상태 ---- */
 .state-box {
@@ -336,6 +416,30 @@ onMounted(loadScenarios);
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: #ffe8e8;
+  font-size: 12.5px;
+  color: #a83030;
+}
+
+.retry-btn {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border: 1px solid #e0a6a6;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #a83030;
+  cursor: pointer;
+}
 
 /* ---- 제목 ---- */
 .page-head { padding-top: 4px; }
@@ -375,6 +479,7 @@ onMounted(loadScenarios);
 }
 
 .scenario-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -391,9 +496,23 @@ onMounted(loadScenarios);
   background: #fffaeb;
 }
 
-.scenario-card.is-disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
+.scenario-card.is-locked {
+  background: #f8f7f2;
+  border-style: dashed;
+}
+
+.scenario-card.is-locked .scenario-name,
+.scenario-card.is-locked .scenario-target { color: #a8a29a; }
+
+.lock-tag {
+  margin-top: 4px;
+  align-self: flex-start;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #ece8e0;
+  color: #7d766d;
+  font-size: 10px;
+  font-weight: 600;
 }
 
 .scenario-name {
@@ -409,11 +528,17 @@ onMounted(loadScenarios);
 
 .hint-warn {
   margin: 0;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: #fffaeb;
   font-size: 12px;
-  color: #b6964d;
+  color: #8a6d1f;
+  line-height: 1.5;
 }
 
-/* ---- 강도 ---- */
+/* ---- 강도 ----
+   선택 표시를 시나리오 카드와 같은 시각 언어로 맞춘다.
+   검은 배경은 화면에서 가장 강한 요소가 되어 주인공인 점수 카드보다 먼저 눈에 들어온다 */
 .level-row {
   display: flex;
   gap: 8px;
@@ -432,12 +557,12 @@ onMounted(loadScenarios);
 }
 
 .level-btn.is-selected {
-  border-color: #2e2a24;
-  background: #2e2a24;
+  border-color: #ffbc00;
+  background: #fffaeb;
 }
 
-.level-btn.is-selected .level-label { color: #ffffff; }
-.level-btn.is-selected .level-value { color: #d8d2c8; }
+.level-btn.is-selected .level-label { color: #2e2a24; }
+.level-btn.is-selected .level-value { color: #8a6d1f; }
 
 .level-label {
   font-size: 13.5px;
@@ -627,6 +752,12 @@ onMounted(loadScenarios);
 }
 
 .reduce-main strong { color: #c99400; }
+
+.reduce-grade-line {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6f6860;
+}
 
 .reduce-grade {
   padding: 2px 7px;
