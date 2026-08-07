@@ -7,6 +7,7 @@ export default [
       hideTabBar: true,
       title: '로그인',
       headerType: 'root',
+      
     },
     component: () => import('../pages/auth/Login.vue'),
   },
