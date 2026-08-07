@@ -134,10 +134,12 @@
           {{ addButtonText }}
         </button>
 
+        <!-- [상호] 2026-08-07 : detail.aplyUrlAddr 대신 applyUrl 을 본다.
+             값의 존재만 보면 열리지 않는 주소에도 버튼이 활성화된다. -->
         <button
           type="button"
           class="detail-button primary"
-          :disabled="!detail.aplyUrlAddr"
+          :disabled="!applyUrl"
           @click="moveToApplyPage"
         >
           신청하러 가기
@@ -353,6 +355,38 @@ const jobLabel = computed(() => {
   return (detail.value?.jobNames ?? []).join(', ');
 });
 
+/**
+ * [상호] 2026-08-07 : 신청 링크 정리 추가
+ *
+ * 원본 aply_url_addr 에는 빈 문자열, 스킴 없는 주소('www.…'),
+ * URL 이 아닌 값('전화문의', '-'), 앞뒤 공백이 섞여 있다.
+ * 값의 존재만 보고 window.open 을 부르면 상대 경로로 해석돼 엉뚱한 곳으로 간다.
+ * EngineResult.vue 의 normalizeUrl 과 같은 규칙으로 맞췄다.
+ *
+ * 서버(BenefitMapper.xml)가 관리자 지정 URL을 우선해 내려주므로
+ * 여기서 걸러지는 것은 온통청년 원본뿐이다.
+ */
+const applyUrl = computed(() => {
+  const raw = (detail.value?.aplyUrlAddr || '').trim();
+
+  if (!raw) {
+    return '';
+  }
+
+  // 동기화 과정에서 & 가 &amp; 로 저장된 값이 있어 되돌린다
+  const decoded = raw.replace(/&amp;/g, '&');
+
+  if (/^https?:\/\//i.test(decoded)) {
+    return decoded;
+  }
+
+  if (/^www\./i.test(decoded)) {
+    return `https://${decoded}`;
+  }
+
+  return '';
+});
+
 const loadDetail = async () => {
   if (!Number.isInteger(benefitNo.value) || benefitNo.value <= 0) {
     errorMessage.value = '잘못된 혜택 번호입니다.';
@@ -404,14 +438,13 @@ const addToApplied = async () => {
   }
 };
 
+// [상호] 2026-08-07 : 원본값 대신 정리된 applyUrl 을 연다
 const moveToApplyPage = () => {
-  const url = detail.value?.aplyUrlAddr;
-
-  if (!url) {
+  if (!applyUrl.value) {
     return;
   }
 
-  window.open(url, '_blank', 'noopener,noreferrer');
+  window.open(applyUrl.value, '_blank', 'noopener,noreferrer');
 };
 
 watch(benefitNo, () => {

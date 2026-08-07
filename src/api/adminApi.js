@@ -31,6 +31,16 @@ export default {
     );
     return data;
   },
+  // ADMIN-02 관리자 지정 신청 URL 저장·해제
+  // 빈 문자열을 보내면 해제되고 원본(aply_url_addr)으로 되돌아간다
+  async changeCustomApplyUrl(benefitNo, customApplyUrl) {
+    const { data } = await instance.patch(
+        `${BASE_URL}/benefits/${benefitNo}/apply-url`,
+        null,
+        { params: { customApplyUrl } },
+    );
+    return data;
+  },
 
   // ADMIN-03 동기화 로그 목록
   async getSyncLogs(params) {

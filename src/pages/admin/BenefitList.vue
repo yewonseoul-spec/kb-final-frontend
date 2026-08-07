@@ -73,6 +73,20 @@
             </div>
           </div>
         </div>
+
+        <!--
+          배지 뜻풀이. 중복수혜 필터를 켰을 때만 보여준다.
+          평소에는 표에 잘 안 걸리는 정보라 항상 띄우면 화면만 복잡해진다.
+        -->
+        <div v-if="filters.hasConflict" class="rule-legend mt-3">
+          <span class="badge rule rule-group">G01</span> 같은 묶음의 혜택은 하나만 받을 수 있음
+          <span class="sep">·</span>
+          <span class="badge rule rule-pair">개별</span> 엔진이 후보에서 빼거나 감점함
+          <span class="sep">·</span>
+          <span class="badge rule rule-external">외부</span> 우리 DB에 없는 제도라 안내만 함
+          <span class="sep">·</span>
+          <span class="badge rule rule-review">검수</span> 아직 확인 전이라 엔진이 무시함
+        </div>
       </div>
     </div>
 
@@ -122,7 +136,7 @@
                     조회수 <span class="sort-mark">{{ sortMark('inqCnt') }}</span>
                   </th>
 
-                  <th style="width:80px">중복규칙</th>
+                  <th style="width:150px">중복규칙</th>
                   <th style="width:170px">관리</th>
                 </tr>
               </thead>
@@ -149,12 +163,38 @@
                     </div>
                   </td>
                   <td class="text-end small">{{ (b.inqCnt ?? 0).toLocaleString() }}</td>
+
+                  <!--
+                    그룹 코드만 보여주면 개별쌍 규칙에만 걸린 혜택이 '-' 로 나와서,
+                    중복수혜 필터로 걸러낸 목록인데도 아무 표시가 없는 행이 생긴다.
+                    엔진의 처리 방식이 다르므로 합치지 않고 넷으로 나눠 보여준다.
+                  -->
                   <td>
-                    <span v-if="b.conflictGroupCode" class="badge bg-info-subtle text-info">
-                      {{ b.conflictGroupCode }}
-                    </span>
+                    <div v-if="hasRule(b)" class="d-flex flex-wrap gap-1">
+                      <span v-if="b.conflictGroupCode"
+                            class="badge rule rule-group"
+                            title="같은 그룹 코드가 붙은 혜택끼리는 하나만 받을 수 있습니다">
+                        {{ b.conflictGroupCode }}
+                      </span>
+                      <span v-if="b.pairRuleCount > 0"
+                            class="badge rule rule-pair"
+                            title="다른 혜택과 짝으로 등록된 규칙입니다. 엔진이 후보에서 빼거나 점수를 깎습니다">
+                        개별 {{ b.pairRuleCount }}
+                      </span>
+                      <span v-if="b.externalRuleCount > 0"
+                            class="badge rule rule-external"
+                            title="상대가 온통청년 정책이 아니라 우리 DB에 없습니다. 회원이 받고 있는지 알 수 없어 안내만 하고 점수는 건드리지 않습니다">
+                        외부 {{ b.externalRuleCount }}
+                      </span>
+                      <span v-if="b.reviewRuleCount > 0"
+                            class="badge rule rule-review"
+                            title="아직 공고문으로 확인되지 않은 규칙입니다. 엔진은 무시하며 관리자가 검수해야 합니다">
+                        검수 {{ b.reviewRuleCount }}
+                      </span>
+                    </div>
                     <span v-else class="text-muted small">-</span>
                   </td>
+
                   <td>
                     <button class="btn btn-sm btn-outline-secondary me-1"
                             @click="openDetail(b.benefitNo)">상세</button>
@@ -221,7 +261,7 @@
     </div>
 
     <!-- 상세 -->
-    <div v-if="detail" class="modal-backdrop-custom" @click.self="detail = null">
+    <div v-if="detail" class="modal-backdrop-custom" @click.self="closeDetail">
       <div class="modal-box modal-wide">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
@@ -234,7 +274,7 @@
             <h6 class="fw-bold mt-2 mb-0">{{ detail.plcyNm }}</h6>
             <small class="text-muted">{{ detail.sprvsnInstCdNm }}</small>
           </div>
-          <button class="btn-close" @click="detail = null"></button>
+          <button class="btn-close" @click="closeDetail"></button>
         </div>
 
         <dl class="row small mb-0">
@@ -276,6 +316,57 @@
           <dt class="col-4 col-md-3 text-muted fw-normal">신청 방법</dt>
           <dd class="col-8 col-md-9 mb-0">{{ detail.plcyAplyMthdCn || '-' }}</dd>
         </dl>
+
+        <!--
+          신청 링크 관리.
+          원본과 지정값을 함께 보여주는 이유는, 원본이 비어 있거나 잘못된 값인 경우가
+          많아서 '왜 바꿔야 했는지'가 화면에서 바로 보여야 하기 때문이다.
+          원본은 지우지 않으므로 지정을 해제하면 언제든 되돌아간다.
+        -->
+        <div class="url-box mt-4">
+          <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <div class="fw-bold small">신청 링크</div>
+            <small class="text-muted">동기화해도 지정값은 유지됩니다</small>
+          </div>
+
+          <div class="url-row">
+            <span class="url-label">원본</span>
+            <span v-if="originText" class="url-value">{{ originText }}</span>
+            <span v-else class="url-value text-muted">비어 있음 (온통청년이 값을 주지 않음)</span>
+          </div>
+
+          <div class="url-row">
+            <span class="url-label">사용자 노출</span>
+            <span v-if="effectiveUrl" class="url-value">
+              {{ effectiveUrl }}
+              <span v-if="detail.customApplyUrl" class="badge rule rule-custom ms-1">지정값</span>
+            </span>
+            <span v-else class="url-value text-danger">
+              없음 — 사용자 화면에서 신청 버튼이 비활성됩니다
+            </span>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+            <input v-model="urlDraft" type="text"
+                   class="form-control form-control-sm"
+                   placeholder="https:// 로 시작하는 주소"
+                   :disabled="urlSaving"
+                   @keyup.enter="saveCustomUrl" />
+            <button class="btn btn-sm btn-dark px-3"
+                    :disabled="urlSaving"
+                    @click="saveCustomUrl">지정</button>
+            <button class="btn btn-sm btn-outline-secondary px-3"
+                    :disabled="urlSaving || !detail.customApplyUrl"
+                    @click="clearCustomUrl">해제</button>
+          </div>
+
+          <div v-if="urlError" class="alert alert-danger py-2 px-3 small mt-2 mb-0">
+            {{ urlError }}
+          </div>
+          <div v-else-if="urlMessage" class="alert alert-success py-2 px-3 small mt-2 mb-0">
+            {{ urlMessage }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -336,10 +427,26 @@ const detail = ref(null);
 const pendingToggle = ref(null);
 const togglingNo = ref(null);
 
+// 신청 링크 지정
+const urlDraft = ref('');
+const urlSaving = ref(false);
+const urlError = ref('');
+const urlMessage = ref('');
+
 const sortLabel = computed(() => {
   if (!sort.key) return '· 최신 등록순';
   const dir = sort.order === 'asc' ? '오름차순' : '내림차순';
   return `· ${SORT_LABEL[sort.key]} ${dir}`;
+});
+
+// 원본은 빈 문자열·공백만 있는 경우가 많아 그대로 쓰면 '값이 있는 것처럼' 보인다
+const originText = computed(() => (detail.value?.aplyUrlAddr || '').trim());
+
+// 사용자에게 실제로 나가는 링크. 서버의 COALESCE 와 같은 규칙이라
+// 관리자가 저장 전에 결과를 미리 확인할 수 있다
+const effectiveUrl = computed(() => {
+  if (!detail.value) return '';
+  return (detail.value.customApplyUrl || '').trim() || originText.value;
 });
 
 // 현재 페이지 주변 최대 5개만 노출한다
@@ -445,9 +552,76 @@ function goPage(page) {
 async function openDetail(benefitNo) {
   try {
     detail.value = await adminApi.getBenefitDetail(benefitNo);
+    // 입력창은 항상 현재 지정값에서 시작한다. 이전 혜택의 입력이 남으면 안 된다
+    urlDraft.value = detail.value.customApplyUrl || '';
+    urlError.value = '';
+    urlMessage.value = '';
   } catch (e) {
     loadError.value = '혜택 상세를 불러오지 못했습니다.';
     console.error(e);
+  }
+}
+
+function closeDetail() {
+  detail.value = null;
+  urlDraft.value = '';
+  urlError.value = '';
+  urlMessage.value = '';
+}
+
+/**
+ * 서버도 같은 형식을 검사하지만 여기서 먼저 걸러낸다.
+ * 스킴 빠뜨림이 가장 흔한 실수인데, 서버까지 갔다 오면 500 응답이 되어
+ * 무엇이 잘못됐는지 화면에 제대로 나오지 않는다.
+ */
+function validateUrl(value) {
+  if (!value) return '';
+  if (!/^https?:\/\//i.test(value)) {
+    return 'https:// 또는 http:// 로 시작하는 주소를 입력해 주세요.';
+  }
+  if (value.length > 500) {
+    return '주소가 너무 깁니다. 500자 이내로 입력해 주세요.';
+  }
+  return '';
+}
+
+async function saveCustomUrl() {
+  const value = urlDraft.value.trim();
+
+  const message = validateUrl(value);
+  if (message) {
+    urlError.value = message;
+    urlMessage.value = '';
+    return;
+  }
+  if (!value) {
+    urlError.value = '지정할 주소를 입력해 주세요. 되돌리려면 해제를 눌러주세요.';
+    urlMessage.value = '';
+    return;
+  }
+
+  await applyCustomUrl(value, '지정했습니다. 사용자 화면에 이 주소가 나갑니다.');
+}
+
+async function clearCustomUrl() {
+  await applyCustomUrl('', '해제했습니다. 원본 주소로 되돌아갑니다.');
+}
+
+async function applyCustomUrl(value, successMessage) {
+  urlSaving.value = true;
+  urlError.value = '';
+  urlMessage.value = '';
+
+  try {
+    // 응답이 갱신된 상세라 화면 전체가 한 번에 최신 상태가 된다
+    detail.value = await adminApi.changeCustomApplyUrl(detail.value.benefitNo, value);
+    urlDraft.value = detail.value.customApplyUrl || '';
+    urlMessage.value = successMessage;
+  } catch (e) {
+    urlError.value = '저장하지 못했습니다. 주소 형식을 확인하거나 잠시 후 다시 시도해 주세요.';
+    console.error(e);
+  } finally {
+    urlSaving.value = false;
   }
 }
 
@@ -473,6 +647,14 @@ async function confirmToggle() {
   } finally {
     togglingNo.value = null;
   }
+}
+
+// 네 종류 중 하나라도 있으면 배지 영역을, 하나도 없으면 '-' 를 보여준다
+function hasRule(b) {
+  return !!b.conflictGroupCode
+      || b.pairRuleCount > 0
+      || b.externalRuleCount > 0
+      || b.reviewRuleCount > 0;
 }
 
 function categoryName(code) {
@@ -582,6 +764,63 @@ onMounted(() => {
 .cat-4 { background-color: #fff2d6; color: #98701a; border-color: #f7e2b0; }  /* 복지·문화 */
 .cat-5 { background-color: #e3f4f4; color: #16706e; border-color: #c7e8e7; }  /* 참여·권리 */
 .cat-etc { background-color: #efece4; color: #6f6860; border-color: #e2ddd2; }
+
+/*
+  중복수혜 규칙 배지.
+  카테고리 배지와 같은 줄에 놓이므로 채도를 낮춰 카테고리 쪽이 먼저 읽히게 한다.
+  검수만 점선 테두리를 쓰는데, '아직 확정되지 않았다'를 색이 아니라
+  형태로 구분하면 색약인 사용자도 구분할 수 있다.
+*/
+.rule {
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 11px;
+  cursor: help;
+}
+
+.rule-group    { background-color: #eceff4; color: #414a58; border-color: #d6dbe4; }
+.rule-pair     { background-color: #fdecec; color: #a83232; border-color: #f5d2d2; }
+.rule-external { background-color: #fdf0e0; color: #9a5f16; border-color: #f2ddbe; }
+.rule-review   { background-color: #fff;    color: #7a736a; border-color: #b9b2a8; border-style: dashed; }
+.rule-custom   { background-color: #e6f5ec; color: #1e7a45; border-color: #c9e8d6; cursor: default; }
+
+/* 배지 뜻풀이 줄 */
+.rule-legend {
+  font-size: 12px;
+  color: #6f6860;
+  line-height: 2;
+}
+
+.rule-legend .sep {
+  margin: 0 6px;
+  color: #cfc9bf;
+}
+
+/* 신청 링크 관리 영역 */
+.url-box {
+  background: #faf9f6;
+  border: 1px solid #e8e4da;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.url-row {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.url-label {
+  flex: 0 0 72px;
+  color: #908980;
+}
+
+/* 긴 주소가 모달 폭을 밀어내지 않도록 강제로 줄바꿈한다 */
+.url-value {
+  flex: 1 1 auto;
+  word-break: break-all;
+}
 
 /* D-day 아래 붙는 실제 마감일. 주가 아니므로 작고 흐리게 둔다 */
 .deadline-date {
