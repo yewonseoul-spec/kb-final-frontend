@@ -2,7 +2,7 @@
   <div>
     <div class="mb-4">
       <h4 class="mb-1 fw-bold">혜택 관리</h4>
-      <small class="text-muted">온통청년에서 수집한 청년혜택을 조회하고 노출 상태를 관리합니다.</small>
+      <small class="text-muted">온통청년에서 수집한 청년혜택을 조회하고 활성 상태를 관리합니다.</small>
     </div>
 
     <!-- 필터 -->
@@ -26,7 +26,7 @@
 
         <div class="d-flex flex-wrap gap-4">
           <div>
-            <div class="small text-muted mb-1">노출 상태</div>
+            <div class="small text-muted mb-1">활성 상태</div>
             <div class="btn-group btn-group-sm">
               <button v-for="opt in activeOptions" :key="opt.value"
                       class="btn"
@@ -92,7 +92,10 @@
 
         <template v-else-if="data">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0 fw-bold">전체 {{ data.totalCount.toLocaleString() }}건</h6>
+            <div class="d-flex align-items-baseline gap-2">
+              <h6 class="mb-0 fw-bold">전체 {{ data.totalCount.toLocaleString() }}건</h6>
+              <small class="text-muted">{{ sortLabel }}</small>
+            </div>
             <small class="text-muted" v-if="data.totalPages > 0">
               {{ data.page }} / {{ data.totalPages }} 페이지
             </small>
@@ -102,31 +105,49 @@
             <table class="table table-sm align-middle mb-0">
               <thead class="table-light">
                 <tr class="small text-muted">
-                  <th style="width:70px">상태</th>
+                  <!-- 상태·카테고리·중복규칙은 위에 필터가 있어 정렬을 넣지 않는다 -->
+                  <th style="width:80px">상태</th>
                   <th style="width:90px">카테고리</th>
-                  <th style="min-width:260px">혜택명</th>
-                  <th style="min-width:140px">주관기관</th>
-                  <th style="width:110px">마감</th>
-                  <th class="text-end" style="width:80px">조회수</th>
+
+                  <th style="min-width:260px" class="sortable" @click="toggleSort('plcyNm')">
+                    혜택명 <span class="sort-mark">{{ sortMark('plcyNm') }}</span>
+                  </th>
+                  <th style="min-width:140px" class="sortable" @click="toggleSort('sprvsnInstCdNm')">
+                    주관기관 <span class="sort-mark">{{ sortMark('sprvsnInstCdNm') }}</span>
+                  </th>
+                  <th style="width:130px" class="sortable" @click="toggleSort('deadline')">
+                    마감 <span class="sort-mark">{{ sortMark('deadline') }}</span>
+                  </th>
+                  <th class="text-end sortable" style="width:90px" @click="toggleSort('inqCnt')">
+                    조회수 <span class="sort-mark">{{ sortMark('inqCnt') }}</span>
+                  </th>
+
                   <th style="width:80px">중복규칙</th>
-                  <th style="width:150px">관리</th>
+                  <th style="width:170px">관리</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="b in data.benefits" :key="b.benefitNo">
                   <td>
                     <span class="badge" :class="activeBadge(b.isActive)">
-                      {{ b.isActive === 'Y' ? '노출' : '숨김' }}
+                      {{ b.isActive === 'Y' ? '활성' : '비활성' }}
                     </span>
                   </td>
                   <td>
-                    <span class="badge bg-light text-muted border">
+                    <span class="badge cat" :class="categoryClass(b.categoryCode)">
                       {{ categoryName(b.categoryCode) }}
                     </span>
                   </td>
                   <td class="small">{{ b.plcyNm }}</td>
                   <td class="small text-muted">{{ b.sprvsnInstCdNm }}</td>
-                  <td class="small" :class="ddayTone(b)">{{ deadlineText(b) }}</td>
+                  <!-- D-day는 남은 기간이라 언제 끝나는지는 알 수 없다.
+                       상세를 열지 않아도 판단할 수 있게 날짜를 같이 보여준다. -->
+                  <td class="small">
+                    <div :class="ddayTone(b)">{{ deadlineText(b) }}</div>
+                    <div v-if="b.applyEndDate" class="deadline-date">
+                      {{ formatDate(b.applyEndDate) }}
+                    </div>
+                  </td>
                   <td class="text-end small">{{ (b.inqCnt ?? 0).toLocaleString() }}</td>
                   <td>
                     <span v-if="b.conflictGroupCode" class="badge bg-info-subtle text-info">
@@ -141,7 +162,7 @@
                             :class="b.isActive === 'Y' ? 'btn-outline-danger' : 'btn-outline-success'"
                             :disabled="togglingNo === b.benefitNo"
                             @click="askToggle(b)">
-                      {{ b.isActive === 'Y' ? '숨김' : '노출' }}
+                      {{ b.isActive === 'Y' ? '비활성화' : '활성화' }}
                     </button>
                   </td>
                 </tr>
@@ -178,16 +199,19 @@
     <div v-if="pendingToggle" class="modal-backdrop-custom" @click.self="pendingToggle = null">
       <div class="modal-box">
         <h6 class="fw-bold mb-3">
-          {{ pendingToggle.isActive === 'Y' ? '노출을 중단할까요?' : '다시 노출할까요?' }}
+          {{ pendingToggle.isActive === 'Y' ? '비활성화할까요?' : '다시 활성화할까요?' }}
         </h6>
         <p class="small mb-2">{{ pendingToggle.plcyNm }}</p>
         <p class="small text-muted mb-4">
           <template v-if="pendingToggle.isActive === 'Y'">
-            숨김 처리하면 추천 대상에서 제외됩니다. 데이터는 삭제되지 않습니다.
+            비활성화하면 추천 대상에서 제외됩니다. 데이터는 삭제되지 않습니다.
           </template>
           <template v-else>
             다시 추천 대상에 포함됩니다.
           </template>
+          <span class="d-block mt-2">
+            다음 동기화에서 온통청년 기준으로 다시 계산될 수 있습니다.
+          </span>
         </p>
         <div class="d-flex justify-content-end gap-2">
           <button class="btn btn-sm btn-outline-secondary" @click="pendingToggle = null">취소</button>
@@ -201,11 +225,11 @@
       <div class="modal-box modal-wide">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <span class="badge bg-light text-muted border me-1">
+            <span class="badge cat me-1" :class="categoryClass(detail.categoryCode)">
               {{ categoryName(detail.categoryCode) }}
             </span>
             <span class="badge" :class="activeBadge(detail.isActive)">
-              {{ detail.isActive === 'Y' ? '노출' : '숨김' }}
+              {{ detail.isActive === 'Y' ? '활성' : '비활성' }}
             </span>
             <h6 class="fw-bold mt-2 mb-0">{{ detail.plcyNm }}</h6>
             <small class="text-muted">{{ detail.sprvsnInstCdNm }}</small>
@@ -272,8 +296,8 @@ const CATEGORY = {
 
 const activeOptions = [
   { value: '', label: '전체' },
-  { value: 'Y', label: '노출' },
-  { value: 'N', label: '숨김' },
+  { value: 'Y', label: '활성' },
+  { value: 'N', label: '비활성' },
 ];
 
 const categoryOptions = [
@@ -293,12 +317,30 @@ const filters = reactive({
   hasConflict: false,
 });
 
+// 정렬은 서버가 처리한다. 목록이 2,700건이라 현재 페이지 20건만 정렬하면
+// '마감 임박순'이 전체 기준이 아니게 되어 잘못된 결과를 보여준다.
+// sort 가 비어 있으면 서버 기본값(최신 등록순)을 쓴다.
+const sort = reactive({ key: '', order: 'asc' });
+
+const SORT_LABEL = {
+  plcyNm: '혜택명',
+  sprvsnInstCdNm: '주관기관',
+  deadline: '마감',
+  inqCnt: '조회수',
+};
+
 const loading = ref(false);
 const loadError = ref('');
 const data = ref(null);
 const detail = ref(null);
 const pendingToggle = ref(null);
 const togglingNo = ref(null);
+
+const sortLabel = computed(() => {
+  if (!sort.key) return '· 최신 등록순';
+  const dir = sort.order === 'asc' ? '오름차순' : '내림차순';
+  return `· ${SORT_LABEL[sort.key]} ${dir}`;
+});
 
 // 현재 페이지 주변 최대 5개만 노출한다
 const pageNumbers = computed(() => {
@@ -324,6 +366,8 @@ async function load(page = 1) {
       categoryCode: filters.categoryCode || undefined,
       deadlineSoon: filters.deadlineSoon || undefined,
       hasConflict: filters.hasConflict || undefined,
+      sort: sort.key || undefined,
+      order: sort.key ? sort.order : undefined,
       page,
       size: PAGE_SIZE,
     });
@@ -338,6 +382,28 @@ async function load(page = 1) {
 // 필터가 바뀌면 항상 1페이지부터 다시 본다
 function search() {
   load(1);
+}
+
+/**
+ * 같은 컬럼을 계속 누르면 오름차순 → 내림차순 → 해제(기본) 로 돈다.
+ * 해제를 넣은 이유는 기본 정렬(최신 등록순)로 되돌릴 방법이 필요해서다.
+ */
+function toggleSort(key) {
+  if (sort.key !== key) {
+    sort.key = key;
+    sort.order = 'asc';
+  } else if (sort.order === 'asc') {
+    sort.order = 'desc';
+  } else {
+    sort.key = '';
+    sort.order = 'asc';
+  }
+  load(1);
+}
+
+function sortMark(key) {
+  if (sort.key !== key) return '⇅';
+  return sort.order === 'asc' ? '▲' : '▼';
 }
 
 function selectActive(value) {
@@ -366,6 +432,8 @@ function resetFilters() {
   filters.categoryCode = '';
   filters.deadlineSoon = false;
   filters.hasConflict = false;
+  sort.key = '';
+  sort.order = 'asc';
   search();
 }
 
@@ -376,7 +444,7 @@ function goPage(page) {
 
 async function openDetail(benefitNo) {
   try {
-      detail.value = await adminApi.getBenefitDetail(benefitNo);
+    detail.value = await adminApi.getBenefitDetail(benefitNo);
   } catch (e) {
     loadError.value = '혜택 상세를 불러오지 못했습니다.';
     console.error(e);
@@ -409,6 +477,11 @@ async function confirmToggle() {
 
 function categoryName(code) {
   return CATEGORY[code] || '기타';
+}
+
+// 카테고리를 색으로 구분해 목록에서 한눈에 묶이도록 한다
+function categoryClass(code) {
+  return `cat-${CATEGORY[code] ? code : 'etc'}`;
 }
 
 function activeBadge(isActive) {
@@ -481,6 +554,41 @@ onMounted(() => {
 
 <style scoped>
 .table td { word-break: keep-all; }
+
+/* 정렬 가능한 컬럼임을 알린다 */
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sortable:hover { color: #2e2a24; }
+
+.sort-mark {
+  font-size: 10px;
+  opacity: 0.55;
+  margin-left: 2px;
+}
+
+/* 카테고리 색상 — 목록에서 같은 분야가 한눈에 묶이도록 한다 */
+.cat {
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+
+.cat-1 { background-color: #e8f0fe; color: #1a56c4; border-color: #cfe0fb; }  /* 일자리 */
+.cat-2 { background-color: #e6f5ec; color: #1e7a45; border-color: #c9e8d6; }  /* 주거 */
+.cat-3 { background-color: #f0e9fb; color: #6b3fa0; border-color: #ddd0f4; }  /* 교육 */
+.cat-4 { background-color: #fff2d6; color: #98701a; border-color: #f7e2b0; }  /* 복지·문화 */
+.cat-5 { background-color: #e3f4f4; color: #16706e; border-color: #c7e8e7; }  /* 참여·권리 */
+.cat-etc { background-color: #efece4; color: #6f6860; border-color: #e2ddd2; }
+
+/* D-day 아래 붙는 실제 마감일. 주가 아니므로 작고 흐리게 둔다 */
+.deadline-date {
+  font-size: 11px;
+  color: #908980;
+  margin-top: 1px;
+}
 
 .modal-backdrop-custom {
   position: fixed;

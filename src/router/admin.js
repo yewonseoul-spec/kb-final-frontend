@@ -3,7 +3,7 @@ export default [
   {
     path: '/admin',
     component: () => import('../pages/admin/AdminLayout.vue'),
-    meta: { requiresAuth: true, requiresAdmin: true, title: '관리자' },
+    meta: { requiresAuth: true, requiresAdmin: true, title: '관리자', hideTabBar: true },
     children: [
       {
         path: '',

@@ -121,6 +121,8 @@
                   <td class="text-end small">{{ log.insertCnt }}건</td>
                   <td class="text-end small">{{ log.updateCnt }}건</td>
                   <td class="text-end small">{{ formatDuration(log.durationMs) }}</td>
+
+                  <!-- 요약만 보여준다. 원문 확인은 '전체 보기'의 동기화 로그 화면에서 한다 -->
                   <td class="small">
                     <span v-if="log.errorMsg"
                           :class="log.resultStatus === 'F' ? 'text-danger' : 'text-warning-emphasis'">
@@ -148,6 +150,7 @@
 import { ref, computed, onMounted } from 'vue';
 import adminApi from '@/api/adminApi';
 import SyncPanel from '@/components/admin/SyncPanel.vue';
+import { shortenError } from '@/util/syncError';
 
 const CATEGORY = {
   1: '일자리', 2: '주거', 3: '교육', 4: '복지·문화', 5: '참여·권리',
@@ -254,11 +257,6 @@ function formatDateTime(ms) {
 function formatDuration(ms) {
   if (ms === null || ms === undefined) return '-';
   return `${(ms / 1000).toFixed(1)}초`;
-}
-
-// 외부 서버 에러 페이지가 통째로 들어오는 경우가 있어 대시보드에서는 앞부분만 보여준다
-function shortenError(text) {
-  return text.length > 40 ? `${text.slice(0, 40)}…` : text;
 }
 
 onMounted(loadDashboard);

@@ -21,7 +21,7 @@ export default {
     return data;
   },
 
-  // ADMIN-02 노출 상태 변경 (Y/N)
+  // ADMIN-02 활성 상태 변경 (Y/N)
   // 물리 삭제는 FK 제약으로 불가능해 상태 변경만 제공한다
   async changeBenefitActive(benefitNo, isActive) {
     const { data } = await instance.patch(
