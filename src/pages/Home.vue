@@ -193,18 +193,33 @@ onMounted(async () => {
       <section class="section box">
         <div class="section-head">
           <h2 class="section-title">내 자산</h2>
-          <RouterLink to="/asset" class="section-more">전체보기 ›</RouterLink>
         </div>
 
-        <!-- AssetDashboard.vue 의 총 자산 카드와 같은 모양 -->
-        <div class="total-card">
+        <!-- AssetDashboard.vue 의 총 자산 카드와 같은 모양.
+               전체보기 링크 대신 카드 자체를 눌러 자산 화면으로 간다 -->
+        <div
+          class="total-card"
+          role="button"
+          tabindex="0"
+          @click="router.push('/asset')"
+          @keydown.enter="router.push('/asset')"
+        >
           <p class="total-label">총 자산</p>
           <p class="total-amount">{{ formatWon(totalAsset) }}</p>
           <div class="btn-row">
-            <button type="button" class="asset-btn primary" @click="goProducts">
+            <!-- 카드 전체가 눌리므로 버튼은 .stop 으로 이동을 막는다 -->
+            <button
+              type="button"
+              class="asset-btn primary"
+              @click.stop="goProducts"
+            >
               금융 상품 조회
             </button>
-            <button type="button" class="asset-btn secondary" @click="goRatio">
+            <button
+              type="button"
+              class="asset-btn secondary"
+              @click.stop="goRatio"
+            >
               자산 비율 분석
             </button>
           </div>
@@ -214,14 +229,17 @@ onMounted(async () => {
       <section class="section box">
         <div class="section-head">
           <h2 class="section-title">내 소비</h2>
-          <RouterLink to="/consumption" class="section-more"
-            >전체보기 ›</RouterLink
-          >
         </div>
 
         <!-- ConsumptionCal.vue 의 summary-bar. 원본은 그 자체가 흰 카드라
                그대로 쓰면 카드 안에 카드가 된다. 껍데기는 KbCard 에 맡긴다 -->
-        <KbCard>
+        <KbCard
+          class="clickable"
+          role="button"
+          tabindex="0"
+          @click="router.push('/consumption')"
+          @keydown.enter="router.push('/consumption')"
+        >
           <div class="summary-bar">
             <div class="summary-item">
               <span>총 지출</span>
@@ -289,7 +307,7 @@ onMounted(async () => {
 
 .greeting {
   margin: 0 0 28px;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -330,7 +348,7 @@ onMounted(async () => {
 
 .card-title {
   margin: 0;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -454,21 +472,22 @@ onMounted(async () => {
      홈 배너(#2e2a24)와 같은 계열이라 톤이 어긋나지 않는다 */
 .total-card {
   box-sizing: border-box;
-  padding: 24px 20px;
+  padding: 18px 20px;
   border-radius: 16px;
   background: linear-gradient(135deg, #4a4340 0%, #2b2725 100%);
   color: #ffffff;
+  cursor: pointer;
 }
 
 .total-label {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-size: 14px;
   opacity: 0.8;
 }
 
 .total-amount {
-  margin: 0 0 20px;
-  font-size: 28px;
+  font-size: 24px;
+  margin: 0 0 14px;
   font-weight: 700;
 }
 
@@ -481,7 +500,7 @@ onMounted(async () => {
      Pretendard 를 쓰는 나머지 홈 요소와 어긋난다 */
 .asset-btn {
   flex: 1;
-  padding: 12px 0;
+  padding: 10px 0;
   border: none;
   border-radius: 10px;
   font: inherit;
@@ -646,5 +665,15 @@ onMounted(async () => {
 
 .dot.on::before {
   background-color: #ffbc00;
+}
+
+/* KbCard 의 padding 은 공통 컴포넌트 값(20px)이라 홈 안에서만 줄인다 */
+.home :deep(.kb-card) {
+  padding: 16px;
+}
+
+/* KbCard 루트에 붙는다. 자식 컴포넌트 루트는 부모 스코프도 함께 받는다 */
+.clickable {
+  cursor: pointer;
 }
 </style>

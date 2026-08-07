@@ -69,8 +69,8 @@ const MARITAL_OPTIONS = [
     <KbInput
       v-model="profile.income"
       type="number"
-      label="연 소득(원)"
-      placeholder="예) 30000000"
+      label="월 소득(원)"
+      placeholder="예) 2500000"
       :is-error="!!errors.income"
       :error-message="errors.income"
     />

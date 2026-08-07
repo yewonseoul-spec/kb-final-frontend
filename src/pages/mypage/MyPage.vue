@@ -278,7 +278,7 @@ const topApplied = computed(() => applied.value.slice(0, 3));
 
 .member-name {
   margin: 0;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: #2e2a24;
 }
