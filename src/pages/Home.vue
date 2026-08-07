@@ -5,6 +5,8 @@ import KbCard from '@/components/common/KbCard.vue';
 import KbButton from '@/components/common/KbButton.vue';
 import { ref, computed, onMounted } from 'vue';
 import homeApi from '@/api/homeApi';
+import { getAssetDashboard } from '@/api/assetApi';
+import { useConsumptionStore } from '@/stores/consumptionStore';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -30,8 +32,8 @@ const onCta = () => {
     router.push({ name: 'Login' });
     return;
   }
-  // TODO 추천 혜택 페이지가 생기면 목적지를 그쪽으로 바꾼다
-  router.push({ name: 'BenefitSearch' });
+  // 이름 대신 경로 문자열: benefit-main 만 kebab-case 라 담당자가 정리하면 깨진다
+  router.push('/benefit');
 };
 
 // Enigne,Stress 배너 클릭시 해당 페이지로 이동연결
@@ -67,6 +69,35 @@ const goTo = (i) => {
 const popular = ref([]);
 const loading = ref(true);
 
+const consumption = useConsumptionStore();
+
+// 자산 화면이 실패 시 0원을 보여주므로 초기값도 같게 맞춘다
+const totalAsset = ref(0);
+
+const goProducts = () => router.push('/asset/products');
+const goRatio = () => router.push('/asset/ratio');
+
+// AssetDashboard.vue 의 formatWon 과 같은 표기
+const formatWon = (value) => `${Number(value ?? 0).toLocaleString('ko-KR')}원`;
+
+// ConsumptionCal.vue 의 displayAmount 와 같은 규칙.
+// 총 지출은 음수로 넘겨서 '-' 가 붙는다
+const displayAmount = (amount) => {
+  const n = amount || 0;
+  const sign = n < 0 ? '-' : '';
+  return `${sign}${Math.abs(n).toLocaleString()}원`;
+};
+
+const totalSpend = computed(() => consumption.calendarData?.totalSpend || 0);
+const expectedTotal = computed(
+  () => consumption.calendarData?.expectedTotal || 0,
+);
+
+const thisMonth = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
 // 인기 혜택 실패 시에도 멈추지 않게 처리.
 // 빈 배열이면 섹션을 통째로 숨긴다.
 onMounted(async () => {
@@ -78,6 +109,19 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+
+  // 두 컨트롤러 다 user 가 null 이면 바로 터진다(permitAll 이라 401 도 아닌 500). 가드 필수
+  if (!auth.isLogin) return;
+
+  try {
+    const { data } = await getAssetDashboard();
+    totalAsset.value = data.totalAsset;
+  } catch (e) {
+    console.error('자산 요약을 불러오지 못했어요', e);
+  }
+
+  // 스토어가 실패를 calendarError 로 삼키므로 try 로 감쌀 필요가 없다
+  consumption.getCalendar(thisMonth());
 });
 </script>
 
@@ -100,7 +144,6 @@ onMounted(async () => {
       </KbCard>
     </section>
 
-    <!-- 혜택 상세 페이지가 없어 지금은 클릭 불가로 둔다 -->
     <section v-if="loading || popular.length" class="section popular">
       <div class="section-head">
         <h2 class="section-title">요즘 많이 보는 혜택</h2>
@@ -108,17 +151,22 @@ onMounted(async () => {
 
       <KbCard>
         <ol v-if="popular.length" class="popular-list">
-          <li v-for="(b, i) in popular" :key="b.benefitNo" class="popular-item">
-            <span class="popular-rank">{{ i + 1 }}</span>
-            <div class="popular-body">
-              <p class="popular-name">{{ b.plcyNm }}</p>
-              <p class="popular-meta">
-                {{ b.categoryName }}
-                <template v-if="b.sprvsnInstCdNm">
-                  · {{ b.sprvsnInstCdNm }}</template
-                >
-              </p>
-            </div>
+          <li v-for="(b, i) in popular" :key="b.benefitNo">
+            <RouterLink
+              :to="`/benefit/detail/${b.benefitNo}`"
+              class="popular-item popular-link"
+            >
+              <span class="popular-rank">{{ i + 1 }}</span>
+              <div class="popular-body">
+                <p class="popular-name">{{ b.plcyNm }}</p>
+                <p class="popular-meta">
+                  {{ b.categoryName }}
+                  <template v-if="b.sprvsnInstCdNm">
+                    · {{ b.sprvsnInstCdNm }}</template
+                  >
+                </p>
+              </div>
+            </RouterLink>
           </li>
         </ol>
 
@@ -138,9 +186,9 @@ onMounted(async () => {
       </KbCard>
     </section>
 
-    <!-- 자산 백엔드가 없고 소비는 memberNo 가 하드코딩이라 금액은 띄우지 않는다.
-         비로그인에게는 '내 자산'이 어색하고, /consumption 은 requiresAuth 가 없어
-         비로그인이 들어가면 2번 회원 소비가 그대로 보이므로 로그인 시에만 노출한다 -->
+    <!-- 자산·소비는 로그인 회원 본인 데이터라 v-if 로 묶는다.
+           /consumption 은 requiresAuth 가 없어 비로그인도 들어갈 수 있고,
+           두 API 다 비로그인이면 서버에서 터지므로 호출 자체를 막아야 한다 -->
     <template v-if="auth.isLogin">
       <section class="section box">
         <div class="section-head">
@@ -148,9 +196,19 @@ onMounted(async () => {
           <RouterLink to="/asset" class="section-more">전체보기 ›</RouterLink>
         </div>
 
-        <KbCard>
-          <p class="box-text">계좌 연동을 준비하고 있어요</p>
-        </KbCard>
+        <!-- AssetDashboard.vue 의 총 자산 카드와 같은 모양 -->
+        <div class="total-card">
+          <p class="total-label">총 자산</p>
+          <p class="total-amount">{{ formatWon(totalAsset) }}</p>
+          <div class="btn-row">
+            <button type="button" class="asset-btn primary" @click="goProducts">
+              금융 상품 조회
+            </button>
+            <button type="button" class="asset-btn secondary" @click="goRatio">
+              자산 비율 분석
+            </button>
+          </div>
+        </div>
       </section>
 
       <section class="section box">
@@ -161,8 +219,22 @@ onMounted(async () => {
           >
         </div>
 
+        <!-- ConsumptionCal.vue 의 summary-bar. 원본은 그 자체가 흰 카드라
+               그대로 쓰면 카드 안에 카드가 된다. 껍데기는 KbCard 에 맡긴다 -->
         <KbCard>
-          <p class="box-text">달력에서 이번 달 소비를 확인해 보세요</p>
+          <div class="summary-bar">
+            <div class="summary-item">
+              <span>총 지출</span>
+              <strong class="spend">{{ displayAmount(-totalSpend) }}</strong>
+            </div>
+            <div class="divider"></div>
+            <div class="summary-item">
+              <span>예상 소비</span>
+              <strong class="expected">{{
+                displayAmount(expectedTotal)
+              }}</strong>
+            </div>
+          </div>
         </KbCard>
       </section>
     </template>
@@ -290,6 +362,13 @@ onMounted(async () => {
   min-height: 66px;
 }
 
+/* a 안에 div·p 를 넣는 건 허용된다(a 는 투명 콘텐츠 모델).
+     링크를 이름 글자에만 걸면 표적이 너무 작아서 행 전체를 링크로 만든다 */
+.popular-link {
+  color: inherit;
+  text-decoration: none;
+}
+
 .popular-rank {
   flex-shrink: 0;
   width: 22px;
@@ -371,12 +450,104 @@ onMounted(async () => {
   margin-top: 28px;
 }
 
-.box-text {
-  margin: 0;
-  font-size: 15px;
-  line-height: 1.4;
-  color: #908980;
-  word-break: keep-all;
+/* AssetDashboard.vue 의 .total-card 와 같은 값.
+     홈 배너(#2e2a24)와 같은 계열이라 톤이 어긋나지 않는다 */
+.total-card {
+  box-sizing: border-box;
+  padding: 24px 20px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4a4340 0%, #2b2725 100%);
+  color: #ffffff;
+}
+
+.total-label {
+  margin: 0 0 8px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.total-amount {
+  margin: 0 0 20px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* font: inherit 는 원본에 없다. 없으면 버튼만 브라우저 기본 글꼴로 빠져
+     Pretendard 를 쓰는 나머지 홈 요소와 어긋난다 */
+.asset-btn {
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.asset-btn.primary {
+  background: #f4c15c;
+  color: #2b2725;
+}
+
+.asset-btn.secondary {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ConsumptionCal.vue 의 summary-bar 에서 카드 껍데기만 뺀 것 */
+.summary-bar {
+  display: flex;
+  align-items: center;
+}
+
+.summary-item {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.summary-item span {
+  font-size: 13px;
+  color: #777;
+  white-space: nowrap;
+}
+
+.summary-item strong {
+  font-size: 17px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.divider {
+  width: 1px;
+  height: 22px;
+  margin: 0 8px;
+  background: #eee;
+}
+
+.spend {
+  color: #e85b5b;
+}
+
+.expected {
+  color: #7b61ff;
+}
+
+/* 원본(ConsumptionCal.vue:957,975)에 있는 규칙. 좁은 화면에서 금액이 잘리지 않게 */
+@media (max-width: 768px) {
+  .summary-item strong {
+    font-size: 15px;
+  }
 }
 
 .banners {

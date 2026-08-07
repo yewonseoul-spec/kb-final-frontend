@@ -29,7 +29,11 @@
       </svg>
     </router-link>
 
-    <router-link to="/benefit" class="tab-item" active-class="active">
+  <router-link
+  to="/benefit"
+  class="tab-item"
+  :class="{ active: route.path.startsWith('/benefit') }"
+>
       <svg
         width="20"
         height="34"
@@ -142,7 +146,13 @@
   </nav>
 </template>
 
-<script setup></script>
+<script setup>
+
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+
+</script>
 
 <style scoped>
 .kb-tab-bar {
