@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useConsumptionStore } from '@/stores/consumptionStore';
+import KbModal from '@/components/common/KbModal.vue';
+import KbButton from '@/components/common/KbButton.vue';
 
 // 부모(CalendarView)가 넘겨주는 값
 // - targetDate: 이 예상 소비가 속한 날짜 ("2026-07-27" 형태)
@@ -111,11 +113,9 @@ function getCategoryColor(name) {
     return CATEGORY_COLORS[name] || '#9E9E9E';
 }
 
-// ── 폼 상태 (수정 화면이라 처음부터 editingItem 값으로 채워서 시작한다) ─────
+// 폼 상태 (수정 화면이라 처음부터 editingItem 값으로 채워서 시작한다)
 const selectedDate = ref(props.targetDate);
 
-// ★ 여기가 핵심 ★ : 카테고리는 "이름"이 아니라 "번호"로 관리한다.
-// editingItem.categoryNo는 백엔드가 이제 같이 내려주는 값이라 그대로 쓰면 된다.
 const newCategoryNo = ref(props.editingItem.categoryNo);
 
 const newAmount = ref(String(props.editingItem.amount));
@@ -138,35 +138,7 @@ const canSubmit = computed(() => {
     );
 });
 
-// "수정" 버튼: 바뀐 값들을 저장한다.
-async function submit() {
-    if (!canSubmit.value) return;
-
-    await consumptionStore.updateExpectedSpending(props.editingItem.expectedNo, {
-        expectedDate: selectedDate.value,
-        categoryNo: newCategoryNo.value,
-        expectedAmount: Number(newAmount.value),
-        merchant: newMerchant.value,
-        memo: newMemo.value
-    });
-
-    emit('saved');
-}
-
-// "삭제" 버튼: 정말 지울 건지 한 번 물어보고, "확인"을 눌러야만 진짜로 지운다.
-async function remove() {
-    const isSure = window.confirm('해당 내역을 삭제하시겠습니까?');
-    if (!isSure) return;
-
-    await consumptionStore.deleteExpectedSpending(props.editingItem.expectedNo);
-    emit('saved');
-}
-
-function close() {
-    emit('close');
-}
-
-// ── "예정일" 미니 달력 ──────────────────────────────────────────
+// 예정일 미니 달력
 const showDatePicker = ref(false);
 
 const [startYear, startMonth] = props.targetDate.split('-').map(Number);
@@ -221,6 +193,45 @@ function pickDate(day) {
 
     selectedDate.value = day.date;
     showDatePicker.value = false;
+}
+
+// 수정 버튼: 바뀐 값들을 저장한다.
+async function submit() {
+    if (!canSubmit.value) return;
+
+    await consumptionStore.updateExpectedSpending(props.editingItem.expectedNo, {
+        expectedDate: selectedDate.value,
+        categoryNo: newCategoryNo.value,
+        expectedAmount: Number(newAmount.value),
+        merchant: newMerchant.value,
+        memo: newMemo.value
+    });
+
+    emit('saved');
+}
+
+// --- 삭제 버튼: 삭제 여부를 확인하고, 확인 창에서 삭제를 선택하면 예상 소비를 지운다. ---
+const showDeleteConfirm = ref(false);
+
+// 삭제 버튼을 선택하면 확인 창을 띄운다.
+function askDelete() {
+    showDeleteConfirm.value = true;
+}
+
+// 취소를 선택하면 확인 창만 닫는다.
+function cancelDelete() {
+    showDeleteConfirm.value = false;
+}
+
+// 확인 창에서 삭제를 선택하면 내역을 지운다.
+async function confirmDelete() {
+    showDeleteConfirm.value = false;
+    await consumptionStore.deleteExpectedSpending(props.editingItem.expectedNo);
+    emit('saved');
+}
+
+function close() {
+    emit('close');
 }
 </script>
 
@@ -286,15 +297,21 @@ function pickDate(day) {
                     </div>
                 </div>
 
-                <!-- 취소 버튼 대신 삭제/수정 두 버튼으로 구성했다.
-             (그냥 닫기만 하고 싶으면 위쪽 ✕ 버튼을 누르면 된다) -->
                 <div class="sheet-actions">
-                    <button class="delete" @click="remove">삭제</button>
+                    <button class="delete" @click="askDelete">삭제</button>
                     <button class="save" :disabled="!canSubmit" @click="submit">수정</button>
                 </div>
             </div>
         </div>
     </transition>
+
+    <kb-modal v-if="showDeleteConfirm" title="예상 소비를 삭제할까요?" :columns="2">
+        <p class="modal-desc">삭제하면 다시 되돌릴 수 없어요.</p>
+        <template #actions>
+            <KbButton type="secondary" @click="cancelDelete">취소</KbButton>
+            <KbButton type="danger" @click="confirmDelete">삭제</KbButton>
+        </template>
+    </kb-modal>
 </template>
 
 <style scoped>
@@ -314,6 +331,12 @@ function pickDate(day) {
     padding: 20px;
     padding-bottom: max(90px, env(safe-area-inset-bottom));
     box-shadow: 0 -8px 30px rgba(0, 0, 0, .15);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.sheet::-webkit-scrollbar {
+    display: none;
 }
 
 .sheet-handle {
