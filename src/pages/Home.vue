@@ -193,18 +193,33 @@ onMounted(async () => {
       <section class="section box">
         <div class="section-head">
           <h2 class="section-title">내 자산</h2>
-          <RouterLink to="/asset" class="section-more">전체보기 ›</RouterLink>
         </div>
 
-        <!-- AssetDashboard.vue 의 총 자산 카드와 같은 모양 -->
-        <div class="total-card">
+        <!-- AssetDashboard.vue 의 총 자산 카드와 같은 모양.
+               전체보기 링크 대신 카드 자체를 눌러 자산 화면으로 간다 -->
+        <div
+          class="total-card"
+          role="button"
+          tabindex="0"
+          @click="router.push('/asset')"
+          @keydown.enter="router.push('/asset')"
+        >
           <p class="total-label">총 자산</p>
           <p class="total-amount">{{ formatWon(totalAsset) }}</p>
           <div class="btn-row">
-            <button type="button" class="asset-btn primary" @click="goProducts">
+            <!-- 카드 전체가 눌리므로 버튼은 .stop 으로 이동을 막는다 -->
+            <button
+              type="button"
+              class="asset-btn primary"
+              @click.stop="goProducts"
+            >
               금융 상품 조회
             </button>
-            <button type="button" class="asset-btn secondary" @click="goRatio">
+            <button
+              type="button"
+              class="asset-btn secondary"
+              @click.stop="goRatio"
+            >
               자산 비율 분석
             </button>
           </div>
@@ -214,14 +229,17 @@ onMounted(async () => {
       <section class="section box">
         <div class="section-head">
           <h2 class="section-title">내 소비</h2>
-          <RouterLink to="/consumption" class="section-more"
-            >전체보기 ›</RouterLink
-          >
         </div>
 
         <!-- ConsumptionCal.vue 의 summary-bar. 원본은 그 자체가 흰 카드라
                그대로 쓰면 카드 안에 카드가 된다. 껍데기는 KbCard 에 맡긴다 -->
-        <KbCard>
+        <KbCard
+          class="clickable"
+          role="button"
+          tabindex="0"
+          @click="router.push('/consumption')"
+          @keydown.enter="router.push('/consumption')"
+        >
           <div class="summary-bar">
             <div class="summary-item">
               <span>총 지출</span>
