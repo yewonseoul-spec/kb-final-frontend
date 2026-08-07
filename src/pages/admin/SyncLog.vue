@@ -110,8 +110,8 @@
                   <th class="text-end" style="width:100px">신규(추정)</th>
                   <th class="text-end" style="width:100px">갱신(추정)</th>
                   <th class="text-end" style="width:80px">소요</th>
-                  <th style="min-width:280px">오류 내용</th>
-                  <th style="width:80px">내역</th>
+                  <th style="min-width:220px">오류 내용</th>
+                  <th style="width:80px">상세</th>
                 </tr>
               </thead>
               <tbody>
@@ -132,23 +132,26 @@
                   <td class="text-end small">{{ log.insertCnt }}건</td>
                   <td class="text-end small">{{ log.updateCnt }}건</td>
                   <td class="text-end small">{{ formatDuration(log.durationMs) }}</td>
+
+                  <!-- 표에는 한글 요약만 둔다. 원문은 상세 모달에서 본다.
+                       원문에 테이블 구조와 SQL 문이 들어 있어 목록에 그대로 노출하지 않는다. -->
                   <td class="small">
-                    <template v-if="log.errorMsg">
-                      <span :class="log.resultStatus === 'F' ? 'text-danger' : 'text-warning-emphasis'">
-                        {{ expanded[log.logNo] ? log.errorMsg : shorten(log.errorMsg) }}
-                      </span>
-                      <button v-if="log.errorMsg.length > ERROR_PREVIEW"
-                              class="btn btn-link btn-sm p-0 ms-1 align-baseline"
-                              @click="toggleError(log.logNo)">
-                        {{ expanded[log.logNo] ? '접기' : '더보기' }}
-                      </button>
-                    </template>
+                    <span v-if="log.errorMsg"
+                          :class="log.resultStatus === 'F' ? 'text-danger' : 'text-warning-emphasis'">
+                      {{ errorOf(log.errorMsg).summary }}
+                    </span>
                     <span v-else class="text-muted">-</span>
                   </td>
+
+                  <!-- 실패한 로그는 처리 건수가 0이라 갱신 내역이 없다.
+                       대신 오류 원문을 볼 수 있어야 하므로 오류가 있으면 버튼을 연다. -->
                   <td>
-                    <button class="btn btn-sm btn-outline-secondary"
-                            :disabled="log.totalCnt === 0"
-                            @click="openDetails(log)">보기</button>
+                    <button class="btn btn-sm"
+                            :class="log.errorMsg ? 'btn-outline-danger' : 'btn-outline-secondary'"
+                            :disabled="log.totalCnt === 0 && !log.errorMsg"
+                            @click="openDetails(log)">
+                      {{ log.errorMsg ? '오류' : '보기' }}
+                    </button>
                   </td>
                 </tr>
 
@@ -180,18 +183,35 @@
       </div>
     </div>
 
-    <!-- 갱신 내역 -->
+    <!-- 상세 : 오류 원문 + 갱신 내역 -->
     <div v-if="detailTarget" class="modal-backdrop-custom" @click.self="closeDetails">
       <div class="modal-box">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <h6 class="fw-bold mb-1">동기화 갱신 내역</h6>
+            <h6 class="fw-bold mb-1">동기화 상세</h6>
             <small class="text-muted">
               {{ formatDateTime(detailTarget.executedAt) }}
+              · {{ execLabel(detailTarget.execType) }}
+              · {{ statusLabel(detailTarget.resultStatus) }}
               <template v-if="periodText(detailTarget)"> · {{ periodText(detailTarget) }}</template>
             </small>
           </div>
           <button class="btn-close" @click="closeDetails"></button>
+        </div>
+
+        <!-- 오류가 있으면 먼저 보여준다. 실패 로그는 이게 전부다 -->
+        <div v-if="detailTarget.errorMsg" class="error-box mb-3">
+          <div class="fw-semibold mb-1"
+               :class="detailTarget.resultStatus === 'F' ? 'text-danger' : 'text-warning-emphasis'">
+            {{ errorOf(detailTarget.errorMsg).summary }}
+          </div>
+
+          <template v-if="errorOf(detailTarget.errorMsg).detail">
+            <button class="btn btn-link btn-sm p-0" @click="showRaw = !showRaw">
+              {{ showRaw ? '원문 접기' : '원문 보기' }}
+            </button>
+            <pre v-if="showRaw" class="error-raw">{{ errorOf(detailTarget.errorMsg).detail }}</pre>
+          </template>
         </div>
 
         <div v-if="detailLoading" class="text-center py-5">
@@ -252,8 +272,13 @@
                 </tr>
                 <tr v-if="details.length === 0">
                   <td colspan="6" class="text-center text-muted small py-5">
-                    기록된 처리 내역이 없습니다.
-                    <div class="mt-1">기간별 동기화만 내역을 남깁니다.</div>
+                    <template v-if="detailTarget.errorMsg">
+                      동기화가 실패해 처리된 혜택이 없습니다.
+                    </template>
+                    <template v-else>
+                      기록된 처리 내역이 없습니다.
+                      <div class="mt-1">기간별 동기화만 내역을 남깁니다.</div>
+                    </template>
                   </td>
                 </tr>
               </tbody>
@@ -269,10 +294,8 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import adminApi from '@/api/adminApi';
+import { translateSyncError } from '@/util/syncError';
 
-// 오류 메시지에 외부 서버의 HTML 에러 페이지가 통째로 들어오는 경우가 있어
-// 기본은 잘라 보여주고 '더보기'로 펼친다.
-const ERROR_PREVIEW = 60;
 const PAGE_SIZE = 20;
 
 const statusOptions = [
@@ -298,7 +321,6 @@ const filters = reactive({
 const loading = ref(false);
 const loadError = ref('');
 const data = ref(null);
-const expanded = ref({});
 
 // 달력에서 막지만 직접 입력하는 경우까지 대비한다.
 // 조회 화면이라 미래 날짜는 허용한다 — 결과가 0건으로 나올 뿐 문제가 없다.
@@ -309,10 +331,11 @@ const CATEGORY = {
   1: '일자리', 2: '주거', 3: '교육', 4: '복지·문화', 5: '참여·권리',
 };
 
-const detailTarget = ref(null);   // 내역을 보고 있는 로그
+const detailTarget = ref(null);   // 상세를 보고 있는 로그
 const details = ref([]);
 const detailLoading = ref(false);
 const detailError = ref('');
+const showRaw = ref(false);       // 오류 원문 펼침 여부
 
 const insertCount = computed(() => details.value.filter((d) => d.actionType === 'I').length);
 const updateCount = computed(() => details.value.filter((d) => d.actionType === 'U').length);
@@ -357,7 +380,6 @@ async function load(page = 1) {
       page,
       size: PAGE_SIZE,
     });
-    expanded.value = {};
   } catch (e) {
     loadError.value = '실행 기록을 불러오지 못했습니다. 서버 상태를 확인해 주세요.';
     console.error(e);
@@ -394,12 +416,13 @@ function goPage(page) {
   load(page);
 }
 
-function toggleError(logNo) {
-  expanded.value = { ...expanded.value, [logNo]: !expanded.value[logNo] };
-}
-
-function shorten(text) {
-  return text.length > ERROR_PREVIEW ? `${text.slice(0, ERROR_PREVIEW)}…` : text;
+/**
+ * 오류 원문을 화면용으로 바꾼다.
+ *   summary — 한글 한 줄 요약
+ *   detail  — 원문. 이미 읽을 만한 메시지면 null 이라 '원문 보기'가 안 뜬다
+ */
+function errorOf(raw) {
+  return translateSyncError(raw);
 }
 
 function execLabel(type) {
@@ -427,16 +450,20 @@ function categoryName(code) {
 }
 
 /**
- * 동기화 갱신 내역 조회.
+ * 동기화 상세 조회.
  * 로그에는 건수만 남아 어떤 혜택이 처리됐는지 알 수 없으므로 건별로 확인한다.
- * 기간별 동기화만 내역을 기록하므로 예전 로그는 비어 있을 수 있다.
+ * 실패한 로그는 처리 건수가 0이라 목록이 비고, 오류 원문만 보게 된다.
  */
 async function openDetails(log) {
   detailTarget.value = log;
   details.value = [];
   detailError.value = '';
-  detailLoading.value = true;
+  showRaw.value = false;
 
+  // 처리 건수가 0이면 조회할 내역이 없다. 오류만 보여주고 끝낸다
+  if (log.totalCnt === 0) return;
+
+  detailLoading.value = true;
   try {
       details.value = await adminApi.getSyncLogDetails(log.logNo);
   } catch (e) {
@@ -451,6 +478,7 @@ function closeDetails() {
   detailTarget.value = null;
   details.value = [];
   detailError.value = '';
+  showRaw.value = false;
 }
 
 // 어떤 기간을 대상으로 돌렸는지 표시한다.
@@ -519,4 +547,27 @@ onMounted(() => load(1));
 }
 
 .table td { word-break: keep-all; }
+
+.error-box {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fdf2f2;
+  font-size: 13px;
+}
+
+/* 외부 서버의 HTML 에러 페이지가 통째로 들어오는 경우가 있어
+   높이를 제한하고 그 안에서만 스크롤한다 */
+.error-raw {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6f6860;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
 </style>
