@@ -41,8 +41,10 @@ export default [
     path: '/benefit',
     name: 'benefit-main',
     component: BenefitMainPage,
-    meta: {
+      meta: {
       title: '혜택',
+      headerType: 'back',
+      headerTitle: '혜택',
     },
   },
 ];
