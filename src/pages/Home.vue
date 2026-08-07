@@ -144,7 +144,6 @@ onMounted(async () => {
       </KbCard>
     </section>
 
-    <!-- 혜택 상세 페이지가 없어 지금은 클릭 불가로 둔다 -->
     <section v-if="loading || popular.length" class="section popular">
       <div class="section-head">
         <h2 class="section-title">요즘 많이 보는 혜택</h2>
@@ -152,17 +151,22 @@ onMounted(async () => {
 
       <KbCard>
         <ol v-if="popular.length" class="popular-list">
-          <li v-for="(b, i) in popular" :key="b.benefitNo" class="popular-item">
-            <span class="popular-rank">{{ i + 1 }}</span>
-            <div class="popular-body">
-              <p class="popular-name">{{ b.plcyNm }}</p>
-              <p class="popular-meta">
-                {{ b.categoryName }}
-                <template v-if="b.sprvsnInstCdNm">
-                  · {{ b.sprvsnInstCdNm }}</template
-                >
-              </p>
-            </div>
+          <li v-for="(b, i) in popular" :key="b.benefitNo">
+            <RouterLink
+              :to="`/benefit/detail/${b.benefitNo}`"
+              class="popular-item popular-link"
+            >
+              <span class="popular-rank">{{ i + 1 }}</span>
+              <div class="popular-body">
+                <p class="popular-name">{{ b.plcyNm }}</p>
+                <p class="popular-meta">
+                  {{ b.categoryName }}
+                  <template v-if="b.sprvsnInstCdNm">
+                    · {{ b.sprvsnInstCdNm }}</template
+                  >
+                </p>
+              </div>
+            </RouterLink>
           </li>
         </ol>
 
@@ -356,6 +360,13 @@ onMounted(async () => {
   align-items: center;
   gap: 12px;
   min-height: 66px;
+}
+
+/* a 안에 div·p 를 넣는 건 허용된다(a 는 투명 콘텐츠 모델).
+     링크를 이름 글자에만 걸면 표적이 너무 작아서 행 전체를 링크로 만든다 */
+.popular-link {
+  color: inherit;
+  text-decoration: none;
 }
 
 .popular-rank {
