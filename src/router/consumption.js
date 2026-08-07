@@ -4,11 +4,7 @@ export default [
   {
     path: '/consumption',
     name: '/consumption',
-    meta: { title: '소비',
-          headerType: 'back',
-      headerTitle: '소비',
-      
-     },
+    meta: { title: '소비' },
     component: ConsumptionCalView,
   },
 ];

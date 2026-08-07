@@ -16,9 +16,7 @@ const isMenuOpen = ref(false);
  */
 const isBackHeader = computed(() => route.meta.headerType !== 'root');
 
-const pageTitle = computed(
-  () => route.meta.headerTitle || route.meta.title || '청년타파',
-);
+const pageTitle = computed(() => route.meta.title || '청년타파');
 
 // 히스토리가 없으면(주소창 직접 진입·새로고침 직후) back() 이 앱 밖으로 나간다.
 // 마이페이지 화면들의 '취소' 와 같은 방식으로 막는다.
