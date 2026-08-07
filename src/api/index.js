@@ -30,4 +30,16 @@ instance.interceptors.response.use(
   },
 );
 
+// 에러 응답 본문을 사용자 문구로 쓸지 판단한다.
+// 4xx 는 ApiExceptionAdvice 가 만든 평문이라 그대로 보여도 되지만,
+// 5xx 는 내부 오류 메시지이거나 스택 트레이스라 노출하면 안 된다.
+// (백엔드가 꺼져 있으면 Vite 프록시가 500 + 스택을 본문으로 준다)
+export const errorMessage = (e, fallback) => {
+  const status = e.response?.status;
+  const data = e.response?.data;
+  const isUserMessage =
+    status >= 400 && status < 500 && typeof data === 'string' && data;
+  return isUserMessage ? data : fallback;
+};
+
 export default instance;

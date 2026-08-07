@@ -34,12 +34,27 @@ const router = createRouter({
   ],
 });
 
+// '처음 접속' 은 이 탭에서 앱을 처음 여는 것을 말한다.
+// 새로고침마다 로그인으로 튕기면 비로그인 사용자가 홈에 머무를 수 없다.
+const FIRST_VISIT_KEY = 'firstVisitDone';
+
 router.beforeEach((to) => {
   const authStore = useAuthStore();
 
   // 로그인 응답의 roles 는 ["ROLE_ADMIN"] 형태다 (UserInfoDTO 가 "ROLE_" + role 로 만든다)
   const roles = authStore.state?.user?.roles ?? [];
   const isAdmin = roles.includes('ROLE_ADMIN');
+
+  // 앱을 처음 열 때 한 번만 로그인 화면을 거친다. 여기서 걸린 뒤 홈으로 들어가면
+  // 비로그인으로 계속 둘러볼 수 있다.
+  // 표시는 어디로 들어왔든 최초 진입에서 남긴다. 공유 링크로 들어온 사람이
+  // 나중에 홈으로 이동할 때 뒤늦게 로그인으로 튕기면 안 되기 때문이다.
+  if (!sessionStorage.getItem(FIRST_VISIT_KEY)) {
+    sessionStorage.setItem(FIRST_VISIT_KEY, '1');
+    if (to.name === 'Home' && !authStore.isLogin) {
+      return { name: 'Login' };
+    }
+  }
 
   // 로그인 상태 시 로그인, 회원가입 페이지 진입 차단
   // 관리자는 사용자용 홈이 의미 없으므로 대시보드로 보낸다
