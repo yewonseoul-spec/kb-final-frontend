@@ -492,6 +492,7 @@ async function onEditSaved() {
             <button @click="selectedDay = null">✕</button>
           </div>
 
+          <!-- 소비 내역 -->
           <template v-if="isPastDay(selectedDay.date) || isToday(selectedDay.date)">
             <div v-if="!selectedDay.spendings.length" class="empty-note">내역이 없어요</div>
             <div v-for="s in selectedDay.spendings" :key="s.spendingNo" class="detail-item"
@@ -511,7 +512,8 @@ async function onEditSaved() {
             </div>
           </template>
 
-          <template v-else>
+          <!-- 예상 소비 -->
+          <template v-if="!isPastDay(selectedDay.date)">
             <div v-if="!selectedDay.expectedSpendings.length" class="empty-note">내역이 없어요</div>
             <div v-for="s in selectedDay.expectedSpendings" :key="s.expectedNo" class="detail-item"
               :style="expectedItemStyle(s.categoryName)">
