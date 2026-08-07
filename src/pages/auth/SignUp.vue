@@ -9,6 +9,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import KbCheckbox from '@/components/common/KbCheckbox.vue';
 import KbBadge from '@/components/common/KbBadge.vue';
 import KbCard from '@/components/common/KbCard.vue';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -141,7 +142,7 @@ const signup = async () => {
       router.push({ name: 'Login' });
     }
   } catch (e) {
-    error.value = e.response?.data || '회원가입 중 오류가 발생했어요';
+    error.value = errorMessage(e, '회원가입 중 오류가 발생했어요');
   }
 };
 </script>

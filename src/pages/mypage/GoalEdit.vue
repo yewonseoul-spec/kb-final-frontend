@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import KbButton from '@/components/common/KbButton.vue';
 import GoalSelect from '@/components/mypage/GoalSelect.vue';
 import mypageApi from '@/api/mypageApi';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 
@@ -48,8 +49,10 @@ const onSave = async () => {
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 처리한다(그 경우 e.response 가 없다)
     isError.value = true;
-    message.value =
-      e.response?.data || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    message.value = errorMessage(
+      e,
+      '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    );
   } finally {
     isSaving.value = false;
   }

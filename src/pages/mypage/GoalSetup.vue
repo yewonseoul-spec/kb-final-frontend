@@ -5,6 +5,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import OnboardingHeader from '@/components/mypage/OnboardingHeader.vue';
 import GoalSelect from '@/components/mypage/GoalSelect.vue';
 import mypageApi from '@/api/mypageApi';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 
@@ -43,9 +44,10 @@ const onSubmit = async () => {
     router.replace({ name: 'MyPage' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보낸다(그 경우 e.response 가 없다)
-    // 에러 본문은 JSON 이 아니라 평문 문자열이다(ApiExceptionAdvice)
-    submitError.value =
-      e.response?.data || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    submitError.value = errorMessage(
+      e,
+      '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    );
     isSaving.value = false;
   }
 };

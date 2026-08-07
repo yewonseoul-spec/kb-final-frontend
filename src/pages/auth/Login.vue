@@ -4,6 +4,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useRoute, useRouter } from 'vue-router';
 import KbInput from '@/components/common/KbInput.vue';
 import KbButton from '@/components/common/KbButton.vue';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 const route = useRoute();
@@ -25,7 +26,7 @@ const login = async () => {
     await auth.login(member);
     router.push({ name: 'Home' });
   } catch (e) {
-    error.value = e.response?.data || '로그인 중 오류가 발생했어요';
+    error.value = errorMessage(e, '로그인 중 오류가 발생했어요');
   }
 };
 </script>

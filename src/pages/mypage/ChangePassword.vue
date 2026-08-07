@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import KbInput from '@/components/common/KbInput.vue';
 import KbButton from '@/components/common/KbButton.vue';
 import mypageApi from '@/api/mypageApi';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 
@@ -59,8 +60,10 @@ const onSave = async () => {
     // 현재 비밀번호 불일치는 서버가 400 + 문구를 준다.
     // 401 은 api/index.js 인터셉터가 처리한다.
     isError.value = true;
-    message.value =
-      e.response?.data || '변경에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    message.value = errorMessage(
+      e,
+      '변경에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    );
   } finally {
     isSaving.value = false;
   }

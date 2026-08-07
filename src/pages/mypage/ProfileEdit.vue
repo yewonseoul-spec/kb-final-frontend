@@ -7,6 +7,7 @@ import KbCard from '@/components/common/KbCard.vue';
 import ProfileForm from '@/components/mypage/ProfileForm.vue';
 import { useAuthStore } from '@/stores/auth';
 import KbModal from '@/components/common/KbModal.vue';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -75,8 +76,10 @@ const onSave = async () => {
       // 프로필이 없는 상태에서 PUT 하면 404 → 입력 화면으로 유도
       isEmpty.value = true;
     } else {
-      message.value =
-        e.response?.data || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      message.value = errorMessage(
+        e,
+        '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+      );
     }
   } finally {
     isSaving.value = false;
@@ -108,8 +111,10 @@ const onWithdraw = async () => {
     isWithdrawn.value = true; // 모달을 완료 안내로 바꾼다
   } catch (e) {
     // 401 은 인터셉터가 처리한다(그 경우 e.response 가 없어 옵셔널 체이닝이 필요)
-    withdrawError.value =
-      e.response?.data || '탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요.';
+    withdrawError.value = errorMessage(
+      e,
+      '탈퇴에 실패했어요. 잠시 후 다시 시도해 주세요.',
+    );
   } finally {
     isWithdrawing.value = false;
   }

@@ -6,6 +6,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import KbCard from '@/components/common/KbCard.vue';
 import ProfileForm from '@/components/mypage/ProfileForm.vue';
 import OnboardingHeader from '@/components/mypage/OnboardingHeader.vue';
+import { errorMessage } from '@/api';
 
 const router = useRouter();
 
@@ -63,9 +64,10 @@ const onSubmit = async () => {
       submitError.value =
         '이미 프로필이 저장되어 있어요. 마이페이지에서 수정해 주세요.';
     } else {
-      // 에러 본문은 JSON 이 아니라 평문 문자열이다(ApiExceptionAdvice)
-      submitError.value =
-        e.response?.data || '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      submitError.value = errorMessage(
+        e,
+        '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
+      );
     }
   } finally {
     isSaving.value = false;
