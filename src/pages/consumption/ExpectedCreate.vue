@@ -149,7 +149,7 @@ function close() {
     emit('close');
 }
 
-// "예정일" 미니 달력
+// 예정일 미니 달력
 const showDatePicker = ref(false);
 
 // 미니 달력도 처음 열 때부터 targetDate가 속한 달로 맞춰서 시작한다.
@@ -298,6 +298,12 @@ function pickDate(day) {
     padding: 20px;
     padding-bottom: max(90px, env(safe-area-inset-bottom));
     box-shadow: 0 -8px 30px rgba(0, 0, 0, .15);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.sheet::-webkit-scrollbar {
+    display: none;
 }
 
 .sheet-handle {
