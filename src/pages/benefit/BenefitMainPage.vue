@@ -124,7 +124,7 @@
 
     <!-- 목표 기반 추천 임시 화면 -->
     <section
-      v-else
+      v-else-if="activeRecommendation === 'goal'"
       class="state-box"
     >
       등록한 목표를 기반으로 혜택을 추천할 예정이에요.
@@ -161,16 +161,12 @@ import {
   onMounted,
   reactive,
   ref,
+  watch,
 } from "vue";
 
-import {
-  useRouter,
-} from "vue-router";
+import {useRoute, useRouter} from "vue-router";
 
-import {
-  getBenefit,
-  getBenefitProfileFilter,
-} from "@/api/benefitApi";
+import {getBenefit,getBenefitProfileFilter} from "@/api/benefitApi";
 
 import BenefitCard from
   "@/components/benefit/BenefitCard.vue";
@@ -178,7 +174,8 @@ import BenefitCard from
 import BenefitFilterModal from
   "@/components/benefit/BenefitFilterModal.vue";
 
-const router = useRouter();
+const route = useRoute()
+const router = useRouter()
 
 const recommendationTabs = [
   {
@@ -195,8 +192,22 @@ const recommendationTabs = [
   },
 ];
 
-const activeRecommendation = ref(
+const validTabs = [
   "condition",
+  "consumption",
+  "goal",
+];
+
+const getTabFromRoute = () => {
+  const tab = route.query.tab;
+
+  return validTabs.includes(tab)
+    ? tab
+    : "condition";
+};
+
+const activeRecommendation = ref(
+  getTabFromRoute(),
 );
 
 const isFilterOpen = ref(false);
@@ -463,10 +474,19 @@ const handleApplyFilter = async (
   await loadBenefits();
 };
 
-const changeRecommendation = async (
-  type,
-) => {
+const changeRecommendation = async (type) => {
+  if (!validTabs.includes(type)) {
+    return;
+  }
+
   activeRecommendation.value = type;
+
+  await router.replace({
+    path: "/benefit",
+    query: {
+      tab: type,
+    },
+  });
 
   if (type === "condition") {
     await loadBenefits();
@@ -497,8 +517,30 @@ const toggleFavorite = (item) => {
   );
 };
 
-onMounted(() => {
-  loadProfileRecommendation();
+watch(
+  () => route.query.tab,
+  async (newTab) => {
+    const tab = validTabs.includes(newTab)
+      ? newTab
+      : "condition";
+
+    activeRecommendation.value = tab;
+
+    if (tab === "condition") {
+      await loadBenefits();
+    }
+  },
+);
+
+
+onMounted(async () => {
+  const tab = getTabFromRoute();
+
+  activeRecommendation.value = tab;
+
+  if (tab === "condition") {
+    await loadProfileRecommendation();
+  }
 });
 </script>
 

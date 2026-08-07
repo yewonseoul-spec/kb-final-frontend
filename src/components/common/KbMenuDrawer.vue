@@ -114,7 +114,7 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage('/benefit')">
+          <div class="menu-item" @click=" emit('close');">
             <div class="menu-main">
               <span class="icon">
                 <svg
@@ -147,12 +147,33 @@
                   />
                 </svg>
               </span>
-              <div class="text-group">
-                <span class="title">청년혜택</span>
-                <span class="sub"
-                  >조건 기반 추천<br />소비 기반 추천<br />목표 기반 추천</span
-                >
-              </div>
+           <div class="text-group">
+  <span class="title">청년혜택</span>
+
+  <div class="sub">
+    <router-link
+      :to="{ path: '/benefit', query: { tab: 'condition' } }"
+      class="sub"
+    >
+      조건 기반 추천
+    </router-link>
+
+    <router-link
+      :to="{ path: '/benefit', query: { tab: 'consumption' } }"
+      class="sub"
+    >
+    <br/>
+      소비 기반 추천
+    </router-link>
+  <br/>
+    <router-link
+      :to="{ path: '/benefit', query: { tab: 'goal' } }"
+      class="sub"
+    >
+      목표 기반 추천
+    </router-link>
+  </div>
+</div>
             </div>
             <span class="arrow">></span>
           </div>
@@ -473,6 +494,7 @@ watch(
   font-size: 12px;
   color: #908980;
   line-height: 1.4;
+   text-decoration: none !important;
 }
 
 .arrow {
