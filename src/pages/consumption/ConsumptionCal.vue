@@ -12,7 +12,6 @@ const activeTab = ref('calendar');
 
 const currentDate = ref(new Date());
 const selectedDay = ref(null);
-console.log(selectDay)
 const selectedCategories = ref(['전체']);
 
 const calendarData = computed(() => consumptionStore.calendarData || {
@@ -469,6 +468,7 @@ async function onEditSaved() {
             'no-data': day && !day.spendings.length && !day.expectedSpendings.length
           }" @click="selectDay(day)">
             <template v-if="day">
+              <!-- <span v-if="hasMoreCategories(day)" class="more-badge">+</span> -->
               <div class="date">
                 <span class="date-num">{{ day.day }}</span>
               </div>
@@ -824,6 +824,26 @@ async function onEditSaved() {
   border-radius: 999px;
 }
 
+/* .more-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brown);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border: 1.5px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+} */
+
 .detail-inline {
   background: #fff;
   border: 1px solid #eee;
@@ -964,6 +984,8 @@ async function onEditSaved() {
   }
 
   .cell {
+    aspect-ratio: auto;
+    height: 92px;
     padding: 5px;
   }
 
