@@ -69,6 +69,13 @@ const login = async () => {
         >회원가입</RouterLink
       >
     </p>
+    <!-- 로그인 화면은 hideTabBar 라 탭바가 없다. 첫 화면으로 뜨는 만큼
+           로그인하지 않고 나갈 출구가 하나는 있어야 한다 -->
+    <div class="browse-row">
+      <RouterLink class="browse-link" :to="{ name: 'Home' }">
+        로그인 없이 둘러보기
+      </RouterLink>
+    </div>
   </div>
 </template>
 
@@ -129,5 +136,16 @@ const login = async () => {
 .signup-link {
   color: #2e2a24;
   font-weight: 600;
+}
+
+.browse-row {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.browse-link {
+  font-size: 13px;
+  color: #908980;
+  text-decoration: underline;
 }
 </style>
