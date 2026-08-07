@@ -45,7 +45,9 @@ const onSave = async () => {
       await mypageApi.createGoal(goalType.value);
       hasGoal.value = true;
     }
-    message.value = '저장했어요.';
+    // 목적지가 지연 로딩이라 isSaving 을 끄지 않는다(끄면 버튼이 깜빡였다 사라진다).
+    // 뒤로가기가 방금 떠난 수정 폼으로 돌아가지 않도록 push 가 아니라 replace 다.
+    router.replace({ name: 'MyPage' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 처리한다(그 경우 e.response 가 없다)
     isError.value = true;
@@ -53,7 +55,6 @@ const onSave = async () => {
       e,
       '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
     );
-  } finally {
     isSaving.value = false;
   }
 };

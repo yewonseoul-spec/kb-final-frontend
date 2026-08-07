@@ -69,7 +69,8 @@ const onSave = async () => {
   try {
     // PUT 은 전체 교체다. 폼이 항목 전체를 들고 있으므로 그대로 보낸다.
     await mypageApi.updateProfile(form);
-    message.value = '저장했어요.';
+    // 목적지가 지연 로딩이라 isSaving 을 끄지 않는다(끄면 버튼이 깜빡였다 사라진다)
+    router.replace({ name: 'MyPage' });
   } catch (e) {
     isError.value = true;
     if (e.response?.status === 404) {
@@ -81,7 +82,6 @@ const onSave = async () => {
         '저장에 실패했어요. 잠시 후 다시 시도해 주세요.',
       );
     }
-  } finally {
     isSaving.value = false;
   }
 };
