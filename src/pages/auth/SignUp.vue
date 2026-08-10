@@ -234,7 +234,7 @@ const signup = async () => {
             중복 확인
           </button>
         </div>
-        <p class="field-msg">알림 수신에 사용돼요</p>
+        <p class="field-msg">아이디 찾기·비밀번호 재설정에 사용돼요</p>
         <p v-if="emailFormatError" class="field-msg err">
           이메일 형식이 올바르지 않아요
         </p>
