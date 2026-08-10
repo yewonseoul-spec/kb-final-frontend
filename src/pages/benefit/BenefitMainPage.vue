@@ -57,7 +57,6 @@
           :key="chip.key"
           type="button"
           class="filter-chip"
-          @click="isFilterOpen = true"
         >
           {{ chip.label }}
         </button>
