@@ -5,6 +5,7 @@
       :type="type"
       :value="modelValue"
       :placeholder="placeholder"
+      :maxlength="maxlength"
       :class="['kb-input', { error: isError, focus: isFocus }]"
       @input="$emit('update:modelValue', $event.target.value)"
       @focus="isFocus = true"
@@ -24,6 +25,7 @@ defineProps({
   label: String,
   type: { type: String, default: 'text' },
   placeholder: String,
+  maxlength: [String, Number],
   errorMessage: String,
   hintMessage: String,
   isError: Boolean,

@@ -40,18 +40,9 @@ watch(
   () => (emailAvailable.value = null),
 );
 
-// KbInput 은 루트가 div 라 maxlength 가 input 까지 가지 않는다. DB 컬럼 길이를 넘기면
-// MySQL 1406 으로 500 이 나므로 여기서 잘라 둔다. KbInput 이 속성을 넘기게 되면 지울 코드.
-// realName 만 DB(20) 가 아니라 닉네임 규칙 상한(10)을 쓴다. 넘치면 잘리므로 상한 오류는 없다.
+// DB 컬럼 길이를 넘기면 MySQL 1406 으로 500 이 나므로 input 에서 막는다.
+// realName 만 DB(20) 가 아니라 닉네임 규칙 상한(10)을 쓴다. 상한 오류 문구가 따로 없는 이유.
 const LENGTH_LIMIT = { realName: 10, loginId: 30, email: 100 };
-Object.entries(LENGTH_LIMIT).forEach(([field, limit]) => {
-  watch(
-    () => member[field],
-    (v) => {
-      if (v.length > limit) member[field] = v.slice(0, limit);
-    },
-  );
-});
 
 onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
@@ -165,6 +156,7 @@ const signup = async () => {
           v-model="member.realName"
           label="닉네임"
           placeholder="닉네임을 입력하세요"
+          :maxlength="LENGTH_LIMIT.realName"
           :is-error="nicknameError"
           @focusout="touched.realName = true"
         />
@@ -181,6 +173,7 @@ const signup = async () => {
             class="field-input"
             label="아이디"
             placeholder="아이디를 입력하세요"
+            :maxlength="LENGTH_LIMIT.loginId"
             :is-error="idAvailable === false"
           />
           <!-- KbButton 은 폼 안에서 submit 으로 동작해 회원가입이 제출된다. 중복확인은 네이티브 button 유지 -->
@@ -240,6 +233,7 @@ const signup = async () => {
             class="field-input"
             label="이메일"
             placeholder="name@example.com"
+            :maxlength="LENGTH_LIMIT.email"
             :is-error="emailFormatError || emailAvailable === false"
             @focusout="touched.email = true"
           />
