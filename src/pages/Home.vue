@@ -40,7 +40,7 @@ const onCta = () => {
 const banners = [
   {
     key: 'engine',
-    title: 'AI 정책 조합 최적화',
+    title: '맞춤 정책 조합 최적화',
     desc: '수혜액이 가장 큰 정책 3개를 찾아드려요',
     to: '/engine',
   },
