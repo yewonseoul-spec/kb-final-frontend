@@ -42,7 +42,8 @@ watch(
 
 // KbInput 은 루트가 div 라 maxlength 가 input 까지 가지 않는다. DB 컬럼 길이를 넘기면
 // MySQL 1406 으로 500 이 나므로 여기서 잘라 둔다. KbInput 이 속성을 넘기게 되면 지울 코드.
-const LENGTH_LIMIT = { realName: 20, loginId: 30, email: 100 };
+// realName 만 DB(20) 가 아니라 닉네임 규칙 상한(10)을 쓴다. 넘치면 잘리므로 상한 오류는 없다.
+const LENGTH_LIMIT = { realName: 10, loginId: 30, email: 100 };
 Object.entries(LENGTH_LIMIT).forEach(([field, limit]) => {
   watch(
     () => member[field],
@@ -59,6 +60,11 @@ onMounted(async () => {
     expanded[t.termsNo] = false;
   });
 });
+
+// 닉네임: 한글·영문·숫자 2~10자. 표시용이라 중복은 허용한다.
+const NICKNAME_RULE = /^[가-힣a-zA-Z0-9]{2,10}$/;
+const nickname = computed(() => member.realName.trim());
+const nicknameValid = computed(() => NICKNAME_RULE.test(nickname.value));
 
 const checkId = async () => {
   idAvailable.value = !(await authApi.checkId(member.loginId));
@@ -82,11 +88,15 @@ const passwordMatch = computed(
 // 오류 문구는 칸을 벗어난 뒤부터 보여준다
 // 통과 표시는 타이핑 도중 즉시 사라진다
 const touched = reactive({
+  realName: false,
   password: false,
   passwordConfirm: false,
   email: false,
 });
 
+const nicknameError = computed(
+  () => touched.realName && !!nickname.value && !nicknameValid.value,
+);
 const passwordError = computed(
   () => touched.password && !!member.password && !passwordValid.value,
 );
@@ -111,7 +121,7 @@ const requiredAgreed = computed(() =>
 const disableSubmit = computed(
   () =>
     !(
-      member.realName.trim() &&
+      nicknameValid.value &&
       idAvailable.value === true &&
       passwordValid.value &&
       passwordMatch.value &&
@@ -127,7 +137,7 @@ const signup = async () => {
       loginId: member.loginId,
       password: member.password,
       email: member.email,
-      realName: member.realName.trim(),
+      realName: nickname.value,
       terms: terms.value.map((t) => ({
         termsNo: t.termsNo,
         agreed: !!agreed[t.termsNo],
@@ -150,11 +160,19 @@ const signup = async () => {
 <template>
   <div class="signup">
     <form class="signup-form" @submit.prevent="signup">
-      <KbInput
-        v-model="member.realName"
-        label="실명"
-        placeholder="실명을 입력하세요"
-      />
+      <div class="field">
+        <KbInput
+          v-model="member.realName"
+          label="닉네임"
+          placeholder="닉네임을 입력하세요"
+          :is-error="nicknameError"
+          @focusout="touched.realName = true"
+        />
+        <p class="field-msg">한글·영문·숫자 2~10자</p>
+        <p v-if="nicknameError" class="field-msg err">
+          닉네임 형식이 올바르지 않아요
+        </p>
+      </div>
 
       <div class="field">
         <div class="field-row">
