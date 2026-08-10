@@ -506,9 +506,13 @@ async function onEditSaved() {
             <button @click="selectedDay = null">✕</button>
           </div>
 
+          <div v-if="!selectedDay.spendings.length && !selectedDay.expectedSpendings.length" class="empty-note">
+            내역이 없어요
+          </div>
+
           <!-- 소비 내역 -->
           <template v-if="isPastDay(selectedDay.date) || isToday(selectedDay.date)">
-            <div v-if="!selectedDay.spendings.length" class="empty-note">내역이 없어요</div>
+            <!-- <div v-if="!selectedDay.spendings.length" class="empty-note">내역이 없어요</div> -->
             <div v-for="s in selectedDay.spendings" :key="s.spendingNo" class="detail-item"
               :style="itemStyle(s.categoryName)">
 
@@ -528,7 +532,7 @@ async function onEditSaved() {
 
           <!-- 예상 소비 -->
           <template v-if="!isPastDay(selectedDay.date)">
-            <div v-if="!selectedDay.expectedSpendings.length" class="empty-note">내역이 없어요</div>
+            <!-- <div v-if="!selectedDay.expectedSpendings.length" class="empty-note">내역이 없어요</div> -->
             <div v-for="s in selectedDay.expectedSpendings" :key="s.expectedNo" class="detail-item"
               :style="expectedItemStyle(s.categoryName)">
               <!-- 자동 등록된 항목이면 칸 상단에 안내 문구 -->
