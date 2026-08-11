@@ -117,7 +117,7 @@
             </div>
           </div>
 
-          <div class="menu-item" @click="emit('close')">
+          <div class="menu-item" @click="goPage('/benefit')">
             <div class="menu-main">
               <span class="icon">
                 <svg
