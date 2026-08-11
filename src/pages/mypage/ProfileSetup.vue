@@ -82,13 +82,7 @@ const onSkip = () => {
 <template>
   <!-- 프로필 유무를 확인하기 전에 폼을 그리면, 이미 입력한 회원에게 폼이 깜빡였다 사라진다 -->
   <div v-if="!isLoading" class="profile-setup">
-    <OnboardingHeader
-      title="프로필 입력"
-      :step="2"
-      :steps="3"
-      step-name="프로필"
-      @skip="onSkip"
-    />
+    <OnboardingHeader :step="2" :steps="3" step-name="프로필" @skip="onSkip" />
 
     <KbCard yellow-bg>
       <p class="guide-main">
