@@ -63,6 +63,48 @@
       </div>
     </section>
 
+<!-- 프로필 미완성 안내 배너 -->
+<button
+  v-if="
+    activeRecommendation === 'condition'
+    && auth.isLogin
+    && !isProfileComplete
+  "
+  type="button"
+  class="profile-completion-banner"
+  @click="moveToProfile"
+>
+  <div class="profile-banner-header">
+    <strong>프로필 입력</strong>
+
+    <span>
+      {{ completedProfileCount }} / 6 항목
+    </span>
+  </div>
+
+  <div class="profile-progress">
+    <span
+      v-for="index in 6"
+      :key="index"
+      class="profile-progress-bar"
+      :class="{
+        completed:
+          index <= completedProfileCount
+      }"
+    />
+  </div>
+
+  <div class="profile-banner-bottom">
+    <p>
+      {{ profileGuideText }}
+    </p>
+
+    <span class="profile-arrow">
+      ›
+    </span>
+  </div>
+</button>
+
     <!-- 로딩 -->
     <section
       v-if="loading"
@@ -284,12 +326,16 @@ const activeFilterChips = computed(() => {
   }
 
 
-  if (filter.age != null) {
-    chips.push({
-      key: "age",
-      label: `만 ${filter.age}세`,
-    });
-  }
+if (
+  filter.age !== null
+  && filter.age !== undefined
+  && filter.age !== ""
+) {
+  chips.push({
+    key: "age",
+    label: `만 ${filter.age}세`,
+  });
+}
 
   if (filter.majorName && filter.majorName !== "전체") {
     chips.push({
@@ -321,6 +367,63 @@ const activeFilterChips = computed(() => {
 
   return chips;
 });
+
+const profileItems = computed(() => [
+  {
+    label: "거주지역",
+    completed: !!filter.provinceCode,
+  },
+  {
+    label: "나이",
+    completed: filter.age != null,
+  },
+  {
+    label: "전공",
+    completed: !!filter.plcyMajorCd,
+  },
+  {
+    label: "학력",
+    completed: !!filter.schoolCd,
+  },
+  {
+    label: "취업상태",
+    completed: !!filter.jobCd,
+  },
+  {
+    label: "혼인 여부",
+    completed: !!filter.mrgSttsCd,
+  },
+]);
+
+const completedProfileCount = computed(() =>
+  profileItems.value.filter(
+    (item) => item.completed
+  ).length
+);
+
+const isProfileComplete = computed(
+  () => completedProfileCount.value === 6
+);
+
+const missingProfileLabels = computed(() =>
+  profileItems.value
+    .filter((item) => !item.completed)
+    .map((item) => item.label)
+);
+
+const profileGuideText = computed(() => {
+  if (!missingProfileLabels.value.length) {
+    return "프로필을 모두 입력했어요.";
+  }
+
+  return `${missingProfileLabels.value.join(
+    ", "
+  )}을 입력하면 맞춤 혜택 추천이 더 정확해져요.`;
+});
+
+const moveToProfile = () => {
+  router.push("/mypage/profile");
+};
 
 const applyProfileFilter = (profile) => {
   /*
@@ -422,11 +525,18 @@ const loadProfileRecommendation = async () => {
   loading.value = true;
 
   try {
+  if (!auth.isLogin) {
+      await loadBenefits();
+      return;
+    }
+
     const profile = await getBenefitProfileFilter();
 
     applyProfileFilter(profile);
 
     await loadBenefits();
+
+    
   } catch (error) {
     console.error("프로필 기본 필터 조회 실패:", error);
 
@@ -438,6 +548,8 @@ const loadProfileRecommendation = async () => {
   } finally {
     loading.value = false;
   }
+
+  
 };
 
 const loadFavorites = async () => {
@@ -456,6 +568,10 @@ const loadFavorites = async () => {
 
 const handleApplyFilter = async (appliedFilter) => {
   Object.assign(filter, appliedFilter);
+
+  if (filter.age === "") {
+    filter.age = null;
+  }
 
   isFilterOpen.value = false;
 
@@ -716,5 +832,71 @@ onMounted(async () => {
   font-size: 14px;
   line-height: 1.6;
   text-align: center;
+}
+
+.profile-completion-banner {
+  width: 100%;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #f3b400;
+  border-radius: 16px;
+  background: #fffdf7;
+  color: #2e2a24;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-banner-header strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-banner-header span {
+  color: #756f67;
+  font-size: 11px;
+}
+
+.profile-progress {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.profile-progress-bar {
+  width: 24px;
+  height: 5px;
+  border-radius: 3px;
+  background: #ebe8e1;
+}
+
+.profile-progress-bar.completed {
+  background: #f5b400;
+}
+
+.profile-banner-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.profile-banner-bottom p {
+  margin: 0;
+  color: #827b72;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.profile-arrow {
+  flex-shrink: 0;
+  color: #b0a89e;
+  font-size: 20px;
 }
 </style>
