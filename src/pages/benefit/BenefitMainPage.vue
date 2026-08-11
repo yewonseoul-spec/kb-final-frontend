@@ -259,15 +259,30 @@ const apiParams = computed(() => {
   };
 });
 
+const selectedRegionLabel = computed(() => {
+  return [
+    filter.provinceName,
+    filter.cityName,
+    filter.districtName,
+  ]
+    .filter(Boolean)
+    .join(' ');
+});
+
 const activeFilterChips = computed(() => {
   const chips = [];
 
-  if (filter.provinceName && filter.provinceName !== "전국") {
+  // 지역
+  if (
+    selectedRegionLabel.value
+    && selectedRegionLabel.value !== '전국'
+  ) {
     chips.push({
-      key: "region",
-      label: filter.provinceName,
+      key: 'region',
+      label: selectedRegionLabel.value,
     });
   }
+
 
   if (filter.age != null) {
     chips.push({
@@ -313,15 +328,31 @@ const applyProfileFilter = (profile) => {
    * 41000처럼 시도 단위이므로
    * provinceCode에 설정한다.
    */
-  filter.provinceCode = profile.zipCd || "";
+  filter.provinceCode =
+    profile.provinceCode
+    || profile.zipCd
+    || "";
 
-  filter.provinceName = profile.regionName || "전국";
+  filter.provinceName =
+    profile.provinceName
+    || profile.regionName
+    || "전국";
 
-  filter.cityCode = "";
-  filter.cityName = "";
+  filter.cityCode =
+    profile.cityCode
+    || "";
 
-  filter.districtCode = "";
-  filter.districtName = "";
+  filter.cityName =
+    profile.cityName
+    || "";
+
+  filter.districtCode =
+    profile.districtCode
+    || "";
+
+  filter.districtName =
+    profile.districtName
+    || "";
 
   filter.age = profile.age ?? null;
 
@@ -528,6 +559,7 @@ onMounted(async () => {
     await loadProfileRecommendation();
   }
 });
+
 </script>
 
 <style scoped>
