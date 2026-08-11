@@ -177,6 +177,75 @@
             </div>
           </div>
 
+          <div class="menu-item" @click="goPage('/engine')">
+            <div class="menu-main">
+              <span class="icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 -3 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="2.9"
+                    y="6.1"
+                    width="14.2"
+                    height="7.1"
+                    rx="2"
+                    stroke="#2E2A24"
+                    stroke-width="1.9"
+                  />
+                  <path
+                    d="M4.9 3.7H15.1"
+                    stroke="#2E2A24"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M6.7 1.3H13.3"
+                    stroke="#2E2A24"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+              <div class="text-group">
+                <span class="title">맞춤 혜택 조합</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-item" @click="goPage('/stress')">
+            <div class="menu-main">
+              <span class="icon">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 -3 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3.5 12.45A6.5 6.5 0 0 1 16.5 12.45"
+                    stroke="#2E2A24"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M10 12.45L13 8.2"
+                    stroke="#2E2A24"
+                    stroke-width="1.9"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+              <div class="text-group">
+                <span class="title">금융 스트레스 테스트</span>
+              </div>
+            </div>
+          </div>
+
           <div class="menu-item" @click="goPage({ name: 'MyPage' })">
             <div class="menu-main">
               <span class="icon"
