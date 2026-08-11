@@ -9,6 +9,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import KbCheckbox from '@/components/common/KbCheckbox.vue';
 import KbBadge from '@/components/common/KbBadge.vue';
 import KbCard from '@/components/common/KbCard.vue';
+import KbModal from '@/components/common/KbModal.vue';
 import { errorMessage } from '@/api';
 
 const router = useRouter();
@@ -24,7 +25,7 @@ const member = reactive({
 
 const terms = ref([]);
 const agreed = reactive({});
-const expanded = reactive({});
+const detailTerms = ref(null); // 전문 모달에 띄울 약관. 한 번에 하나만 연다
 
 const idAvailable = ref(null);
 const emailAvailable = ref(null);
@@ -48,7 +49,6 @@ onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
   terms.value.forEach((t) => {
     agreed[t.termsNo] = false;
-    expanded[t.termsNo] = false;
   });
 });
 
@@ -271,37 +271,25 @@ const signup = async () => {
 
         <hr class="terms-divider" />
 
-        <div v-for="t in terms" :key="t.termsNo" class="terms-item">
-          <div class="terms-row">
-            <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
-              {{ t.title }}
-            </KbCheckbox>
-            <KbBadge :variant="t.required ? 'danger' : 'gray'">
-              {{ t.required ? '필수' : '선택' }}
-            </KbBadge>
-            <!-- KbCheckbox 루트가 label 이라 안에 넣으면 화살표 클릭에 동의가 토글된다 -->
-            <button
-              type="button"
-              class="terms-toggle"
-              :class="{ open: expanded[t.termsNo] }"
-              :aria-expanded="!!expanded[t.termsNo]"
-              :aria-label="t.title + ' 전문 보기'"
-              @click="expanded[t.termsNo] = !expanded[t.termsNo]"
-            >
-              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-                <path
-                  d="M1 1.5L6 6.5L11 1.5"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <p v-if="expanded[t.termsNo]" class="terms-content">
-            {{ t.content }}
-          </p>
+        <!-- 래퍼 div 를 없앴다. 펼침 <p> 가 빠져 자식이 한 줄뿐이고,
+               줄 사이 간격은 KbCard 의 gap: 8px 이 이미 준다 -->
+        <div v-for="t in terms" :key="t.termsNo" class="terms-row">
+          <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
+            {{ t.title }}
+          </KbCheckbox>
+          <KbBadge :variant="t.required ? 'danger' : 'gray'">
+            {{ t.required ? '필수' : '선택' }}
+          </KbBadge>
+          <!-- KbCheckbox 루트가 label 이라 안에 넣으면 버튼 클릭에 동의가 토글된다.
+                 form 안이라 type="button" 이 없으면 회원가입이 제출된다 -->
+          <button
+            type="button"
+            class="terms-detail-btn"
+            :aria-label="t.title + ' 전문 보기'"
+            @click="detailTerms = t"
+          >
+            보기
+          </button>
         </div>
       </KbCard>
 
@@ -312,6 +300,15 @@ const signup = async () => {
         <KbButton type="primary" :disabled="disableSubmit">가입하기</KbButton>
       </div>
     </form>
+
+    <!-- form 밖에 둔다. KbButton 이 native type 을 안 받아 기본 submit 이라
+           form 안에 있으면 '닫기'가 회원가입을 제출한다 -->
+    <KbModal v-if="detailTerms" :title="detailTerms.title" wide>
+      <p class="terms-content">{{ detailTerms.content }}</p>
+      <template #actions>
+        <KbButton type="secondary" @click="detailTerms = null">닫기</KbButton>
+      </template>
+    </KbModal>
   </div>
 </template>
 
@@ -393,12 +390,6 @@ const signup = async () => {
   border-top: 1px solid #efece4;
 }
 
-.terms-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .terms-row {
   display: flex;
   align-items: center;
@@ -409,29 +400,22 @@ const signup = async () => {
   flex: 1;
 }
 
-.terms-toggle {
-  display: flex;
+.terms-detail-btn {
   flex-shrink: 0;
-  align-items: center;
-  padding: 4px;
+  padding: 4px 6px;
   background: none;
   border: 0;
+  font-size: 13px;
   color: #908980;
+  text-decoration: underline;
   cursor: pointer;
 }
 
-.terms-toggle svg {
-  transition: transform 0.2s;
-}
-
-.terms-toggle.open svg {
-  transform: rotate(180deg);
-}
-
-/* content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
+/* 모달 슬롯 안이지만 슬롯 내용은 부모 스코프로 컴파일되므로 이 scoped 스타일이 그대로 걸린다.
+     content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
 .terms-content {
-  margin: 0;
-  max-height: 160px;
+  margin: 0 0 20px;
+  max-height: 50vh;
   padding: 12px;
   overflow-y: auto;
   background-color: #f8f7f2;
