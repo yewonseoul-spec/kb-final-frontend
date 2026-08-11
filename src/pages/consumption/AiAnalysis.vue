@@ -50,7 +50,6 @@ function highlightNumbers(text) {
             <span class="ai-icon">🔍</span>
             <div class="ai-header-text">
                 <p class="ai-title">AI 소비 패턴 분석</p>
-                <p class="ai-subtitle">LLM 기반 맞춤 분석</p>
             </div>
 
             <!-- 분석 전에는 "분석 보기 >", 분석 후에는 접기/펼치기 화살표 표시 -->
@@ -71,6 +70,8 @@ function highlightNumbers(text) {
                     <p class="insight-desc">{{ insight.description }}</p>
                 </div>
             </div>
+
+            <p class="ai-disclaimer">위 내용은 AI가 생성한 분석입니다.</p>
         </div>
 
         <p v-if="errorMessage" class="ai-error">{{ errorMessage }}</p>
@@ -119,12 +120,6 @@ function highlightNumbers(text) {
     font-size: 15px;
     color: #fff;
     margin: 0;
-}
-
-.ai-subtitle {
-    font-size: 12px;
-    color: rgba(255, 255, 255, .6);
-    margin: 2px 0 0;
 }
 
 .ai-link-btn {
@@ -196,6 +191,13 @@ function highlightNumbers(text) {
     color: #777;
     line-height: 1.5;
     margin: 0;
+}
+
+.ai-disclaimer {
+    margin: 12px 0 0;
+    font-size: 11px;
+    color: #aaa;
+    text-align: right;
 }
 
 .ai-retry-btn {
