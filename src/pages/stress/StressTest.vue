@@ -2,29 +2,32 @@
   <div class="stress-page">
 
     <header class="page-head">
-      <h2 class="page-title">금융 스트레스 테스트</h2>
-      <p class="page-sub">위기 상황이 오면 얼마나 버틸 수 있는지 확인해보세요</p>
+      <h2 class="page-title">내 통장의 평행세계</h2>
+      <p class="page-sub">조건이 다른 세계를 내 통장에 적용해봅니다</p>
     </header>
 
-    <!-- 시나리오 선택 -->
+    <!-- 1단 · 세계 선택 -->
     <section class="section">
-      <h3 class="section-title">어떤 상황을 가정할까요</h3>
+      <h3 class="section-title">어느 세계로 가볼까요</h3>
 
       <div v-if="loadingScenarios" class="state-box">
         <div class="spinner"></div>
       </div>
 
-      <div v-else class="scenario-grid">
-        <!-- 계산할 수 없는 시나리오도 누를 수 있게 두고, 누르면 사유를 보여준다.
-             disabled 로 막으면 왜 못 쓰는지 확인할 방법이 없다. -->
-        <button v-for="s in scenarios" :key="s.scenarioCode"
-                class="scenario-card"
-                :class="{ 'is-selected': selectedCode === s.scenarioCode, 'is-locked': !s.available }"
-                :aria-pressed="selectedCode === s.scenarioCode"
-                @click="selectScenario(s)">
-          <span class="scenario-name">{{ s.scenarioName }}</span>
-          <span class="scenario-target">{{ s.targetCategory === 'ALL' ? '전체' : s.targetCategory }}</span>
-          <span v-if="!s.available" class="lock-tag">준비 중</span>
+      <div v-else class="world-list">
+        <button
+          v-for="world in worlds"
+          :key="world.scenarioCode"
+          class="world-card"
+          :class="{ 'is-selected': selectedCode === world.scenarioCode, 'is-locked': !world.available }"
+          :aria-pressed="selectedCode === world.scenarioCode"
+          @click="selectWorld(world)">
+          <span class="world-head">
+            <span class="world-name">{{ world.scenarioName }}</span>
+            <span class="world-badge" :class="badgeClass(world)">{{ badgeText(world) }}</span>
+          </span>
+          <span class="world-desc">{{ world.description || world.targetCategory }}</span>
+          <span v-if="!world.available" class="world-lock">준비 중</span>
         </button>
       </div>
 
@@ -32,175 +35,178 @@
     </section>
 
     <!-- 강도 선택 -->
-    <section v-if="selectedScenario && selectedScenario.available" class="section">
-      <h3 class="section-title">충격 강도</h3>
-
+    <section v-if="selectedWorld && selectedWorld.available && hasLevels" class="section">
+      <h3 class="section-title">얼마나 세게</h3>
       <div class="level-row">
-        <button v-for="lv in selectedScenario.levels" :key="lv.shockLevel"
-                class="level-btn"
-                :class="{ 'is-selected': selectedLevel === lv.shockLevel }"
-                :aria-pressed="selectedLevel === lv.shockLevel"
-                @click="selectLevel(lv.shockLevel)">
-          <span class="level-label">{{ lv.label }}</span>
-          <span class="level-value">{{ lv.displayText }}</span>
+        <button
+          v-for="level in selectedWorld.levels"
+          :key="level.shockLevel"
+          class="level-btn"
+          :class="{ 'is-selected': selectedLevel === level.shockLevel }"
+          :aria-pressed="selectedLevel === level.shockLevel"
+          @click="selectLevel(level.shockLevel)">
+          <span class="level-value">{{ level.displayText }}</span>
         </button>
       </div>
+      <p class="hint">실제 전망이 아니라 재무 민감도를 확인하기 위한 가정입니다</p>
     </section>
 
-    <!-- 오류 안내.
-         결과가 이미 있으면 지우지 않고 위에 배너로만 알린다 -->
     <div v-if="loadError" class="error-banner">
       <span>{{ loadError }}</span>
       <button class="retry-btn" @click="retry">다시 시도</button>
     </div>
 
-    <!-- 첫 계산 중에만 전체를 대체한다.
-         이미 결과가 있으면 그대로 두고 흐리게만 처리해,
-         시나리오를 바꿀 때마다 화면이 접혔다 펴지는 것을 막는다. -->
     <div v-if="calculating && !result" class="state-box">
       <div class="spinner"></div>
-      <p class="state-text">방어력을 계산하는 중이에요</p>
     </div>
 
-    <!-- 계산 불가 -->
-    <KbCard v-else-if="result && result.status !== 'OK'" class="text-center">
-      <h3 class="empty-title">계산할 수 없어요</h3>
-      <p class="empty-desc">{{ result.message }}</p>
-      <KbButton v-if="result.status === 'PROFILE_REQUIRED'" class="mt-3" @click="goProfile">
-        프로필 입력하러 가기
-      </KbButton>
-      <KbButton v-else-if="result.status === 'NO_ACCOUNT'" class="mt-3" @click="goAsset">
-        계좌 연결하러 가기
-      </KbButton>
-    </KbCard>
+    <!-- 2단 · 결과 -->
+    <template v-if="result">
+      <section class="section" :class="{ 'is-dim': calculating }">
 
-    <!-- 결과 -->
-    <div v-else-if="result" class="result-wrap" :class="{ 'is-dim': calculating }">
-
-      <!-- 점수 -->
-      <KbCard yellow-bg class="score-card">
-        <div class="score-top">
-          <span class="grade-badge" :class="gradeClass">{{ result.grade }}</span>
-          <span class="score-sub">방어력 점수</span>
+        <!-- 계산 불가 안내 -->
+        <div v-if="isInsufficientHistory" class="notice-box">
+          <p class="notice-title">분석할 수 있는 기간이 없습니다</p>
+          <p class="notice-body">소비 내역이 쌓이면 결과를 볼 수 있습니다</p>
         </div>
-        <div class="score-main">
-          <strong>{{ result.score }}</strong><span class="score-unit">점</span>
+
+        <div v-else-if="isIncomeUnknown" class="notice-box">
+          <p class="notice-title">소득 정보가 없습니다</p>
+          <p class="notice-body">계산에 사용할 소득을 선택해주세요</p>
+          <div class="notice-actions">
+            <KbButton type="secondary" size="small" @click="goProfile">소득 입력하기</KbButton>
+          </div>
         </div>
-        <p class="survival">
-          지금 수입이 끊긴다면 <strong>{{ result.survivalMonths }}개월</strong> 버틸 수 있어요
-        </p>
-        <p class="grade-action">{{ result.gradeAction }}</p>
-      </KbCard>
 
-      <p class="assume-note">
-        수입이 끊긴 상황을 가정해 현재 잔액으로 몇 개월 버틸 수 있는지 계산합니다.
-        일반적으로 권장되는 비상자금은 3~6개월치입니다.
-      </p>
+        <!-- 정상 결과 -->
+        <template v-else>
+          <div class="result-head">
+            <p class="result-caption">{{ result.appliedDescription }}</p>
 
-      <!-- 위기 시 지출 -->
-      <section class="section">
-        <h3 class="section-title">위기가 오면</h3>
+            <template v-if="hasCoverage">
+              <p class="result-main">
+                <span class="result-number">{{ displayMonths }}</span>
+                <span class="result-unit">개월</span>
+              </p>
+              <p class="result-sub">버틸 수 있습니다</p>
+            </template>
 
-        <KbCard>
-          <div class="flow">
-            <div class="flow-item">
-              <span class="flow-label">평상시 월 지출</span>
-              <span class="flow-value">{{ won(result.monthlySpending) }}</span>
+            <template v-else-if="result.cashFlowState === 'SURPLUS'">
+              <p class="result-main">
+                <span class="result-number">{{ formatWon(result.monthlySurplus) }}</span>
+              </p>
+              <p class="result-sub">매달 남습니다</p>
+            </template>
+
+            <template v-else-if="result.cashFlowState === 'BALANCED'">
+              <p class="result-main"><span class="result-number">±0원</span></p>
+              <p class="result-sub">수입과 지출이 같습니다</p>
+            </template>
+
+            <template v-else>
+              <p class="result-main">
+                <span class="result-number">{{ formatWon(result.monthlyGap) }}</span>
+              </p>
+              <p class="result-sub">매달 부족합니다</p>
+            </template>
+          </div>
+
+          <!-- 게이지 -->
+          <div v-if="hasCoverage" class="gauge">
+            <div class="gauge-fill" :style="{ width: gaugeWidth }"></div>
+            <div class="gauge-goal"></div>
+          </div>
+          <p v-if="hasCoverage" class="gauge-note">눈금은 6개월입니다</p>
+
+          <!-- 보조 지표 -->
+          <div class="metric-row">
+            <div class="metric">
+              <span class="metric-label">월 부족액</span>
+              <b class="metric-value">{{ result.monthlyGap != null ? formatWon(result.monthlyGap) : '없음' }}</b>
             </div>
-            <div class="flow-item is-plus">
-              <span class="flow-label">{{ result.scenarioName }} · {{ result.shockLabel }}</span>
-              <span class="flow-value">+{{ won(result.increaseAmount) }}</span>
+            <div class="metric">
+              <span class="metric-label">즉시 부족액</span>
+              <b class="metric-value" :class="{ 'is-danger': result.immediateShortfall > 0 }">
+                {{ result.immediateShortfall != null ? formatWon(result.immediateShortfall) : '알 수 없음' }}
+              </b>
             </div>
-            <div class="flow-divider"></div>
-            <div class="flow-item is-total">
-              <span class="flow-label">위기 시 월 지출</span>
-              <span class="flow-value">{{ won(result.crisisSpending) }}</span>
+            <div class="metric">
+              <span class="metric-label">남은 돈</span>
+              <b class="metric-value">
+                {{ result.postShockBalance != null ? formatWon(result.postShockBalance) : '알 수 없음' }}
+              </b>
             </div>
           </div>
 
-          <p v-if="result.scenarioBasis" class="basis-note">
-            {{ result.scenarioBasis }}
+          <p v-if="isNoAccount" class="hint-warn">
+            등록된 계좌가 없어 잔액 기반 결과를 계산하지 않았습니다
           </p>
-        </KbCard>
+        </template>
       </section>
 
-      <!-- 지출 구성 -->
-      <section class="section">
-        <h3 class="section-title">내 지출 구성</h3>
+      <!-- 3단 · 귀환 -->
+      <section v-if="canRebalance" class="section">
+        <h3 class="section-title">무엇을 포기하시겠어요</h3>
 
-        <KbCard>
-          <div class="bar">
-            <div class="bar-seg is-fixed" :style="{ width: pct(result.fixedTotal) }"></div>
-            <div class="bar-seg is-variable" :style="{ width: pct(result.variableTotal) }"></div>
-            <div class="bar-seg is-adjustable" :style="{ width: pct(result.adjustableTotal) }"></div>
-          </div>
-
-          <div class="legend">
-            <span><i class="dot is-fixed"></i>고정비 {{ won(result.fixedTotal) }}</span>
-            <span><i class="dot is-variable"></i>변동비 {{ won(result.variableTotal) }}</span>
-            <span><i class="dot is-adjustable"></i>조절 가능 {{ won(result.adjustableTotal) }}</span>
-          </div>
-
-          <button class="link-toggle" @click="showBreakdown = !showBreakdown">
-            카테고리별 보기
-            <span class="caret">{{ showBreakdown ? '▴' : '▾' }}</span>
+        <div class="give-up-list">
+          <button
+            v-for="category in reducibleCategories"
+            :key="category.categoryName"
+            class="give-up-item"
+            :class="{ 'is-selected': givenUp.includes(category.categoryName) }"
+            :aria-pressed="givenUp.includes(category.categoryName)"
+            @click="toggleGiveUp(category.categoryName)">
+            <span class="give-up-name">{{ category.categoryName }}</span>
+            <span class="give-up-amount">월 {{ formatWon(category.monthlyAverage) }}</span>
+            <span class="give-up-effect">+{{ effectOf(category) }}개월</span>
           </button>
+        </div>
 
-          <ul v-if="showBreakdown" class="cat-list">
-            <li v-for="b in result.breakdown" :key="b.categoryName"
-                :class="{ 'is-affected': isAffected(b) }">
-              <span class="cat-name">
-                {{ b.categoryName }}
-                <em v-if="isAffected(b)" class="affected-tag">영향</em>
+        <div v-if="givenUp.length" class="rebalance-result">
+          <span class="rebalance-from">{{ displayMonths }}개월</span>
+          <span class="rebalance-arrow">→</span>
+          <span class="rebalance-to">{{ rebalancedMonths }}개월</span>
+          <span class="rebalance-diff">{{ rebalanceDiffText }}</span>
+        </div>
+
+        <p class="hint">줄인다고 가정했을 때의 결과입니다</p>
+      </section>
+
+      <!-- 4단 · 상세 -->
+      <section class="section">
+        <details class="detail-block">
+          <summary class="detail-summary">계산 근거</summary>
+          <ul class="detail-list">
+            <li v-for="(line, index) in result.basis" :key="'basis-' + index">{{ line }}</li>
+          </ul>
+          <p class="detail-meta">
+            소비 분석 기간 {{ result.analysisStart }} ~ {{ result.analysisEnd }}
+            ({{ result.observationMonths }}개 완결월)
+          </p>
+        </details>
+
+        <details class="detail-block">
+          <summary class="detail-summary">지출 구성</summary>
+          <ul class="category-list">
+            <li v-for="category in result.categories" :key="category.categoryName" class="category-item">
+              <span class="category-name">{{ category.categoryName }}</span>
+              <span class="category-freq">
+                {{ result.observationMonths }}개월 중 {{ category.occurredMonths }}개월
               </span>
-              <span class="cat-type">{{ b.spendingType }}</span>
-              <span class="cat-amount">{{ won(b.monthlyAmount) }}</span>
+              <span class="category-amount">{{ formatWon(category.monthlyAverage) }}</span>
             </li>
           </ul>
-        </KbCard>
-      </section>
+          <p class="detail-meta">월 환산 평균입니다. 실제로 그 금액을 쓴 달이 없을 수 있습니다</p>
+        </details>
 
-      <!-- 권고 -->
-      <section v-if="result.reduction" class="section">
-        <h3 class="section-title">지출을 줄이면</h3>
-
-        <KbCard>
-          <p class="reduce-main">
-            월 <strong>{{ won(result.reduction.reducedSpending) }}</strong>까지 줄이면
-            <strong>{{ result.reduction.reducedSurvivalMonths }}개월</strong>까지 버틸 수 있어요.
-          </p>
-          <p class="reduce-grade-line">
-            이때 등급은
-            <span class="reduce-grade" :class="gradeClassOf(result.reduction.reducedGrade)">
-              {{ result.reduction.reducedGrade }}
-            </span>
-            입니다.
-          </p>
-
-          <ul class="save-list">
-            <li v-for="(s, i) in result.reduction.topSavings" :key="i">{{ s }}</li>
+        <details class="detail-block">
+          <summary class="detail-summary">알려진 한계</summary>
+          <ul class="detail-list">
+            <li v-for="(line, index) in result.limitations" :key="'limit-' + index">{{ line }}</li>
           </ul>
-
-          <p class="basis-note">
-            주거비처럼 계약으로 정해진 지출은 줄일 수 없다고 보고,
-            여가·쇼핑처럼 조절 가능한 항목만 반영했습니다.
-          </p>
-        </KbCard>
+        </details>
       </section>
-
-      <!-- 계산 근거 -->
-      <section class="section">
-        <button class="more-btn" @click="showBasis = !showBasis">
-          계산 근거 보기
-          <span class="caret">{{ showBasis ? '▴' : '▾' }}</span>
-        </button>
-
-        <ul v-if="showBasis" class="basis-list">
-          <li v-for="(b, i) in result.basis" :key="i">{{ b }}</li>
-        </ul>
-      </section>
-
-    </div>
+    </template>
   </div>
 </template>
 
@@ -208,337 +214,316 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import stressApi from '@/api/stressApi';
-import KbCard from '@/components/common/KbCard.vue';
 import KbButton from '@/components/common/KbButton.vue';
 
 const router = useRouter();
 
+/** 소득 전액 상실은 stress_scenario 에 없어 화면에서 추가한다 */
+const JOB_LOSS_WORLD = {
+  scenarioCode: 'JOB_LOSS',
+  scenarioName: '소득이 끊긴 세계',
+  description: '등록 월소득이 전부 사라진다고 가정합니다',
+  targetCategory: '소득',
+  available: true,
+  levels: [],
+};
+
 const scenarios = ref([]);
 const loadingScenarios = ref(false);
-const selectedCode = ref('');
-const selectedLevel = ref('');
-const blockedNotice = ref('');
-
-const result = ref(null);
 const calculating = ref(false);
 const loadError = ref('');
-const failedStage = ref('');   // 'scenarios' | 'result'
+const blockedNotice = ref('');
 
-const showBreakdown = ref(false);
-const showBasis = ref(false);
+const selectedCode = ref('');
+const selectedLevel = ref('');
+const result = ref(null);
+const givenUp = ref([]);
 
-// 응답 역전 방지용 요청 순번.
-// 시나리오를 빠르게 여러 번 누르면 늦게 도착한 이전 응답이 최신 결과를 덮는다.
-let reqId = 0;
+const worlds = computed(() => [JOB_LOSS_WORLD, ...scenarios.value]);
 
-const selectedScenario = computed(() =>
-    scenarios.value.find((s) => s.scenarioCode === selectedCode.value) || null);
+const selectedWorld = computed(
+  () => worlds.value.find((world) => world.scenarioCode === selectedCode.value) || null,
+);
 
-const gradeClass = computed(() => gradeClassOf(result.value?.grade));
+const hasLevels = computed(
+  () => !!selectedWorld.value?.levels?.length,
+);
 
-function gradeClassOf(grade) {
-  if (grade === '안전') return 'is-safe';
-  if (grade === '주의') return 'is-warn';
-  return 'is-danger';
-}
+const isInsufficientHistory = computed(
+  () => result.value?.spendingStatus === 'INSUFFICIENT_HISTORY',
+);
+
+const isIncomeUnknown = computed(
+  () => result.value?.incomeStatus === 'NEEDS_USER_ASSUMPTION',
+);
+
+const isNoAccount = computed(
+  () => result.value?.balanceStatus === 'NO_ACCOUNT',
+);
+
+const hasCoverage = computed(
+  () => result.value?.coverageMonths != null,
+);
+
+const coverageMonths = computed(
+  () => Number(result.value?.coverageMonths ?? 0),
+);
+
+const displayMonths = computed(() => formatMonths(coverageMonths.value));
+
+const gaugeWidth = computed(() => {
+  const ratio = Math.min(coverageMonths.value / 8, 1);
+  return `${Math.round(ratio * 100)}%`;
+});
+
+/** 부족 상태이고 잔액을 알 때만 조정할 수 있다 */
+const canRebalance = computed(
+  () => result.value?.cashFlowState === 'DEFICIT' && hasCoverage.value,
+);
+
+const reducibleCategories = computed(
+  () => (result.value?.categories ?? []).filter((category) => category.monthlyAverage > 0),
+);
+
+/** 포기한 항목의 월 환산 합계 */
+const reducedAmount = computed(() =>
+  reducibleCategories.value
+    .filter((category) => givenUp.value.includes(category.categoryName))
+    .reduce((sum, category) => sum + category.monthlyAverage, 0),
+);
+
+const rebalancedMonths = computed(() => {
+  const gap = Number(result.value?.monthlyGap ?? 0) - reducedAmount.value;
+  if (gap <= 0) {
+    return '∞';
+  }
+  return formatMonths(Number(result.value?.postShockBalance ?? 0) / gap);
+});
+
+const rebalanceDiffText = computed(() => {
+  if (rebalancedMonths.value === '∞') {
+    return '부족이 사라집니다';
+  }
+  const diff = Number(rebalancedMonths.value) - coverageMonths.value;
+  return `${diff.toFixed(1)}개월 늘었습니다`;
+});
 
 /**
- * 영향 카테고리 판정.
- * 백엔드가 affected 를 안 내려주면 선택한 시나리오의 대상 카테고리로 대신 판정한다.
- * 의료비는 카테고리 무관 고정 금액이고 복합 위기는 대상이 'ALL' 이라 표시되지 않는다.
+ * 해당 항목만 포기했을 때 늘어나는 기간을 계산한다
+ * 서버가 배열로 내려주기 전까지 화면에서 계산한다
  */
-function isAffected(b) {
-  if (b.affected !== undefined && b.affected !== null) return b.affected;
-
-  const target = selectedScenario.value?.targetCategory;
-  if (!target || target === 'ALL') return false;
-  return b.categoryName === target;
+function effectOf(category) {
+  const gap = Number(result.value?.monthlyGap ?? 0);
+  const balance = Number(result.value?.postShockBalance ?? 0);
+  const nextGap = gap - category.monthlyAverage;
+  if (nextGap <= 0) {
+    return '∞';
+  }
+  return (balance / nextGap - balance / gap).toFixed(1);
 }
 
-/**
- * 지출 구성 막대의 비율.
- * 분모를 monthlySpending 이 아니라 세 구간의 합으로 둔다.
- * 의료비를 통계 기대값으로 대체하는 계산 때문에 둘이 어긋나면
- * 막대가 100%를 넘거나 모자라기 때문이다.
- */
-function pct(amount) {
-  const r = result.value;
-  if (!r) return '0%';
-
-  const total = (r.fixedTotal || 0) + (r.variableTotal || 0) + (r.adjustableTotal || 0);
-  if (!total) return '0%';
-
-  return `${((amount || 0) / total * 100).toFixed(1)}%`;
+function badgeText(world) {
+  if (world.scenarioCode === 'JOB_LOSS') {
+    return '가정';
+  }
+  return '가정';
 }
 
-function won(v) {
-  return `${(v ?? 0).toLocaleString()}원`;
+function badgeClass(world) {
+  return world.scenarioCode === 'JOB_LOSS' ? 'is-income' : 'is-assumed';
+}
+
+function formatWon(value) {
+  if (value == null) {
+    return '알 수 없음';
+  }
+  return `${Number(value).toLocaleString()}원`;
+}
+
+function formatMonths(value) {
+  const months = Number(value);
+  if (!Number.isFinite(months)) {
+    return '0';
+  }
+  return months >= 100 ? Math.round(months).toString() : months.toFixed(1);
+}
+
+function selectWorld(world) {
+  if (!world.available) {
+    blockedNotice.value = world.unavailableReason || '아직 계산할 수 없는 세계입니다';
+    return;
+  }
+  blockedNotice.value = '';
+  selectedCode.value = world.scenarioCode;
+  selectedLevel.value = world.levels?.length ? world.levels[0].shockLevel : 'HIGH';
+  calculate();
+}
+
+function selectLevel(shockLevel) {
+  selectedLevel.value = shockLevel;
+  calculate();
+}
+
+function toggleGiveUp(categoryName) {
+  const index = givenUp.value.indexOf(categoryName);
+  if (index >= 0) {
+    givenUp.value.splice(index, 1);
+  } else {
+    givenUp.value.push(categoryName);
+  }
+}
+
+function goProfile() {
+  router.push({ path: '/mypage' });
+}
+
+function retry() {
+  loadError.value = '';
+  if (selectedCode.value) {
+    calculate();
+  } else {
+    loadScenarios();
+  }
 }
 
 async function loadScenarios() {
   loadingScenarios.value = true;
   loadError.value = '';
-
   try {
-    const data = await stressApi.getScenarios();
-    scenarios.value = data;
-
-    // 첫 진입에는 계산 가능한 첫 시나리오를 보통 강도로 보여준다
-    const first = data.find((s) => s.available);
-    if (first) {
-      selectedCode.value = first.scenarioCode;
-      selectedLevel.value = 'MID';
-      await calculate();
-    }
+    scenarios.value = await stressApi.getScenarios();
   } catch (e) {
-    failedStage.value = 'scenarios';
-    loadError.value = '시나리오를 불러오지 못했어요.';
-    console.error(e);
+    loadError.value = '세계 목록을 불러오지 못했습니다';
   } finally {
     loadingScenarios.value = false;
   }
 }
 
-function selectScenario(s) {
-  // 계산할 수 없는 시나리오는 사유만 보여주고 요청하지 않는다
-  if (!s.available) {
-    blockedNotice.value = s.unavailableReason || '아직 준비 중인 시나리오예요.';
+async function calculate() {
+  if (!selectedCode.value) {
     return;
   }
-
-  blockedNotice.value = '';
-  selectedCode.value = s.scenarioCode;
-
-  // 시나리오마다 강도 구성이 다를 수 있어 없는 강도면 보통으로 되돌린다
-  if (!s.levels?.some((lv) => lv.shockLevel === selectedLevel.value)) {
-    selectedLevel.value = 'MID';
-  }
-
-  calculate();
-}
-
-function selectLevel(level) {
-  selectedLevel.value = level;
-  calculate();
-}
-
-async function calculate() {
-  if (!selectedCode.value || !selectedLevel.value) return;
-
-  const myReq = ++reqId;
   calculating.value = true;
   loadError.value = '';
-
+  givenUp.value = [];
   try {
-    const data = await stressApi.getResult(selectedCode.value, selectedLevel.value);
-    if (myReq !== reqId) return;   // 늦게 온 이전 응답은 버린다
-    result.value = data;
+    result.value = await stressApi.getResult(selectedCode.value, selectedLevel.value);
   } catch (e) {
-    if (myReq !== reqId) return;
-
-    failedStage.value = 'result';
-    loadError.value = '계산에 실패했어요. 잠시 후 다시 시도해주세요.';
-    console.error(e);
+    loadError.value = '결과를 계산하지 못했습니다';
   } finally {
-    if (myReq === reqId) calculating.value = false;
+    calculating.value = false;
   }
-}
-
-/**
- * 실패한 지점에 따라 다시 부를 대상이 다르다.
- * 시나리오 조회가 실패하면 selectedCode 가 비어 있어 calculate 가 그냥 return 하므로,
- * '다시 시도'를 눌러도 아무 일이 일어나지 않는다.
- */
-function retry() {
-  if (failedStage.value === 'scenarios' || scenarios.value.length === 0) {
-    loadScenarios();
-  } else {
-    calculate();
-  }
-}
-
-function goProfile() {
-  router.push('/mypage');
-}
-
-function goAsset() {
-  router.push('/asset');
 }
 
 onMounted(loadScenarios);
 </script>
 
 <style scoped>
-/* 하단 탭바(80px)에 마지막 카드가 가리지 않도록 여백을 둔다 */
 .stress-page {
   padding-bottom: 100px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 480px;
-  margin: 0 auto;
 }
 
-/* 결과를 div 로 감싸면 부모의 flex gap 이 안 먹으므로 같은 간격을 다시 준다.
-   재계산 중에는 결과를 지우지 않고 흐리게만 해서 화면이 튀지 않게 한다 */
-.result-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  transition: opacity 0.15s ease;
+.page-head {
+  margin-bottom: 24px;
 }
-
-.result-wrap.is-dim { opacity: 0.45; }
-
-/* ---- 상태 ---- */
-.state-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 60px 0;
-}
-
-.state-text {
-  margin: 0;
-  font-size: 14px;
-  color: #908980;
-}
-
-.spinner {
-  width: 26px;
-  height: 26px;
-  border: 3px solid #efece4;
-  border-top-color: #ffbc00;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
-
-.error-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 11px 13px;
-  border-radius: 10px;
-  background: #ffe8e8;
-  font-size: 12.5px;
-  color: #a83030;
-}
-
-.retry-btn {
-  flex-shrink: 0;
-  padding: 5px 10px;
-  border: 1px solid #e0a6a6;
-  border-radius: 8px;
-  background: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  color: #a83030;
-  cursor: pointer;
-}
-
-/* ---- 제목 ---- */
-.page-head { padding-top: 4px; }
 
 .page-title {
-  margin: 0 0 4px;
   font-size: 22px;
   font-weight: 700;
-  color: #2e2a24;
-  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0 0 4px;
 }
 
 .page-sub {
-  margin: 0;
   font-size: 13px;
-  color: #908980;
+  color: var(--color-text-muted);
+  margin: 0;
 }
 
 .section {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  margin-bottom: 28px;
+  transition: opacity 0.2s;
+}
+
+.section.is-dim {
+  opacity: 0.5;
 }
 
 .section-title {
-  margin: 4px 0 0;
   font-size: 15px;
-  font-weight: 700;
-  color: #2e2a24;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 12px;
 }
 
-/* ---- 시나리오 ---- */
-.scenario-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+/* 세계 카드 */
+.world-list {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
 }
 
-.scenario-card {
-  position: relative;
+.world-card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 12px 10px;
-  border-radius: 12px;
-  border: 1.5px solid #efece4;
-  background: #ffffff;
-  cursor: pointer;
+  gap: 6px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
   text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.scenario-card.is-selected {
-  border-color: #ffbc00;
-  background: #fffaeb;
+.world-card.is-selected {
+  border-color: var(--color-primary);
+  background: #fffdf5;
 }
 
-.scenario-card.is-locked {
-  background: #f8f7f2;
-  border-style: dashed;
+.world-card.is-locked {
+  opacity: 0.55;
 }
 
-.scenario-card.is-locked .scenario-name,
-.scenario-card.is-locked .scenario-target { color: #a8a29a; }
+.world-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-.lock-tag {
-  margin-top: 4px;
-  align-self: flex-start;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #ece8e0;
-  color: #7d766d;
-  font-size: 10px;
+.world-name {
+  font-size: 15px;
   font-weight: 600;
+  color: var(--color-text-primary);
 }
 
-.scenario-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #2e2a24;
+.world-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
 }
 
-.scenario-target {
-  font-size: 11.5px;
-  color: #908980;
+.world-badge.is-assumed {
+  background: #f2efe8;
+  color: var(--color-text-muted);
 }
 
-.hint-warn {
-  margin: 0;
-  padding: 9px 11px;
-  border-radius: 8px;
-  background: #fffaeb;
+.world-badge.is-income {
+  background: #fdeaea;
+  color: var(--color-danger);
+}
+
+.world-desc {
   font-size: 12px;
-  color: #8a6d1f;
-  line-height: 1.5;
+  color: var(--color-text-muted);
 }
 
-/* ---- 강도 ----
-   선택 표시를 시나리오 카드와 같은 시각 언어로 맞춘다.
-   검은 배경은 화면에서 가장 강한 요소가 되어 주인공인 점수 카드보다 먼저 눈에 들어온다 */
+.world-lock {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* 강도 */
 .level-row {
   display: flex;
   gap: 8px;
@@ -546,288 +531,340 @@ onMounted(loadScenarios);
 
 .level-btn {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
   padding: 12px 8px;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  border: 1.5px solid #efece4;
-  background: #ffffff;
+  background: var(--color-surface);
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .level-btn.is-selected {
-  border-color: #ffbc00;
-  background: #fffaeb;
-}
-
-.level-btn.is-selected .level-label { color: #2e2a24; }
-.level-btn.is-selected .level-value { color: #8a6d1f; }
-
-.level-label {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #2e2a24;
+  border-color: var(--color-primary);
+  background: #fffdf5;
 }
 
 .level-value {
-  font-size: 11px;
-  color: #908980;
+  display: block;
+  font-size: 13px;
+  color: var(--color-text-primary);
 }
 
-/* ---- 점수 ---- */
-.score-top {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* 결과 */
+.result-head {
+  text-align: center;
+  padding: 20px 0 12px;
 }
 
-.grade-badge {
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 12.5px;
-  font-weight: 700;
+.result-caption {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 10px;
 }
 
-.grade-badge.is-safe { background: #e3f4e6; color: #2c7a3f; }
-.grade-badge.is-warn { background: #fff2d6; color: #98701a; }
-.grade-badge.is-danger { background: #ffe8e8; color: #d64545; }
-
-.score-sub {
-  font-size: 12.5px;
-  color: #908980;
-}
-
-.score-main {
+.result-main {
+  margin: 0;
   display: flex;
   align-items: baseline;
-  gap: 2px;
-  margin-top: 2px;
+  justify-content: center;
+  gap: 4px;
 }
 
-.score-main strong {
+.result-number {
   font-size: 40px;
   font-weight: 700;
-  color: #2e2a24;
-  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+  line-height: 1.1;
 }
 
-.score-unit {
-  font-size: 16px;
-  color: #908980;
+.result-unit {
+  font-size: 18px;
+  color: var(--color-text-primary);
 }
 
-.survival {
-  margin: 2px 0 0;
-  font-size: 14px;
-  color: #2e2a24;
+.result-sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 6px 0 0;
 }
 
-.survival strong { color: #c99400; }
-
-.grade-action {
-  margin: 0;
-  font-size: 12.5px;
-  color: #908980;
+.gauge {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: #efece4;
+  margin: 16px 0 6px;
 }
 
-.assume-note {
-  margin: -8px 0 0;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #f8f7f2;
-  font-size: 12px;
-  color: #6f6860;
-  line-height: 1.55;
+.gauge-fill {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--color-primary);
+  transition: width 0.3s;
 }
 
-/* ---- 지출 흐름 ---- */
-.flow {
+.gauge-goal {
+  position: absolute;
+  top: -3px;
+  left: 75%;
+  width: 2px;
+  height: 16px;
+  background: var(--color-text-muted);
+}
+
+.gauge-note {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin: 0 0 16px;
+}
+
+.metric-row {
   display: flex;
-  flex-direction: column;
   gap: 8px;
 }
 
-.flow-item {
+.metric {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  background: #faf8f3;
+  text-align: center;
+}
+
+.metric-label {
+  display: block;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.metric-value.is-danger {
+  color: var(--color-danger);
+}
+
+/* 귀환 */
+.give-up-list {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 13.5px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.flow-label { color: #6f6860; }
-.flow-value { color: #2e2a24; font-weight: 600; }
-
-.flow-item.is-plus .flow-value { color: #d64545; }
-
-.flow-divider {
-  height: 1px;
-  background: #efece4;
-  margin: 2px 0;
-}
-
-.flow-item.is-total .flow-label { font-weight: 700; color: #2e2a24; }
-.flow-item.is-total .flow-value { font-size: 16px; font-weight: 700; }
-
-.basis-note {
-  margin: 10px 0 0;
-  font-size: 12px;
-  color: #908980;
-  line-height: 1.55;
-}
-
-/* ---- 지출 구성 ---- */
-.bar {
+.give-up-item {
   display: flex;
-  height: 10px;
-  border-radius: 5px;
-  overflow: hidden;
-  background: #f4f1ea;
-}
-
-.bar-seg.is-fixed { background: #6f6860; }
-.bar-seg.is-variable { background: #ffbc00; }
-.bar-seg.is-adjustable { background: #f0dfa8; }
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
-  margin-top: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.give-up-item.is-selected {
+  border-color: var(--color-primary);
+  background: #fffdf5;
+}
+
+.give-up-name {
+  flex: 1;
+  font-size: 14px;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.give-up-amount {
   font-size: 12px;
-  color: #6f6860;
+  color: var(--color-text-muted);
 }
 
-.dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  margin-right: 4px;
+.give-up-effect {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  min-width: 62px;
+  text-align: right;
 }
 
-.dot.is-fixed { background: #6f6860; }
-.dot.is-variable { background: #ffbc00; }
-.dot.is-adjustable { background: #f0dfa8; }
+.rebalance-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #faf8f3;
+}
 
-.cat-list {
-  margin: 8px 0 0;
-  padding: 0;
+.rebalance-from {
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+.rebalance-arrow {
+  color: var(--color-text-muted);
+}
+
+.rebalance-to {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.rebalance-diff {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* 상세 */
+.detail-block {
+  border-top: 1px solid var(--color-border);
+  padding: 12px 0;
+}
+
+.detail-summary {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.detail-list {
+  margin: 10px 0 0;
+  padding-left: 16px;
+}
+
+.detail-list li {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.8;
+}
+
+.detail-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin: 10px 0 0;
+}
+
+.category-list {
   list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
 }
 
-.cat-list li {
+.category-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid #f4f1ea;
-  font-size: 12.5px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f2eb;
 }
 
-.cat-list li:last-child { border-bottom: none; }
-.cat-list li.is-affected { background: #fffaeb; }
-
-.cat-name { flex: 1; color: #2e2a24; }
-
-.affected-tag {
-  margin-left: 4px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: #ffe8b0;
-  color: #8a6d1f;
-  font-size: 10px;
-  font-style: normal;
-}
-
-.cat-type { color: #908980; font-size: 11.5px; }
-.cat-amount { color: #2e2a24; font-weight: 600; min-width: 78px; text-align: right; }
-
-/* ---- 권고 ---- */
-.reduce-main {
-  margin: 0;
-  font-size: 14px;
-  color: #2e2a24;
-  line-height: 1.6;
-}
-
-.reduce-main strong { color: #c99400; }
-
-.reduce-grade-line {
-  margin: 4px 0 0;
+.category-name {
+  flex: 1;
   font-size: 13px;
-  color: #6f6860;
+  color: var(--color-text-primary);
 }
 
-.reduce-grade {
-  padding: 2px 7px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 700;
+.category-freq {
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
-.reduce-grade.is-safe { background: #e3f4e6; color: #2c7a3f; }
-.reduce-grade.is-warn { background: #fff2d6; color: #98701a; }
-.reduce-grade.is-danger { background: #ffe8e8; color: #d64545; }
+.category-amount {
+  font-size: 13px;
+  color: var(--color-text-primary);
+  min-width: 84px;
+  text-align: right;
+}
 
-.save-list {
+/* 공통 */
+.notice-box {
+  padding: 24px 16px;
+  border-radius: 14px;
+  background: #faf8f3;
+  text-align: center;
+}
+
+.notice-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+}
+
+.notice-body {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.notice-actions {
+  margin-top: 14px;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
   margin: 10px 0 0;
-  padding: 10px 12px;
-  list-style: none;
-  border-radius: 10px;
-  background: #f8f7f2;
 }
 
-.save-list li {
-  font-size: 12.5px;
-  color: #6f6860;
-  padding: 3px 0;
+.hint-warn {
+  font-size: 12px;
+  color: var(--color-danger);
+  margin: 10px 0 0;
 }
 
-/* ---- 근거 ---- */
-.more-btn {
-  width: 100%;
-  padding: 13px;
-  border-radius: 12px;
-  background: #ffffff;
-  border: 1px solid #efece4;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #6f6860;
-  cursor: pointer;
-}
-
-.basis-list {
-  margin: 0;
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 12px 14px;
-  list-style: none;
   border-radius: 12px;
-  background: #f8f7f2;
+  background: #fdeaea;
+  margin-bottom: 20px;
 }
 
-.basis-list li {
-  font-size: 12.5px;
-  color: #6f6860;
-  padding: 4px 0;
-  line-height: 1.5;
-}
-
-/* ---- 공통 ---- */
-.link-toggle {
-  margin-top: 10px;
-  background: none;
-  border: none;
-  padding: 0;
+.error-banner span {
   font-size: 13px;
-  font-weight: 600;
-  color: #908980;
+  color: var(--color-danger);
+}
+
+.retry-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--color-danger);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-danger);
+  font-size: 12px;
   cursor: pointer;
 }
 
-.caret { font-size: 10px; margin-left: 2px; }
+.state-box {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
 
-.empty-title { margin: 0; font-size: 17px; font-weight: 700; color: #2e2a24; }
-.empty-desc { margin: 0; font-size: 13px; color: #908980; line-height: 1.55; }
-.mt-3 { margin-top: 12px; }
-.text-center { text-align: center; align-items: center; }
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #efece4;
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 </style>
