@@ -119,17 +119,19 @@ const formatDate = (date) => (date ? String(date).replaceAll('-', '.') : '');
 .benefit-title {
   margin: 2px 0 0;
   color: #2e2a24;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 750;
   line-height: 1.42;
   letter-spacing: -0.035em;
   word-break: keep-all;
+   padding-right: 50px;
 }
 .benefit-provider {
   margin: 0;
   color: #696158;
   font-size: 13px;
   line-height: 1.5;
+  padding-right: 50px;
 }
 .benefit-period {
   display: flex;
@@ -143,6 +145,7 @@ const formatDate = (date) => (date ? String(date).replaceAll('-', '.') : '');
 .is-closed .benefit-provider {
   color: #908980;
 }
+
 .card-action {
   position: absolute;
   top: 50%;

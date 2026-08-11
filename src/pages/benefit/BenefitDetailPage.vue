@@ -142,7 +142,7 @@
           :disabled="!applyUrl"
           @click="moveToApplyPage"
         >
-          신청하러 가기
+         {{ applyButtonText }}
         </button>
       </div>
     </template>
@@ -319,6 +319,18 @@ const applyMethodText = computed(() => {
   );
 });
 
+const applyButtonText = computed(() => {
+  if (detail.value?.aplyUrlAddr?.trim()) {
+    return "신청하러 가기";
+  }
+
+  if (detail.value?.refUrlAddr1?.trim()) {
+    return "공고 확인하기";
+  }
+
+  return "신청 링크 없음";
+});
+
 const ageText = computed(() => {
   const minAge = detail.value?.sprtTrgtMinAge;
 
@@ -366,14 +378,13 @@ const jobLabel = computed(() => {
  * 서버(BenefitMapper.xml)가 관리자 지정 URL을 우선해 내려주므로
  * 여기서 걸러지는 것은 온통청년 원본뿐이다.
  */
-const applyUrl = computed(() => {
-  const raw = (detail.value?.aplyUrlAddr || '').trim();
+const normalizeUrl = (value) => {
+  const raw = (value || '').trim();
 
   if (!raw) {
     return '';
   }
 
-  // 동기화 과정에서 & 가 &amp; 로 저장된 값이 있어 되돌린다
   const decoded = raw.replace(/&amp;/g, '&');
 
   if (/^https?:\/\//i.test(decoded)) {
@@ -385,6 +396,22 @@ const applyUrl = computed(() => {
   }
 
   return '';
+};
+
+const applyUrl = computed(() => {
+  // 1순위: 실제 신청 URL
+  const aplyUrl = normalizeUrl(
+    detail.value?.aplyUrlAddr
+  );
+
+  if (aplyUrl) {
+    return aplyUrl;
+  }
+
+  // 2순위: 참고 URL
+  return normalizeUrl(
+    detail.value?.refUrlAddr1
+  );
 });
 
 const loadDetail = async () => {
@@ -437,6 +464,7 @@ const addToApplied = async () => {
     isAdding.value = false;
   }
 };
+
 
 // [상호] 2026-08-07 : 원본값 대신 정리된 applyUrl 을 연다
 const moveToApplyPage = () => {
