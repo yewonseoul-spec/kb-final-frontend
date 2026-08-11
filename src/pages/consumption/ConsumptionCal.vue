@@ -4,6 +4,7 @@ import { useConsumptionStore } from '@/stores/consumptionStore';
 import ExpectedCreate from '@/pages/consumption/ExpectedCreate.vue';
 import ExpectedEdit from '@/pages/consumption/ExpectedEdit.vue';
 import AiAnalysis from '@/pages/consumption/AiAnalysis.vue';
+import MonthlyTrendChart from './MonthlyTrendChart.vue';
 
 const consumptionStore = useConsumptionStore();
 
@@ -573,6 +574,8 @@ async function onEditSaved() {
     <template v-else>
       <div class="pattern-tab">
         <AiAnalysis />
+        <!-- 카테고리별 소비 금액 조회 -->
+        <MonthlyTrendChart />
       </div>
     </template>
   </div>
