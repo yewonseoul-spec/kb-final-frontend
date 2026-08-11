@@ -79,7 +79,6 @@
                 >
               </div>
             </div>
-            <span class="arrow">></span>
           </div>
 
           <div class="menu-item" @click="goPage('/consumption')">
@@ -111,7 +110,6 @@
                 <span class="sub">소비 캘린더<br />패턴 분석</span>
               </div>
             </div>
-            <span class="arrow">></span>
           </div>
 
           <div class="menu-item" @click="emit('close')">
@@ -175,7 +173,6 @@
                 </div>
               </div>
             </div>
-            <span class="arrow">></span>
           </div>
 
           <div class="menu-item" @click="goPage({ name: 'MyPage' })">
@@ -226,7 +223,6 @@
                 </div>
               </div>
             </div>
-            <span class="arrow">></span>
           </div>
         </div>
       </div>
@@ -474,12 +470,6 @@ watch(
   align-items: flex-start;
   align-self: flex-start;
   gap: 2px;
-}
-
-.arrow {
-  color: #908980;
-  font-size: 14px;
-  font-weight: bold;
 }
 
 .auth-btn {
