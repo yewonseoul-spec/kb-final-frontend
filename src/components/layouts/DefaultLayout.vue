@@ -10,22 +10,13 @@ const route = useRoute();
 const isMenuOpen = ref(false);
 
 /*
- * 탭바에 있는 최상위 화면 5개. 여기 없으면 하위 화면으로 보고 뒤로가기를 단다.
- * 새 화면이 늘어도 기본값이 '뒤로가기 있음'이라 나갈 길이 막히지 않는다.
- * 이름이 아니라 경로로 판정하는 이유: 라우트 name 작명이 아직 세 갈래로 갈려 있다.
+ * 뒤로가기가 기본이다. 나갈 길이 따로 있는 화면(홈·로그인·관리자 대시보드·404)만
+ * meta.headerType: 'root' 로 예외 처리한다.
+ * 기본값이 '뒤로가기 있음'이라 새 화면이 meta 를 빠뜨려도 갇히지 않는다.
  */
-const TAB_PATHS = ['/', '/benefit', '/asset', '/consumption', '/mypage'];
+const isBackHeader = computed(() => route.meta.headerType !== 'root');
 
-const isBackHeader = computed(() => {
-  // 라우트가 직접 지정했으면 그걸 따른다
-  if (route.meta.headerType === 'back') return true;
-  if (route.meta.headerType === 'root') return false;
-  return !TAB_PATHS.includes(route.path);
-});
-
-const pageTitle = computed(
-  () => route.meta.headerTitle || route.meta.title || '청년타파',
-);
+const pageTitle = computed(() => route.meta.title || '청년타파');
 
 // 히스토리가 없으면(주소창 직접 진입·새로고침 직후) back() 이 앱 밖으로 나간다.
 // 마이페이지 화면들의 '취소' 와 같은 방식으로 막는다.

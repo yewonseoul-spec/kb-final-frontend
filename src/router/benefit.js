@@ -10,8 +10,6 @@ export default [
     component: BenefitSearchPage,
     meta: {
       title: '혜택 검색',
-      headerType: 'back',
-      headerTitle: '혜택 검색',
     },
   },
   {
@@ -20,8 +18,6 @@ export default [
     component: BenefitResultPage,
     meta: {
       title: '검색 결과',
-      headerType: 'back',
-      headerTitle: '검색 결과',
     },
   },
 
@@ -32,8 +28,6 @@ export default [
     props: true,
     meta: {
       title: '혜택 상세',
-      headerType: 'back',
-      headerTitle: '혜택 상세',
     },
   },
 
@@ -41,10 +35,8 @@ export default [
     path: '/benefit',
     name: 'benefit-main',
     component: BenefitMainPage,
-      meta: {
+    meta: {
       title: '혜택',
-      headerType: 'back',
-      headerTitle: '혜택',
     },
   },
 ];

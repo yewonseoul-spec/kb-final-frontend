@@ -14,7 +14,13 @@ import stress from './stress.js';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: '/', name: 'Home', component: Home, meta: { title: '청년타파' } },
+    {
+      path: '/',
+      name: 'Home',
+      component: Home,
+      // 탭바로 언제든 돌아오는 최상위 화면이라 뒤로가기를 달지 않는다
+      meta: { title: '청년타파', headerType: 'root' },
+    },
     ...admin,
     ...asset,
     ...benefit,
