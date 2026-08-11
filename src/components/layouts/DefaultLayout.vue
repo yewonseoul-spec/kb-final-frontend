@@ -70,6 +70,15 @@ const goBack = () => {
 
 <style scoped>
 .common-header {
+  /* 스크롤해도 뒤로가기·햄버거가 항상 닿는 자리에 있게 한다 */
+  position: sticky;
+  top: 0;
+  /* 탭바(1000) 아래, 페이지 콘텐츠 최댓값(100) 위.
+     드로어(2000)·모달(3000)은 그대로 헤더를 덮는다 */
+  z-index: 900;
+  /* 배경이 없으면 스크롤되는 본문이 제목 뒤로 비친다. body 와 같은 색 */
+  background: var(--color-background);
+
   display: flex;
   align-items: center;
   justify-content: space-between;
