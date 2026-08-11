@@ -42,8 +42,8 @@ watch(
 );
 
 // DB 컬럼 길이를 넘기면 MySQL 1406 으로 500 이 나므로 input 에서 막는다.
-// realName 만 DB(20) 가 아니라 닉네임 규칙 상한(10)을 쓴다. 상한 오류 문구가 따로 없는 이유.
-const LENGTH_LIMIT = { realName: 10, loginId: 30, email: 100 };
+// realName·loginId 는 DB(20·30)가 아니라 각 규칙 상한(10·20)을 쓴다. 상한 오류 문구가 따로 없는 이유.
+const LENGTH_LIMIT = { realName: 10, loginId: 20, email: 100 };
 
 onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
@@ -57,7 +57,13 @@ const NICKNAME_RULE = /^[가-힣a-zA-Z0-9]{2,10}$/;
 const nickname = computed(() => member.realName.trim());
 const nicknameValid = computed(() => NICKNAME_RULE.test(nickname.value));
 
+// 아이디: 영문 소문자로 시작하는 영문 소문자·숫자 5~20자.
+// login_id 컬럼 collation 이 ci 라 대문자를 허용하면 저장값과 조회값이 어긋나 보인다.
+const LOGIN_ID_RULE = /^[a-z][a-z0-9]{4,19}$/;
+const loginIdValid = computed(() => LOGIN_ID_RULE.test(member.loginId));
+
 const checkId = async () => {
+  if (!loginIdValid.value) return;
   idAvailable.value = !(await authApi.checkId(member.loginId));
 };
 
@@ -80,6 +86,7 @@ const passwordMatch = computed(
 // 통과 표시는 타이핑 도중 즉시 사라진다
 const touched = reactive({
   realName: false,
+  loginId: false,
   password: false,
   passwordConfirm: false,
   email: false,
@@ -87,6 +94,9 @@ const touched = reactive({
 
 const nicknameError = computed(
   () => touched.realName && !!nickname.value && !nicknameValid.value,
+);
+const loginIdFormatError = computed(
+  () => touched.loginId && !!member.loginId && !loginIdValid.value,
 );
 const passwordError = computed(
   () => touched.password && !!member.password && !passwordValid.value,
@@ -174,19 +184,24 @@ const signup = async () => {
             label="아이디"
             placeholder="아이디를 입력하세요"
             :maxlength="LENGTH_LIMIT.loginId"
-            :is-error="idAvailable === false"
+            :is-error="loginIdFormatError || idAvailable === false"
+            @focusout="touched.loginId = true"
           />
           <!-- KbButton 은 폼 안에서 submit 으로 동작해 회원가입이 제출된다. 중복확인은 네이티브 button 유지 -->
           <button
             type="button"
             class="check-btn"
-            :disabled="!member.loginId"
+            :disabled="!loginIdValid"
             @click="checkId"
           >
             중복 확인
           </button>
         </div>
-        <p v-if="member.loginId && idAvailable === null" class="field-msg">
+        <p class="field-msg">영문 소문자·숫자 5~20자, 영문으로 시작</p>
+        <p v-if="loginIdFormatError" class="field-msg err">
+          아이디 형식이 올바르지 않아요
+        </p>
+        <p v-else-if="loginIdValid && idAvailable === null" class="field-msg">
           중복 확인을 해주세요
         </p>
         <p v-if="idAvailable === true" class="field-msg ok">
