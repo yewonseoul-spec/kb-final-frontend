@@ -178,54 +178,6 @@
             <span class="arrow">></span>
           </div>
 
-          <div class="menu-item" @click="goPage({ name: 'FavoriteBenefits' })">
-            <div class="menu-main">
-              <span class="icon"
-                ><svg
-                  width="14"
-                  height="14"
-                  viewBox="-3 -3 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8.21271 12.5C8.21271 12.5 2.71271 8.99999 1.21271 5.49999C0.21271 3.19999 1.71271 0.899994 3.91271 0.899994C5.41271 0.899994 6.21271 1.79999 6.61271 2.39999C7.01271 1.79999 7.81271 0.899994 9.31271 0.899994C11.5127 0.899994 13.0127 3.19999 12.0127 5.49999C10.5127 8.99999 5.01271 12.5 5.01271 12.5H8.21271Z"
-                    stroke="#2E2A24"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <span class="title">관심 혜택</span>
-            </div>
-            <span class="arrow">></span>
-          </div>
-
-          <div class="menu-item" @click="goPage({ name: 'AppliedBenefits' })">
-            <div class="menu-main">
-              <span class="icon"
-                ><svg
-                  width="14"
-                  height="14"
-                  viewBox="-3 -3 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8.21271 12.5C8.21271 12.5 2.71271 8.99999 1.21271 5.49999C0.21271 3.19999 1.71271 0.899994 3.91271 0.899994C5.41271 0.899994 6.21271 1.79999 6.61271 2.39999C7.01271 1.79999 7.81271 0.899994 9.31271 0.899994C11.5127 0.899994 13.0127 3.19999 12.0127 5.49999C10.5127 8.99999 5.01271 12.5 5.01271 12.5H8.21271Z"
-                    stroke="#2E2A24"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  />
-                </svg>
-              </span>
-              <span class="title">신청 혜택</span>
-            </div>
-            <span class="arrow">></span>
-          </div>
-
           <div class="menu-item" @click="goPage({ name: 'MyPage' })">
             <div class="menu-main">
               <span class="icon"
@@ -252,7 +204,26 @@
               </span>
               <div class="text-group">
                 <span class="title">마이페이지</span>
-                <span class="sub">내 정보 수정<br />목표 수정</span>
+
+                <!--
+                  부모 .menu-item 이 MyPage 로 보내므로 .stop 이 없으면
+                  세부 화면으로 갔다가 마이페이지로 덮어써진다.
+                  .stop 으로 부모를 막았으니 드로어를 닫는 것도 여기서 한다.
+                -->
+                <div class="sub-links" @click.stop="emit('close')">
+                  <RouterLink class="sub" :to="{ name: 'ProfileEdit' }">
+                    내 정보 수정
+                  </RouterLink>
+                  <RouterLink class="sub" :to="{ name: 'GoalEdit' }">
+                    목표 수정
+                  </RouterLink>
+                  <RouterLink class="sub" :to="{ name: 'FavoriteBenefits' }">
+                    관심 혜택
+                  </RouterLink>
+                  <RouterLink class="sub" :to="{ name: 'AppliedBenefits' }">
+                    신청 혜택
+                  </RouterLink>
+                </div>
               </div>
             </div>
             <span class="arrow">></span>
@@ -492,6 +463,17 @@ watch(
   color: #908980;
   line-height: 1.4;
   text-decoration: none !important;
+}
+
+/* .sub 가 inline 이라 세로로 쌓으려면 컨테이너가 필요하다.
+   align-self 로 컨테이너를 링크 폭만큼만 차지하게 해서,
+   글자 오른쪽 빈 곳을 눌렀을 때 드로어만 닫히는 일을 줄인다. */
+.sub-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  align-self: flex-start;
+  gap: 2px;
 }
 
 .arrow {
