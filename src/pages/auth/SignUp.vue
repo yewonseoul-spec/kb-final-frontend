@@ -9,6 +9,7 @@ import KbButton from '@/components/common/KbButton.vue';
 import KbCheckbox from '@/components/common/KbCheckbox.vue';
 import KbBadge from '@/components/common/KbBadge.vue';
 import KbCard from '@/components/common/KbCard.vue';
+import KbModal from '@/components/common/KbModal.vue';
 import { errorMessage } from '@/api';
 
 const router = useRouter();
@@ -24,7 +25,7 @@ const member = reactive({
 
 const terms = ref([]);
 const agreed = reactive({});
-const expanded = reactive({});
+const detailTerms = ref(null); // 전문 모달에 띄울 약관. 한 번에 하나만 연다
 
 const idAvailable = ref(null);
 const emailAvailable = ref(null);
@@ -40,27 +41,29 @@ watch(
   () => (emailAvailable.value = null),
 );
 
-// KbInput 은 루트가 div 라 maxlength 가 input 까지 가지 않는다. DB 컬럼 길이를 넘기면
-// MySQL 1406 으로 500 이 나므로 여기서 잘라 둔다. KbInput 이 속성을 넘기게 되면 지울 코드.
-const LENGTH_LIMIT = { realName: 20, loginId: 30, email: 100 };
-Object.entries(LENGTH_LIMIT).forEach(([field, limit]) => {
-  watch(
-    () => member[field],
-    (v) => {
-      if (v.length > limit) member[field] = v.slice(0, limit);
-    },
-  );
-});
+// DB 컬럼 길이를 넘기면 MySQL 1406 으로 500 이 나므로 input 에서 막는다.
+// realName·loginId 는 DB(20·30)가 아니라 각 규칙 상한(10·20)을 쓴다. 상한 오류 문구가 따로 없는 이유.
+const LENGTH_LIMIT = { realName: 10, loginId: 20, email: 100 };
 
 onMounted(async () => {
   terms.value = await termsApi.getSignupTerms();
   terms.value.forEach((t) => {
     agreed[t.termsNo] = false;
-    expanded[t.termsNo] = false;
   });
 });
 
+// 닉네임: 한글·영문·숫자 2~10자. 표시용이라 중복은 허용한다.
+const NICKNAME_RULE = /^[가-힣a-zA-Z0-9]{2,10}$/;
+const nickname = computed(() => member.realName.trim());
+const nicknameValid = computed(() => NICKNAME_RULE.test(nickname.value));
+
+// 아이디: 영문 소문자로 시작하는 영문 소문자·숫자 5~20자.
+// login_id 컬럼 collation 이 ci 라 대문자를 허용하면 저장값과 조회값이 어긋나 보인다.
+const LOGIN_ID_RULE = /^[a-z][a-z0-9]{4,19}$/;
+const loginIdValid = computed(() => LOGIN_ID_RULE.test(member.loginId));
+
 const checkId = async () => {
+  if (!loginIdValid.value) return;
   idAvailable.value = !(await authApi.checkId(member.loginId));
 };
 
@@ -82,11 +85,19 @@ const passwordMatch = computed(
 // 오류 문구는 칸을 벗어난 뒤부터 보여준다
 // 통과 표시는 타이핑 도중 즉시 사라진다
 const touched = reactive({
+  realName: false,
+  loginId: false,
   password: false,
   passwordConfirm: false,
   email: false,
 });
 
+const nicknameError = computed(
+  () => touched.realName && !!nickname.value && !nicknameValid.value,
+);
+const loginIdFormatError = computed(
+  () => touched.loginId && !!member.loginId && !loginIdValid.value,
+);
 const passwordError = computed(
   () => touched.password && !!member.password && !passwordValid.value,
 );
@@ -111,7 +122,7 @@ const requiredAgreed = computed(() =>
 const disableSubmit = computed(
   () =>
     !(
-      member.realName.trim() &&
+      nicknameValid.value &&
       idAvailable.value === true &&
       passwordValid.value &&
       passwordMatch.value &&
@@ -127,7 +138,7 @@ const signup = async () => {
       loginId: member.loginId,
       password: member.password,
       email: member.email,
-      realName: member.realName.trim(),
+      realName: nickname.value,
       terms: terms.value.map((t) => ({
         termsNo: t.termsNo,
         agreed: !!agreed[t.termsNo],
@@ -150,11 +161,20 @@ const signup = async () => {
 <template>
   <div class="signup">
     <form class="signup-form" @submit.prevent="signup">
-      <KbInput
-        v-model="member.realName"
-        label="실명"
-        placeholder="실명을 입력하세요"
-      />
+      <div class="field">
+        <KbInput
+          v-model="member.realName"
+          label="닉네임"
+          placeholder="닉네임을 입력하세요"
+          :maxlength="LENGTH_LIMIT.realName"
+          :is-error="nicknameError"
+          @focusout="touched.realName = true"
+        />
+        <p class="field-msg">한글·영문·숫자 2~10자</p>
+        <p v-if="nicknameError" class="field-msg err">
+          닉네임 형식이 올바르지 않아요
+        </p>
+      </div>
 
       <div class="field">
         <div class="field-row">
@@ -163,19 +183,25 @@ const signup = async () => {
             class="field-input"
             label="아이디"
             placeholder="아이디를 입력하세요"
-            :is-error="idAvailable === false"
+            :maxlength="LENGTH_LIMIT.loginId"
+            :is-error="loginIdFormatError || idAvailable === false"
+            @focusout="touched.loginId = true"
           />
           <!-- KbButton 은 폼 안에서 submit 으로 동작해 회원가입이 제출된다. 중복확인은 네이티브 button 유지 -->
           <button
             type="button"
             class="check-btn"
-            :disabled="!member.loginId"
+            :disabled="!loginIdValid"
             @click="checkId"
           >
             중복 확인
           </button>
         </div>
-        <p v-if="member.loginId && idAvailable === null" class="field-msg">
+        <p class="field-msg">영문 소문자·숫자 5~20자, 영문으로 시작</p>
+        <p v-if="loginIdFormatError" class="field-msg err">
+          아이디 형식이 올바르지 않아요
+        </p>
+        <p v-else-if="loginIdValid && idAvailable === null" class="field-msg">
           중복 확인을 해주세요
         </p>
         <p v-if="idAvailable === true" class="field-msg ok">
@@ -222,6 +248,7 @@ const signup = async () => {
             class="field-input"
             label="이메일"
             placeholder="name@example.com"
+            :maxlength="LENGTH_LIMIT.email"
             :is-error="emailFormatError || emailAvailable === false"
             @focusout="touched.email = true"
           />
@@ -234,7 +261,7 @@ const signup = async () => {
             중복 확인
           </button>
         </div>
-        <p class="field-msg">알림 수신에 사용돼요</p>
+        <p class="field-msg">아이디 찾기·비밀번호 재설정에 사용돼요</p>
         <p v-if="emailFormatError" class="field-msg err">
           이메일 형식이 올바르지 않아요
         </p>
@@ -259,37 +286,25 @@ const signup = async () => {
 
         <hr class="terms-divider" />
 
-        <div v-for="t in terms" :key="t.termsNo" class="terms-item">
-          <div class="terms-row">
-            <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
-              {{ t.title }}
-            </KbCheckbox>
-            <KbBadge :variant="t.required ? 'danger' : 'gray'">
-              {{ t.required ? '필수' : '선택' }}
-            </KbBadge>
-            <!-- KbCheckbox 루트가 label 이라 안에 넣으면 화살표 클릭에 동의가 토글된다 -->
-            <button
-              type="button"
-              class="terms-toggle"
-              :class="{ open: expanded[t.termsNo] }"
-              :aria-expanded="!!expanded[t.termsNo]"
-              :aria-label="t.title + ' 전문 보기'"
-              @click="expanded[t.termsNo] = !expanded[t.termsNo]"
-            >
-              <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-                <path
-                  d="M1 1.5L6 6.5L11 1.5"
-                  stroke="currentColor"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <p v-if="expanded[t.termsNo]" class="terms-content">
-            {{ t.content }}
-          </p>
+        <!-- 래퍼 div 를 없앴다. 펼침 <p> 가 빠져 자식이 한 줄뿐이고,
+               줄 사이 간격은 KbCard 의 gap: 8px 이 이미 준다 -->
+        <div v-for="t in terms" :key="t.termsNo" class="terms-row">
+          <KbCheckbox v-model="agreed[t.termsNo]" class="terms-check">
+            {{ t.title }}
+          </KbCheckbox>
+          <KbBadge :variant="t.required ? 'danger' : 'gray'">
+            {{ t.required ? '필수' : '선택' }}
+          </KbBadge>
+          <!-- KbCheckbox 루트가 label 이라 안에 넣으면 버튼 클릭에 동의가 토글된다.
+                 form 안이라 type="button" 이 없으면 회원가입이 제출된다 -->
+          <button
+            type="button"
+            class="terms-detail-btn"
+            :aria-label="t.title + ' 전문 보기'"
+            @click="detailTerms = t"
+          >
+            보기
+          </button>
         </div>
       </KbCard>
 
@@ -300,6 +315,15 @@ const signup = async () => {
         <KbButton type="primary" :disabled="disableSubmit">가입하기</KbButton>
       </div>
     </form>
+
+    <!-- form 밖에 둔다. KbButton 이 native type 을 안 받아 기본 submit 이라
+           form 안에 있으면 '닫기'가 회원가입을 제출한다 -->
+    <KbModal v-if="detailTerms" :title="detailTerms.title" wide>
+      <p class="terms-content">{{ detailTerms.content }}</p>
+      <template #actions>
+        <KbButton type="secondary" @click="detailTerms = null">닫기</KbButton>
+      </template>
+    </KbModal>
   </div>
 </template>
 
@@ -381,12 +405,6 @@ const signup = async () => {
   border-top: 1px solid #efece4;
 }
 
-.terms-item {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .terms-row {
   display: flex;
   align-items: center;
@@ -397,29 +415,22 @@ const signup = async () => {
   flex: 1;
 }
 
-.terms-toggle {
-  display: flex;
+.terms-detail-btn {
   flex-shrink: 0;
-  align-items: center;
-  padding: 4px;
+  padding: 4px 6px;
   background: none;
   border: 0;
+  font-size: 13px;
   color: #908980;
+  text-decoration: underline;
   cursor: pointer;
 }
 
-.terms-toggle svg {
-  transition: transform 0.2s;
-}
-
-.terms-toggle.open svg {
-  transform: rotate(180deg);
-}
-
-/* content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
+/* 모달 슬롯 안이지만 슬롯 내용은 부모 스코프로 컴파일되므로 이 scoped 스타일이 그대로 걸린다.
+     content 가 TEXT 라 줄바꿈이 들어온다. pre-wrap 이 없으면 공백이 접힌다 */
 .terms-content {
-  margin: 0;
-  max-height: 160px;
+  margin: 0 0 20px;
+  max-height: 50vh;
   padding: 12px;
   overflow-y: auto;
   background-color: #f8f7f2;

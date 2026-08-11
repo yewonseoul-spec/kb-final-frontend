@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const email = computed(() => state.value.user.email); // 로그인 사용자 email
 
-  const realName = computed(() => state.value.user.realName); // 로그인 사용자 실명
+  const realName = computed(() => state.value.user.realName); // 로그인 사용자 닉네임
 
   const login = async (member) => {
     const { data } = await axios.post('/api/auth/login', member);

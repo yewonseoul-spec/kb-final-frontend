@@ -3,11 +3,22 @@ import KbInput from '@/components/common/KbInput.vue';
 import ProfileSelect from './ProfileSelect.vue';
 import RegionSelect from './RegionSelect.vue';
 
-defineProps({
+const props = defineProps({
   profile: { type: Object, required: true },
   // { birthDate: '메시지' } 형태. 검증은 페이지가 하고 이 컴포넌트는 표시만 한다.
   errors: { type: Object, default: () => ({}) },
 });
+
+// 네이티브 달력은 1990년대까지 내려가는 손이 많아 직접 입력으로 바꿨다.
+// 숫자만 받아 YYYY-MM-DD 로 끼워 넣는다. 값이 옳은지는 validateProfile 이 본다.
+const onBirthInput = (value) => {
+  const digits = String(value).replace(/\D/g, '').slice(0, 8);
+  let formatted = digits.slice(0, 4);
+  if (digits.length > 4) formatted += `-${digits.slice(4, 6)}`;
+  if (digits.length > 6) formatted += `-${digits.slice(6, 8)}`;
+  props.profile.birthDate = formatted;
+};
+
 // 공통코드 조회 API 가 아직 없어 시드(data_0_code.sql)의 실제 코드값을 상수로 둔다.
 // common_code 테이블 정본과 값이 같으므로 저장·조회가 정상 동작한다.
 // '제한없음'(0011009/0013010/0049010/0055003)은 혜택의 조건값일 뿐 사람의 상태가 아니어서
@@ -57,11 +68,13 @@ const MARITAL_OPTIONS = [
 <template>
   <div class="profile-form">
     <KbInput
-      v-model="profile.birthDate"
-      type="date"
+      :model-value="profile.birthDate"
       label="생년월일"
+      placeholder="예) 2000-01-01"
+      :maxlength="10"
       :is-error="!!errors.birthDate"
       :error-message="errors.birthDate"
+      @update:model-value="onBirthInput"
     />
 
     <RegionSelect v-model="profile.regionCode" />

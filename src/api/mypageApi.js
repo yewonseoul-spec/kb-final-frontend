@@ -13,14 +13,50 @@ const sanitize = (profile) =>
     ]),
   );
 
+// 생년월일: 달력을 직접 입력으로 바꾸면서 브라우저가 막아 주던 것을 전부 여기서 막는다.
+// 나이가 추천 엔진의 자격 판정(TIMESTAMPDIFF)에 그대로 들어가 느슨하면 결과가 통째로 달라진다.
+const BIRTH_FORMAT = /^\d{4}-\d{2}-\d{2}$/;
+const MIN_AGE = 14; // 만 14세 미만은 법정대리인 동의가 필요해 대상이 아니다
+const MAX_AGE = 120;
+
+const birthDateError = (value) => {
+  if (!value) return ''; // 전 항목 선택 입력이라 미입력은 정상이다
+  if (!BIRTH_FORMAT.test(value)) return '생년월일 8자리를 입력해 주세요.';
+
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  // 2월 30일 같은 값을 Date 는 조용히 3월로 넘긴다. 되돌려 비교해야 걸린다.
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return '없는 날짜예요.';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (date > today) return '미래 날짜는 입력할 수 없어요.';
+
+  // 올해 생일이 지났는지까지 따져야 만 나이가 된다
+  let age = today.getFullYear() - year;
+  const hadBirthday =
+    today.getMonth() > month - 1 ||
+    (today.getMonth() === month - 1 && today.getDate() >= day);
+  if (!hadBirthday) age -= 1;
+
+  if (age < MIN_AGE) return `만 ${MIN_AGE}세 이상만 입력할 수 있어요.`;
+  if (age > MAX_AGE) return '생년월일을 다시 확인해 주세요.';
+  return '';
+};
+
 // 서버·DB 제약과 1:1로 대응하는 검증.
 export const validateProfile = (profile) => {
   const errors = {};
-  const today = new Date().toISOString().slice(0, 10);
 
-  if (profile.birthDate && profile.birthDate > today) {
-    errors.birthDate = '미래 날짜는 선택할 수 없어요.';
-  }
+  const birthError = birthDateError(profile.birthDate);
+  if (birthError) errors.birthDate = birthError;
+
   if (profile.income !== '' && Number(profile.income) < 0) {
     errors.income = '0 이상으로 입력해 주세요.';
   }

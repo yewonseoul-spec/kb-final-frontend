@@ -1,6 +1,6 @@
 <template>
   <div class="modal-overlay">
-    <div class="modal-card">
+    <div class="modal-card" :class="{ wide }">
       <h4 class="modal-title">{{ title }}</h4>
       <slot />
       <div class="modal-actions" :class="{ two: columns === 2 }">
@@ -11,10 +11,10 @@
 </template>
 
 <script setup>
-// 여닫는 판단은 호출부가 v-if 로 한다(기존 4곳이 전부 그 방식이라 동작이 안 바뀐다)
 defineProps({
   title: { type: String, required: true },
   columns: { type: Number, default: 1 }, // 버튼 2개면 2
+  wide: { type: Boolean, default: false }, // 약관 전문처럼 읽히는 본문이 들어올 때
 });
 </script>
 
@@ -44,6 +44,14 @@ defineProps({
   align-items: center;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 기본 모달은 짧은 확인 문구라 좁고 가운데 정렬이지만,
+     읽히는 본문은 폭이 넓고 왼쪽 정렬이어야 한다 */
+.modal-card.wide {
+  max-width: 420px;
+  align-items: stretch;
+  text-align: left;
 }
 
 .modal-title {
