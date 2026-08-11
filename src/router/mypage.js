@@ -26,6 +26,9 @@ export default [
           requiresAuth: true,
           title: '프로필 입력',
           hideTabBar: true,
+          // 가입 직후 흐름이라 뒤로 갈 곳이 회원가입(guestOnly)뿐이다.
+          // 출구는 OnboardingHeader 의 '건너뛰기'가 담당한다.
+          headerType: 'root',
         },
         component: () => import('../pages/mypage/ProfileSetup.vue'),
       },
@@ -45,6 +48,7 @@ export default [
           requiresAuth: true,
           title: '목표 설정',
           hideTabBar: true,
+          headerType: 'root',
         },
         component: () => import('../pages/mypage/GoalSetup.vue'),
       },
