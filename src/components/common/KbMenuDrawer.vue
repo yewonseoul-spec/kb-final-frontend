@@ -74,9 +74,11 @@
               </span>
               <div class="text-group">
                 <span class="title">자산</span>
-                <span class="sub"
-                  >금융 상품 조회<br />자산 비율 분석<br />계좌별 잔액</span
-                >
+                <div class="sub-links">
+                  <span class="sub">금융 상품 조회</span>
+                  <span class="sub">자산 비율 분석</span>
+                  <span class="sub">계좌별 잔액</span>
+                </div>
               </div>
             </div>
           </div>
@@ -107,7 +109,10 @@
               </span>
               <div class="text-group">
                 <span class="title">소비</span>
-                <span class="sub">소비 캘린더<br />패턴 분석</span>
+                <div class="sub-links">
+                  <span class="sub">소비 캘린더</span>
+                  <span class="sub">패턴 분석</span>
+                </div>
               </div>
             </div>
           </div>
@@ -148,28 +153,25 @@
               <div class="text-group">
                 <span class="title">청년혜택</span>
 
-                <div class="sub">
-                  <router-link
-                    :to="{ path: '/benefit', query: { tab: 'condition' } }"
+                <div class="sub-links" @click.stop="emit('close')">
+                  <RouterLink
                     class="sub"
+                    :to="{ path: '/benefit', query: { tab: 'condition' } }"
                   >
                     조건 기반 추천
-                  </router-link>
-
-                  <router-link
+                  </RouterLink>
+                  <RouterLink
+                    class="sub"
                     :to="{ path: '/benefit', query: { tab: 'consumption' } }"
-                    class="sub"
                   >
-                    <br />
                     소비 기반 추천
-                  </router-link>
-                  <br />
-                  <router-link
-                    :to="{ path: '/benefit', query: { tab: 'goal' } }"
+                  </RouterLink>
+                  <RouterLink
                     class="sub"
+                    :to="{ path: '/benefit', query: { tab: 'goal' } }"
                   >
                     목표 기반 추천
-                  </router-link>
+                  </RouterLink>
                 </div>
               </div>
             </div>
@@ -462,7 +464,7 @@ watch(
 }
 
 /* .sub 가 inline 이라 세로로 쌓으려면 컨테이너가 필요하다.
-   align-self 로 컨테이너를 링크 폭만큼만 차지하게 해서,
+   align-self 로 컨테이너를 내용 폭만큼만 차지하게 해서,
    글자 오른쪽 빈 곳을 눌렀을 때 드로어만 닫히는 일을 줄인다. */
 .sub-links {
   display: flex;
