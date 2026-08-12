@@ -68,6 +68,7 @@
   v-if="
     activeRecommendation === 'condition'
     && auth.isLogin
+    && profileLoaded
     && !isProfileComplete
   "
   type="button"
@@ -246,6 +247,7 @@ const benefitList = ref([]);
 const totalCount = ref(0);
 const favoriteNos = ref(new Set());
 const pendingNos = ref(new Set());
+const profileLoaded = ref(false);
 
 const filter = reactive({
   // 카테고리는 기본 전체
@@ -523,6 +525,7 @@ totalCount.value = activeBenefits.length;
 
 const loadProfileRecommendation = async () => {
   loading.value = true;
+  profileLoaded.value = false;
 
   try {
   if (!auth.isLogin) {
@@ -546,6 +549,7 @@ const loadProfileRecommendation = async () => {
      */
     await loadBenefits();
   } finally {
+    profileLoaded.value = true;
     loading.value = false;
   }
 
