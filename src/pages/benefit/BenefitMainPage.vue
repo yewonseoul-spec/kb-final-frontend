@@ -197,14 +197,14 @@
       </section>
 
       <!-- 목표 미설정 -->
-      <section v-else-if="!goalType" class="state-box goal-empty">
+      <section v-else-if="goalLoaded && !goalType" class="state-box goal-empty">
         <p>아직 목표를 정하지 않았어요.</p>
 
         <KbButton @click="moveToGoal">목표 설정하러 가기</KbButton>
       </section>
 
       <!-- 목표는 있지만 조건에 맞는 혜택이 없음 -->
-      <section v-else-if="!hasGoalBenefits" class="empty-box">
+      <section v-else-if="goalLoaded && !hasGoalBenefits" class="empty-box">
         목표에 맞으면서 내 조건으로 받을 수 있는 혜택이 없어요.
       </section>
 
@@ -417,6 +417,8 @@ const GOAL_NAMES = {
 
 const goalType = ref(null);
 const goalError = ref(false);
+// 조회를 끝냈는지. 응답 전에 '목표 미설정' 으로 오판되는 것을 막는다
+const goalLoaded = ref(false);
 
 const goalGroups = reactive({
   primary: {
@@ -805,6 +807,8 @@ const loadGoalRecommendation = async () => {
 
     resetGoalGroups();
 
+    goalLoaded.value = true;
+
     return;
   }
 
@@ -842,6 +846,8 @@ const loadGoalRecommendation = async () => {
 
     resetGoalGroups();
   } finally {
+    goalLoaded.value = true;
+
     loading.value = false;
   }
 };
