@@ -61,13 +61,7 @@ const onSkip = () => {
 <template>
   <!-- 목표 유무를 확인하기 전에 카드를 그리면 선택 표시가 뒤늦게 켜진다 -->
   <div v-if="!isLoading" class="goal-setup">
-    <OnboardingHeader
-      title="목표 설정"
-      :step="3"
-      :steps="3"
-      step-name="목표"
-      @skip="onSkip"
-    />
+    <OnboardingHeader :step="3" :steps="3" step-name="목표" @skip="onSkip" />
 
     <div>
       <h2 class="guide-title">올해 이루고 싶은<br />목표를 골라주세요</h2>

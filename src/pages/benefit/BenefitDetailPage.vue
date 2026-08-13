@@ -144,7 +144,7 @@
           :disabled="!applyUrl"
           @click="moveToApplyPage"
         >
-         {{ applyButtonText }}
+          {{ applyButtonText }}
         </button>
       </div>
     </template>
@@ -160,8 +160,10 @@ import { getBenefitDetail } from '@/api/benefitApi';
 
 import mypageApi from '@/api/mypageApi';
 import KbButton from '@/components/common/KbButton.vue';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
+const auth = useAuthStore();
 
 const detail = ref(null);
 const loading = ref(false);
@@ -324,14 +326,14 @@ const applyMethodText = computed(() => {
 
 const applyButtonText = computed(() => {
   if (detail.value?.aplyUrlAddr?.trim()) {
-    return "신청하러 가기";
+    return '신청하러 가기';
   }
 
   if (detail.value?.refUrlAddr1?.trim()) {
-    return "공고 확인하기";
+    return '공고 확인하기';
   }
 
-  return "신청 링크 없음";
+  return '신청 링크 없음';
 });
 
 const ageText = computed(() => {
@@ -403,18 +405,14 @@ const normalizeUrl = (value) => {
 
 const applyUrl = computed(() => {
   // 1순위: 실제 신청 URL
-  const aplyUrl = normalizeUrl(
-    detail.value?.aplyUrlAddr
-  );
+  const aplyUrl = normalizeUrl(detail.value?.aplyUrlAddr);
 
   if (aplyUrl) {
     return aplyUrl;
   }
 
   // 2순위: 참고 URL
-  return normalizeUrl(
-    detail.value?.refUrlAddr1
-  );
+  return normalizeUrl(detail.value?.refUrlAddr1);
 });
 
 const loadDetail = async () => {
@@ -435,6 +433,39 @@ const loadDetail = async () => {
     errorMessage.value = '혜택 정보를 불러오지 못했어요.';
   } finally {
     loading.value = false;
+  }
+};
+
+/*
+ * 진입 시점에 이미 신청한 혜택인지 알아낸다.
+ *
+ * 임시 방편이다 — 정석은 혜택 상세 응답에 isApplied 를 두는 것인데
+ * 백엔드에 아직 그 필드가 없다. 생기면 이 함수는 통째로 지우면 된다.
+ *
+ * 🔴 첫 줄에서 반드시 초기화한다. 목록에서 다른 혜택으로 옮겨도
+ *    같은 컴포넌트가 재사용되므로, 안 하면 '✓ 추가됨' 과 안내 문구가
+ *    앞 혜택의 것 그대로 남는다.
+ * 🔴 auth.isLogin 가드 필수 — 비로그인에서 401 을 받으면
+ *    api/index.js 인터셉터가 로그인 화면으로 튕겨버린다.
+ */
+const loadAppliedState = async () => {
+  isAdded.value = false;
+  addMessage.value = '';
+  addFailed.value = false;
+
+  if (!auth.isLogin) {
+    return;
+  }
+
+  try {
+    const list = await mypageApi.getAppliedBenefits();
+
+    isAdded.value = list.some(
+      (item) => Number(item.benefitNo) === benefitNo.value,
+    );
+  } catch (error) {
+    // 부가 정보라 상세 화면을 막을 이유가 없다.
+    // 조회에 실패해도 버튼을 누르면 409 가 받아 준다.
   }
 };
 
@@ -468,7 +499,6 @@ const addToApplied = async () => {
   }
 };
 
-
 // [상호] 2026-08-07 : 원본값 대신 정리된 applyUrl 을 연다
 const moveToApplyPage = () => {
   if (!applyUrl.value) {
@@ -480,10 +510,12 @@ const moveToApplyPage = () => {
 
 watch(benefitNo, () => {
   loadDetail();
+  loadAppliedState();
 });
 
 onMounted(() => {
   loadDetail();
+  loadAppliedState();
 });
 </script>
 
