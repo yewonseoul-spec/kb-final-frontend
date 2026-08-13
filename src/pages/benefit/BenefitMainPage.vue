@@ -63,48 +63,43 @@
       </div>
     </section>
 
-<!-- 프로필 미완성 안내 배너 -->
-<button
-  v-if="
-    activeRecommendation === 'condition'
-    && auth.isLogin
-    && profileLoaded
-    && !isProfileComplete
-  "
-  type="button"
-  class="profile-completion-banner"
-  @click="moveToProfile"
->
-  <div class="profile-banner-header">
-    <strong>프로필 입력</strong>
+    <!-- 프로필 미완성 안내 배너 -->
+    <button
+      v-if="
+        activeRecommendation === 'condition' &&
+        auth.isLogin &&
+        profileLoaded &&
+        !isProfileComplete
+      "
+      type="button"
+      class="profile-completion-banner"
+      @click="moveToProfile"
+    >
+      <div class="profile-banner-header">
+        <strong>프로필 입력</strong>
 
-    <span>
-      {{ completedProfileCount }} / 6 항목
-    </span>
-  </div>
+        <span> {{ completedProfileCount }} / 6 항목 </span>
+      </div>
 
-  <div class="profile-progress">
-    <span
-      v-for="index in 6"
-      :key="index"
-      class="profile-progress-bar"
-      :class="{
-        completed:
-          index <= completedProfileCount
-      }"
-    />
-  </div>
+      <div class="profile-progress">
+        <span
+          v-for="index in 6"
+          :key="index"
+          class="profile-progress-bar"
+          :class="{
+            completed: index <= completedProfileCount,
+          }"
+        />
+      </div>
 
-  <div class="profile-banner-bottom">
-    <p>
-      {{ profileGuideText }}
-    </p>
+      <div class="profile-banner-bottom">
+        <p>
+          {{ profileGuideText }}
+        </p>
 
-    <span class="profile-arrow">
-      ›
-    </span>
-  </div>
-</button>
+        <span class="profile-arrow"> › </span>
+      </div>
+    </button>
 
     <!-- 로딩 -->
     <section
@@ -114,9 +109,39 @@
       맞춤 혜택을 찾고 있어요.
     </section>
 
+    <section
+      v-if="!loading && activeRecommendation === 'consumption'"
+      class="consumption-summary"
+    >
+      <span class="summary-eyebrow"> 소비 조건에 맞는 혜택 </span>
+
+      <div class="summary-count">{{ totalCount }}건</div>
+
+      <p class="consumption-message">
+        {{ consumptionMessage }}
+      </p>
+
+      <div
+        v-if="consumptionCategories.length"
+        class="consumption-chip-list"
+      >
+        <span
+          v-for="category in consumptionCategories"
+          :key="category"
+          class="consumption-chip"
+        >
+          {{ category }}
+        </span>
+      </div>
+    </section>
+
     <!-- 조건 기반 추천 -->
     <section
-      v-else-if="activeRecommendation === 'condition'"
+      v-if="
+        !loading &&
+        (activeRecommendation === 'condition' ||
+          activeRecommendation === 'consumption')
+      "
       class="benefit-list"
     >
       <BenefitCard
@@ -150,24 +175,16 @@
       </BenefitCard>
 
       <div
-        v-if="!benefitList.length"
+        v-if="!benefitList.length && activeRecommendation === 'condition'"
         class="empty-box"
       >
         프로필 조건에 맞는 혜택이 없어요.
       </div>
     </section>
 
-    <!-- 소비 기반 추천 임시 화면 -->
-    <section
-      v-else-if="activeRecommendation === 'consumption'"
-      class="state-box"
-    >
-      소비 내역을 기반으로 받을 수 있는 혜택을 추천할 예정이에요.
-    </section>
-
     <!-- 목표 기반 추천 임시 화면 -->
     <section
-      v-else-if="activeRecommendation === 'goal'"
+      v-if="!loading && activeRecommendation === 'goal'"
       class="state-box"
     >
       등록한 목표를 기반으로 혜택을 추천할 예정이에요.
@@ -203,7 +220,11 @@ import { computed, onMounted, reactive, ref, watch } from "vue";
 
 import { useRoute, useRouter } from "vue-router";
 
-import { getBenefit, getBenefitProfileFilter } from "@/api/benefitApi";
+import {
+  getBenefit,
+  getBenefitProfileFilter,
+  getConsumptionRecommendedBenefits,
+} from "@/api/benefitApi";
 
 import BenefitCard from "@/components/benefit/BenefitCard.vue";
 
@@ -214,6 +235,8 @@ import { useAuthStore } from "@/stores/auth";
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const consumptionMessage = ref("");
+const consumptionCategories = ref([]);
 
 const recommendationTabs = [
   {
@@ -243,8 +266,35 @@ const activeRecommendation = ref(getTabFromRoute());
 const isFilterOpen = ref(false);
 const loading = ref(false);
 
-const benefitList = ref([]);
-const totalCount = ref(0);
+const conditionBenefits = ref([]);
+const conditionTotalCount = ref(0);
+
+const consumptionBenefits = ref([]);
+const consumptionTotalCount = ref(0);
+
+const benefitList = computed(() => {
+  if (activeRecommendation.value === "consumption") {
+    return consumptionBenefits.value;
+  }
+
+  if (activeRecommendation.value === "condition") {
+    return conditionBenefits.value;
+  }
+
+  return [];
+});
+
+const totalCount = computed(() => {
+  if (activeRecommendation.value === "consumption") {
+    return consumptionTotalCount.value;
+  }
+
+  if (activeRecommendation.value === "condition") {
+    return conditionTotalCount.value;
+  }
+
+  return 0;
+});
 const favoriteNos = ref(new Set());
 const pendingNos = ref(new Set());
 const profileLoaded = ref(false);
@@ -304,40 +354,28 @@ const apiParams = computed(() => {
 });
 
 const selectedRegionLabel = computed(() => {
-  return [
-    filter.provinceName,
-    filter.cityName,
-    filter.districtName,
-  ]
+  return [filter.provinceName, filter.cityName, filter.districtName]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
 });
 
 const activeFilterChips = computed(() => {
   const chips = [];
 
   // 지역
-  if (
-    selectedRegionLabel.value
-    && selectedRegionLabel.value !== '전국'
-  ) {
+  if (selectedRegionLabel.value && selectedRegionLabel.value !== "전국") {
     chips.push({
-      key: 'region',
+      key: "region",
       label: selectedRegionLabel.value,
     });
   }
 
-
-if (
-  filter.age !== null
-  && filter.age !== undefined
-  && filter.age !== ""
-) {
-  chips.push({
-    key: "age",
-    label: `만 ${filter.age}세`,
-  });
-}
+  if (filter.age !== null && filter.age !== undefined && filter.age !== "") {
+    chips.push({
+      key: "age",
+      label: `만 ${filter.age}세`,
+    });
+  }
 
   if (filter.majorName && filter.majorName !== "전체") {
     chips.push({
@@ -397,20 +435,16 @@ const profileItems = computed(() => [
   },
 ]);
 
-const completedProfileCount = computed(() =>
-  profileItems.value.filter(
-    (item) => item.completed
-  ).length
+const completedProfileCount = computed(
+  () => profileItems.value.filter((item) => item.completed).length,
 );
 
-const isProfileComplete = computed(
-  () => completedProfileCount.value === 6
-);
+const isProfileComplete = computed(() => completedProfileCount.value === 6);
 
 const missingProfileLabels = computed(() =>
   profileItems.value
     .filter((item) => !item.completed)
-    .map((item) => item.label)
+    .map((item) => item.label),
 );
 
 const profileGuideText = computed(() => {
@@ -419,7 +453,7 @@ const profileGuideText = computed(() => {
   }
 
   return `${missingProfileLabels.value.join(
-    ", "
+    ", ",
   )}을 입력하면 맞춤 혜택 추천이 더 정확해져요.`;
 });
 
@@ -433,31 +467,17 @@ const applyProfileFilter = (profile) => {
    * 41000처럼 시도 단위이므로
    * provinceCode에 설정한다.
    */
-  filter.provinceCode =
-    profile.provinceCode
-    || profile.zipCd
-    || "";
+  filter.provinceCode = profile.provinceCode || profile.zipCd || "";
 
-  filter.provinceName =
-    profile.provinceName
-    || profile.regionName
-    || "전국";
+  filter.provinceName = profile.provinceName || profile.regionName || "전국";
 
-  filter.cityCode =
-    profile.cityCode
-    || "";
+  filter.cityCode = profile.cityCode || "";
 
-  filter.cityName =
-    profile.cityName
-    || "";
+  filter.cityName = profile.cityName || "";
 
-  filter.districtCode =
-    profile.districtCode
-    || "";
+  filter.districtCode = profile.districtCode || "";
 
-  filter.districtName =
-    profile.districtName
-    || "";
+  filter.districtName = profile.districtName || "";
 
   filter.age = profile.age ?? null;
 
@@ -487,37 +507,22 @@ const loadBenefits = async () => {
   try {
     const response = await getBenefit(apiParams.value);
 
-    /*
-     * 현재 목록 API 응답 구조에 맞춰
-     * 한 가지를 사용하면 된다.
-     */
-    if (Array.isArray(response)) {
-  const activeBenefits = response.filter(
-    (item) => item.benefitStatus !== "CLOSED"
-  );
+    const benefits = Array.isArray(response)
+      ? response
+      : response.content || response.list || response.benefits || [];
 
-  benefitList.value = activeBenefits;
-  totalCount.value = activeBenefits.length;
-  return;
-}
+    const activeBenefits = benefits.filter(
+      (item) => item.benefitStatus !== "CLOSED",
+    );
 
-const benefits =
-  response.content
-  || response.list
-  || response.benefits
-  || [];
+    conditionBenefits.value = activeBenefits;
 
-const activeBenefits = benefits.filter(
-  (item) => item.benefitStatus !== "CLOSED"
-);
-
-benefitList.value = activeBenefits;
-totalCount.value = activeBenefits.length;
+    conditionTotalCount.value = activeBenefits.length;
   } catch (error) {
     console.error("맞춤 혜택 조회 실패:", error);
 
-    benefitList.value = [];
-    totalCount.value = 0;
+    conditionBenefits.value = [];
+    conditionTotalCount.value = 0;
   } finally {
     loading.value = false;
   }
@@ -528,7 +533,7 @@ const loadProfileRecommendation = async () => {
   profileLoaded.value = false;
 
   try {
-  if (!auth.isLogin) {
+    if (!auth.isLogin) {
       await loadBenefits();
       return;
     }
@@ -538,8 +543,6 @@ const loadProfileRecommendation = async () => {
     applyProfileFilter(profile);
 
     await loadBenefits();
-
-    
   } catch (error) {
     console.error("프로필 기본 필터 조회 실패:", error);
 
@@ -552,8 +555,6 @@ const loadProfileRecommendation = async () => {
     profileLoaded.value = true;
     loading.value = false;
   }
-
-  
 };
 
 const loadFavorites = async () => {
@@ -570,6 +571,28 @@ const loadFavorites = async () => {
   }
 };
 
+const ensureProfileFilter = async () => {
+  if (!auth.isLogin) {
+    return;
+  }
+
+  if (profileLoaded.value) {
+    return;
+  }
+
+  try {
+    const profile = await getBenefitProfileFilter();
+
+    applyProfileFilter(profile);
+
+    profileLoaded.value = true;
+  } catch (error) {
+    console.error("프로필 기본 필터 조회 실패:", error);
+
+    profileLoaded.value = true;
+  }
+};
+
 const handleApplyFilter = async (appliedFilter) => {
   Object.assign(filter, appliedFilter);
 
@@ -583,23 +606,37 @@ const handleApplyFilter = async (appliedFilter) => {
 };
 
 const changeRecommendation = async (type) => {
-  if (!validTabs.includes(type)) {
-    return;
-  }
-
-  activeRecommendation.value = type;
-
   await router.replace({
-    path: "/benefit",
     query: {
+      ...route.query,
       tab: type,
     },
   });
-
-  if (type === "condition") {
-    await loadBenefits();
-  }
 };
+
+watch(
+  () => route.query.tab,
+
+  async (newTab) => {
+    const tab = validTabs.includes(newTab) ? newTab : "condition";
+
+    activeRecommendation.value = tab;
+
+    if (tab === "condition") {
+      await loadProfileRecommendation();
+      return;
+    }
+
+    if (tab === "consumption") {
+      await loadConsumptionRecommendation();
+      return;
+    }
+
+    if (tab === "goal") {
+      return;
+    }
+  },
+);
 
 const moveToSearch = () => {
   router.push({
@@ -657,29 +694,85 @@ const toggleFavorite = async (benefitNo) => {
 
 watch(
   () => route.query.tab,
-  async (newTab) => {
+  async (newTab, oldTab) => {
     const tab = validTabs.includes(newTab) ? newTab : "condition";
+
+    if (newTab === oldTab && activeRecommendation.value === tab) {
+      return;
+    }
 
     activeRecommendation.value = tab;
 
     if (tab === "condition") {
-      await loadBenefits();
+      await loadProfileRecommendation();
+      return;
     }
+
+    if (tab === "consumption") {
+      await loadConsumptionRecommendation();
+      return;
+    }
+
+    benefitList.value = [];
+    totalCount.value = 0;
+    consumptionMessage.value = "";
+    consumptionCategories.value = [];
   },
 );
 
+//소비기반 추천함수
+const loadConsumptionRecommendation = async () => {
+  loading.value = true;
+
+  try {
+    // 소비기반도 프로필 기본값 준비
+    await ensureProfileFilter();
+
+    const response = await getConsumptionRecommendedBenefits(apiParams.value);
+
+    const benefits = Array.isArray(response?.benefits) ? response.benefits : [];
+
+    consumptionBenefits.value = benefits.filter(
+      (item) => item.benefitStatus !== "CLOSED",
+    );
+
+    consumptionTotalCount.value = consumptionBenefits.value.length;
+
+    consumptionMessage.value = response?.message || "";
+
+    consumptionCategories.value = Array.isArray(response?.spendingCategories)
+      ? response.spendingCategories
+      : [];
+  } catch (error) {
+    console.error("소비 기반 추천 조회 실패:", error);
+
+    consumptionBenefits.value = [];
+    consumptionTotalCount.value = 0;
+
+    consumptionMessage.value = "소비 기반 추천을 불러오지 못했어요.";
+
+    consumptionCategories.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
 onMounted(async () => {
+  await loadFavorites();
+
   const tab = getTabFromRoute();
 
   activeRecommendation.value = tab;
 
-  await loadFavorites();
-
   if (tab === "condition") {
     await loadProfileRecommendation();
+    return;
+  }
+
+  if (tab === "consumption") {
+    await loadConsumptionRecommendation();
   }
 });
-
 </script>
 
 <style scoped>
@@ -902,5 +995,57 @@ onMounted(async () => {
   flex-shrink: 0;
   color: #b0a89e;
   font-size: 20px;
+}
+
+.consumption-summary {
+  margin-top: 15px;
+  padding: 0 2px;
+}
+
+.summary-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: #8c847a;
+  font-size: 11px;
+}
+
+.summary-count {
+  color: #2e2a24;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.consumption-message {
+  margin: 11px 0 0;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: #625a50;
+  font-size: 12px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.consumption-chip-list {
+  display: flex;
+  gap: 7px;
+  margin-top: 9px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.consumption-chip-list::-webkit-scrollbar {
+  display: none;
+}
+
+.consumption-chip {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 1px solid #eadfca;
+  border-radius: 16px;
+  background: #fff;
+  color: #685f53;
+  font-size: 11px;
+  white-space: nowrap;
 }
 </style>
