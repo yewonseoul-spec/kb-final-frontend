@@ -121,18 +121,7 @@
         {{ consumptionMessage }}
       </p>
 
-      <div
-        v-if="consumptionCategories.length"
-        class="consumption-chip-list"
-      >
-        <span
-          v-for="category in consumptionCategories"
-          :key="category"
-          class="consumption-chip"
-        >
-          {{ category }}
-        </span>
-      </div>
+    
     </section>
 
     <!-- 조건 기반 추천 -->
@@ -354,9 +343,32 @@ const apiParams = computed(() => {
 });
 
 const selectedRegionLabel = computed(() => {
-  return [filter.provinceName, filter.cityName, filter.districtName]
-    .filter(Boolean)
-    .join(" ");
+  const regionNames = [];
+
+  if (
+    filter.provinceCode &&
+    filter.provinceName &&
+    filter.provinceName !== "전국"
+  ) {
+    regionNames.push(filter.provinceName);
+  }
+
+  if (
+    filter.cityCode &&
+    filter.cityName
+  ) {
+    regionNames.push(filter.cityName);
+  }
+
+  if (
+    filter.districtCode &&
+    filter.districtName &&
+    filter.districtName !== "분류"
+  ) {
+    regionNames.push(filter.districtName);
+  }
+
+  return regionNames.join(" ");
 });
 
 const activeFilterChips = computed(() => {
