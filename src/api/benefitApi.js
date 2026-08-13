@@ -133,3 +133,16 @@ export const getBenefitGoalRecommend = async () => {
 
   return response.data;
 };
+
+// 소비 기반 혜택 추천
+export const getConsumptionRecommendedBenefits =
+  async (params = {}) => {
+    const response = await api.get(
+      "/recommend/consumption",
+      {
+        params,
+      },
+    );
+
+    return response.data;
+  };

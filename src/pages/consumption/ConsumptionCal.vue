@@ -5,6 +5,7 @@ import ExpectedCreate from '@/pages/consumption/ExpectedCreate.vue';
 import ExpectedEdit from '@/pages/consumption/ExpectedEdit.vue';
 import AiAnalysis from '@/pages/consumption/AiAnalysis.vue';
 import MonthlyTrendChart from './MonthlyTrendChart.vue';
+import CategoryAmountList from './CategoryAmountList.vue';
 
 const consumptionStore = useConsumptionStore();
 
@@ -572,9 +573,13 @@ async function onEditSaved() {
     </template>
 
     <template v-else>
+      <!-- 소비 패턴 화면 -->
       <div class="pattern-tab">
+        <!-- AI 소비 패턴 분석 -->
         <AiAnalysis />
-        <!-- 카테고리별 소비 금액 조회 -->
+        <!-- 카테고리별 소비 금액 -->
+        <CategoryAmountList />
+        <!-- 월별 소비 추이 그래프 -->
         <MonthlyTrendChart />
       </div>
     </template>

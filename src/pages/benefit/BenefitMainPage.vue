@@ -70,20 +70,6 @@
       <p v-if="goalReason" class="goal-reason">{{ goalReason }}</p>
     </section>
 
-    <!-- 목표 탭 : 프로필 입력 안내 (한 줄) -->
-    <button
-      v-if="showProfileHint"
-      type="button"
-      class="profile-completion-banner profile-hint"
-      @click="moveToProfile"
-    >
-      <div class="profile-banner-bottom">
-        <p>프로필 조건을 입력하면 혜택 추천이 더 정확해져요.</p>
-
-        <span class="profile-arrow"> › </span>
-      </div>
-    </button>
-
     <!-- 프로필 미완성 안내 배너 -->
     <button
       v-if="showProfileBanner"
@@ -120,9 +106,50 @@
     <!-- 로딩 -->
     <section v-if="loading" class="state-box">맞춤 혜택을 찾고 있어요.</section>
 
+    <section
+      v-if="!loading && activeRecommendation === 'consumption'"
+      class="consumption-summary"
+    >
+      <span class="summary-eyebrow"> 소비 조건에 맞는 혜택 </span>
+
+      <div class="summary-count">{{ totalCount }}건</div>
+
+      <p class="consumption-message">
+        {{ consumptionMessage }}
+      </p>
+
+      <div v-if="consumptionCategories.length" class="consumption-chip-list">
+        <span
+          v-for="category in consumptionCategories"
+          :key="category"
+          class="consumption-chip"
+        >
+          {{ category }}
+        </span>
+      </div>
+    </section>
+
+    <!-- 조건 탭 외 : 프로필 입력 안내 (한 줄) -->
+    <button
+      v-if="showProfileHint"
+      type="button"
+      class="profile-completion-banner profile-hint"
+      @click="moveToProfile"
+    >
+      <div class="profile-banner-bottom">
+        <p>프로필 조건을 입력하면 혜택 추천이 더 정확해져요.</p>
+
+        <span class="profile-arrow"> › </span>
+      </div>
+    </button>
+
     <!-- 조건 기반 추천 -->
     <section
-      v-else-if="activeRecommendation === 'condition'"
+      v-if="
+        !loading &&
+        (activeRecommendation === 'condition' ||
+          activeRecommendation === 'consumption')
+      "
       class="benefit-list"
     >
       <BenefitCard
@@ -155,21 +182,16 @@
         </template>
       </BenefitCard>
 
-      <div v-if="!benefitList.length" class="empty-box">
+      <div
+        v-if="!benefitList.length && activeRecommendation === 'condition'"
+        class="empty-box"
+      >
         프로필 조건에 맞는 혜택이 없어요.
       </div>
     </section>
 
-    <!-- 소비 기반 추천 임시 화면 -->
-    <section
-      v-else-if="activeRecommendation === 'consumption'"
-      class="state-box"
-    >
-      소비 내역을 기반으로 받을 수 있는 혜택을 추천할 예정이에요.
-    </section>
-
     <!-- 목표 기반 추천 -->
-    <template v-else-if="activeRecommendation === 'goal'">
+    <template v-if="!loading && activeRecommendation === 'goal'">
       <!-- 비로그인 -->
       <section v-if="!auth.isLogin" class="state-box goal-empty">
         <p>로그인하면 목표에 맞는 혜택을 추천해 드려요.</p>
@@ -281,6 +303,7 @@ import {
   getBenefit,
   getBenefitGoalRecommend,
   getBenefitProfileFilter,
+  getConsumptionRecommendedBenefits,
 } from '@/api/benefitApi';
 
 import BenefitCard from '@/components/benefit/BenefitCard.vue';
@@ -293,6 +316,8 @@ import { useAuthStore } from '@/stores/auth';
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
+const consumptionMessage = ref('');
+const consumptionCategories = ref([]);
 
 const recommendationTabs = [
   {
@@ -322,8 +347,35 @@ const activeRecommendation = ref(getTabFromRoute());
 const isFilterOpen = ref(false);
 const loading = ref(false);
 
-const benefitList = ref([]);
-const totalCount = ref(0);
+const conditionBenefits = ref([]);
+const conditionTotalCount = ref(0);
+
+const consumptionBenefits = ref([]);
+const consumptionTotalCount = ref(0);
+
+const benefitList = computed(() => {
+  if (activeRecommendation.value === 'consumption') {
+    return consumptionBenefits.value;
+  }
+
+  if (activeRecommendation.value === 'condition') {
+    return conditionBenefits.value;
+  }
+
+  return [];
+});
+
+const totalCount = computed(() => {
+  if (activeRecommendation.value === 'consumption') {
+    return consumptionTotalCount.value;
+  }
+
+  if (activeRecommendation.value === 'condition') {
+    return conditionTotalCount.value;
+  }
+
+  return 0;
+});
 const favoriteNos = ref(new Set());
 const pendingNos = ref(new Set());
 /*
@@ -335,6 +387,9 @@ const memberProfile = ref(null);
 
 // 프로필 기본 필터는 한 번만 건다. 두 번 걸면 사용자가 모달에서 고친 값이 덮인다
 const profileFilterApplied = ref(false);
+
+// 조회를 시도했는지. 응답 전에 배너가 0/6 으로 깜빡이는 것을 막는다
+const profileLoaded = ref(false);
 
 /*
  * 목표 기반 추천
@@ -648,34 +703,22 @@ const loadBenefits = async () => {
   try {
     const response = await getBenefit(apiParams.value);
 
-    /*
-     * 현재 목록 API 응답 구조에 맞춰
-     * 한 가지를 사용하면 된다.
-     */
-    if (Array.isArray(response)) {
-      const activeBenefits = response.filter(
-        (item) => item.benefitStatus !== 'CLOSED',
-      );
-
-      benefitList.value = activeBenefits;
-      totalCount.value = activeBenefits.length;
-      return;
-    }
-
-    const benefits =
-      response.content || response.list || response.benefits || [];
+    const benefits = Array.isArray(response)
+      ? response
+      : response.content || response.list || response.benefits || [];
 
     const activeBenefits = benefits.filter(
       (item) => item.benefitStatus !== 'CLOSED',
     );
 
-    benefitList.value = activeBenefits;
-    totalCount.value = activeBenefits.length;
+    conditionBenefits.value = activeBenefits;
+
+    conditionTotalCount.value = activeBenefits.length;
   } catch (error) {
     console.error('맞춤 혜택 조회 실패:', error);
 
-    benefitList.value = [];
-    totalCount.value = 0;
+    conditionBenefits.value = [];
+    conditionTotalCount.value = 0;
   } finally {
     loading.value = false;
   }
@@ -684,6 +727,7 @@ const loadBenefits = async () => {
 const loadMemberProfile = async () => {
   if (!auth.isLogin) {
     memberProfile.value = null;
+    profileLoaded.value = true;
 
     return null;
   }
@@ -704,6 +748,25 @@ const loadMemberProfile = async () => {
     memberProfile.value = null;
 
     return null;
+  } finally {
+    profileLoaded.value = true;
+  }
+};
+
+const ensureProfileFilter = async () => {
+  // 마운트 중에 프로필이 바뀔 일이 없으므로 한 번만 받는다
+  const profile = profileLoaded.value
+    ? memberProfile.value
+    : await loadMemberProfile();
+
+  /*
+   * 기본 필터는 한 번만 건다.
+   * 두 번 걸면 사용자가 필터 모달에서 고친 값이 조용히 덮인다.
+   */
+  if (profile && !profileFilterApplied.value) {
+    applyProfileFilter(profile);
+
+    profileFilterApplied.value = true;
   }
 };
 
@@ -711,18 +774,7 @@ const loadProfileRecommendation = async () => {
   loading.value = true;
 
   try {
-    const profile = await loadMemberProfile();
-
-    /*
-     * 프로필이 없으면 필터 없이 전체 목록으로 물러난다.
-     * 이미 한 번 걸었으면 다시 걸지 않는다 —
-     * 사용자가 필터 모달에서 고친 값이 조용히 덮인다.
-     */
-    if (profile && !profileFilterApplied.value) {
-      applyProfileFilter(profile);
-
-      profileFilterApplied.value = true;
-    }
+    await ensureProfileFilter();
 
     await loadBenefits();
   } finally {
@@ -819,7 +871,7 @@ const moveToLogin = () => {
 
 // 프로필이 덜 찼고 안내를 띄울 수 있는 상태인지. 표시 형태는 탭별로 가른다
 const needsProfileGuide = computed(
-  () => auth.isLogin && !isProfileComplete.value,
+  () => auth.isLogin && profileLoaded.value && !isProfileComplete.value,
 );
 
 const showProfileBanner = computed(
@@ -833,12 +885,23 @@ const showProfileBanner = computed(
  *
  * 목표가 없으면 목표 설정 CTA 가 먼저다 — 한 화면에 CTA 는 하나.
  */
-const showProfileHint = computed(
-  () =>
-    needsProfileGuide.value &&
-    activeRecommendation.value === 'goal' &&
-    !!goalType.value,
-);
+/*
+ * 조건 탭 외에는 진행바 배너 대신 한 줄 안내만 띄운다.
+ * 요약 블록 위에 배너까지 쌓이면 정작 혜택 카드가 첫 화면 밖으로 밀린다.
+ *
+ * 목표 탭은 목표가 없을 때 숨긴다 — 목표 설정 CTA 가 먼저다. 한 화면에 CTA 는 하나.
+ */
+const showProfileHint = computed(() => {
+  if (!needsProfileGuide.value || loading.value) {
+    return false;
+  }
+
+  if (activeRecommendation.value === 'consumption') {
+    return true;
+  }
+
+  return activeRecommendation.value === 'goal' && !!goalType.value;
+});
 
 const loadFavorites = async () => {
   if (!auth.isLogin) return;
@@ -867,25 +930,38 @@ const handleApplyFilter = async (appliedFilter) => {
 };
 
 const changeRecommendation = async (type) => {
-  if (!validTabs.includes(type)) {
-    return;
-  }
-
-  activeRecommendation.value = type;
-
   await router.replace({
-    path: '/benefit',
     query: {
+      ...route.query,
       tab: type,
     },
   });
-
-  if (type === 'condition') {
-    await loadProfileRecommendation();
-  } else if (type === 'goal') {
-    await loadGoalRecommendation();
-  }
 };
+
+watch(
+  () => route.query.tab,
+
+  async (newTab) => {
+    const tab = validTabs.includes(newTab) ? newTab : 'condition';
+
+    activeRecommendation.value = tab;
+
+    if (tab === 'condition') {
+      await loadProfileRecommendation();
+      return;
+    }
+
+    if (tab === 'consumption') {
+      await loadConsumptionRecommendation();
+      return;
+    }
+
+    if (tab === 'goal') {
+      await loadGoalRecommendation();
+      return;
+    }
+  },
+);
 
 const moveToSearch = () => {
   router.push({
@@ -941,31 +1017,61 @@ const toggleFavorite = async (benefitNo) => {
   }
 };
 
-watch(
-  () => route.query.tab,
-  async (newTab) => {
-    const tab = validTabs.includes(newTab) ? newTab : 'condition';
+//소비기반 추천함수
+const loadConsumptionRecommendation = async () => {
+  loading.value = true;
 
-    activeRecommendation.value = tab;
+  try {
+    // 소비기반도 프로필 기본값 준비
+    await ensureProfileFilter();
 
-    if (tab === 'condition') {
-      await loadProfileRecommendation();
-    } else if (tab === 'goal') {
-      await loadGoalRecommendation();
-    }
-  },
-);
+    const response = await getConsumptionRecommendedBenefits(apiParams.value);
+
+    const benefits = Array.isArray(response?.benefits) ? response.benefits : [];
+
+    consumptionBenefits.value = benefits.filter(
+      (item) => item.benefitStatus !== 'CLOSED',
+    );
+
+    consumptionTotalCount.value = consumptionBenefits.value.length;
+
+    consumptionMessage.value = response?.message || '';
+
+    consumptionCategories.value = Array.isArray(response?.spendingCategories)
+      ? response.spendingCategories
+      : [];
+  } catch (error) {
+    console.error('소비 기반 추천 조회 실패:', error);
+
+    consumptionBenefits.value = [];
+    consumptionTotalCount.value = 0;
+
+    consumptionMessage.value = '소비 기반 추천을 불러오지 못했어요.';
+
+    consumptionCategories.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
 
 onMounted(async () => {
+  await loadFavorites();
+
   const tab = getTabFromRoute();
 
   activeRecommendation.value = tab;
 
-  await loadFavorites();
-
   if (tab === 'condition') {
     await loadProfileRecommendation();
-  } else if (tab === 'goal') {
+    return;
+  }
+
+  if (tab === 'consumption') {
+    await loadConsumptionRecommendation();
+    return;
+  }
+
+  if (tab === 'goal') {
     await loadGoalRecommendation();
   }
 });
@@ -1277,5 +1383,57 @@ onMounted(async () => {
   background: #fff;
   font-size: 14px;
   cursor: pointer;
+}
+
+.consumption-summary {
+  margin-top: 15px;
+  padding: 0 2px;
+}
+
+.summary-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: #8c847a;
+  font-size: 11px;
+}
+
+.summary-count {
+  color: #2e2a24;
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.consumption-message {
+  margin: 11px 0 0;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #fff9e8;
+  color: #625a50;
+  font-size: 12px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.consumption-chip-list {
+  display: flex;
+  gap: 7px;
+  margin-top: 9px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.consumption-chip-list::-webkit-scrollbar {
+  display: none;
+}
+
+.consumption-chip {
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 1px solid #eadfca;
+  border-radius: 16px;
+  background: #fff;
+  color: #685f53;
+  font-size: 11px;
+  white-space: nowrap;
 }
 </style>
