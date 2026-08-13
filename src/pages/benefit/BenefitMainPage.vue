@@ -333,6 +333,9 @@ const pendingNos = ref(new Set());
  */
 const memberProfile = ref(null);
 
+// 프로필 기본 필터는 한 번만 건다. 두 번 걸면 사용자가 모달에서 고친 값이 덮인다
+const profileFilterApplied = ref(false);
+
 /*
  * 목표 기반 추천
  *
@@ -710,9 +713,15 @@ const loadProfileRecommendation = async () => {
   try {
     const profile = await loadMemberProfile();
 
-    // 프로필이 없으면 필터 없이 전체 목록으로 물러난다
-    if (profile) {
+    /*
+     * 프로필이 없으면 필터 없이 전체 목록으로 물러난다.
+     * 이미 한 번 걸었으면 다시 걸지 않는다 —
+     * 사용자가 필터 모달에서 고친 값이 조용히 덮인다.
+     */
+    if (profile && !profileFilterApplied.value) {
       applyProfileFilter(profile);
+
+      profileFilterApplied.value = true;
     }
 
     await loadBenefits();
@@ -872,7 +881,7 @@ const changeRecommendation = async (type) => {
   });
 
   if (type === 'condition') {
-    await loadBenefits();
+    await loadProfileRecommendation();
   } else if (type === 'goal') {
     await loadGoalRecommendation();
   }
@@ -940,7 +949,7 @@ watch(
     activeRecommendation.value = tab;
 
     if (tab === 'condition') {
-      await loadBenefits();
+      await loadProfileRecommendation();
     } else if (tab === 'goal') {
       await loadGoalRecommendation();
     }
