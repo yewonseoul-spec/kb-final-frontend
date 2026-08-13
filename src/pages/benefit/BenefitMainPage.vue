@@ -59,15 +59,15 @@
     <!-- 요약 : 건수 · 목표 · 추천 이유 -->
     <section
       v-if="activeRecommendation === 'goal' && !loading && hasGoalBenefits"
-      class="goal-summary"
+      class="tab-summary"
     >
-      <div class="goal-summary-header">
-        <span class="goal-summary-label"> {{ goalName }} 목표 추천 혜택 </span>
+      <div class="tab-summary-header">
+        <span class="tab-summary-label">{{ goalName }} 목표 추천 혜택</span>
 
-        <strong> {{ goalTotalCount }}건 </strong>
+        <strong class="tab-summary-count">{{ goalTotalCount }}건</strong>
       </div>
 
-      <p v-if="goalReason" class="goal-reason">{{ goalReason }}</p>
+      <p v-if="goalReason" class="tab-summary-reason">{{ goalReason }}</p>
     </section>
 
     <!-- 프로필 미완성 안내 배너 -->
@@ -108,25 +108,17 @@
 
     <section
       v-if="!loading && activeRecommendation === 'consumption'"
-      class="consumption-summary"
+      class="tab-summary"
     >
-      <span class="summary-eyebrow"> 소비 조건에 맞는 혜택 </span>
+      <div class="tab-summary-header">
+        <span class="tab-summary-label">소비 조건에 맞는 혜택</span>
 
-      <div class="summary-count">{{ totalCount }}건</div>
+        <strong class="tab-summary-count">{{ totalCount }}건</strong>
+      </div>
 
-      <p class="consumption-message">
+      <p v-if="consumptionMessage" class="tab-summary-reason">
         {{ consumptionMessage }}
       </p>
-
-      <div v-if="consumptionCategories.length" class="consumption-chip-list">
-        <span
-          v-for="category in consumptionCategories"
-          :key="category"
-          class="consumption-chip"
-        >
-          {{ category }}
-        </span>
-      </div>
     </section>
 
     <!-- 조건 탭 외 : 프로필 입력 안내 (한 줄) -->
@@ -317,7 +309,6 @@ const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
 const consumptionMessage = ref('');
-const consumptionCategories = ref([]);
 
 const recommendationTabs = [
   {
@@ -1036,10 +1027,6 @@ const loadConsumptionRecommendation = async () => {
     consumptionTotalCount.value = consumptionBenefits.value.length;
 
     consumptionMessage.value = response?.message || '';
-
-    consumptionCategories.value = Array.isArray(response?.spendingCategories)
-      ? response.spendingCategories
-      : [];
   } catch (error) {
     console.error('소비 기반 추천 조회 실패:', error);
 
@@ -1047,8 +1034,6 @@ const loadConsumptionRecommendation = async () => {
     consumptionTotalCount.value = 0;
 
     consumptionMessage.value = '소비 기반 추천을 불러오지 못했어요.';
-
-    consumptionCategories.value = [];
   } finally {
     loading.value = false;
   }
@@ -1326,26 +1311,28 @@ onMounted(async () => {
   line-height: 1;
 }
 
-.goal-summary {
+.tab-summary {
   margin-top: 14px;
 }
 
-.goal-summary-header {
+.tab-summary-header {
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 
-.goal-summary-label {
+.tab-summary-label {
   color: #8b847b;
   font-size: 12px;
 }
 
-.goal-summary strong {
+.tab-summary-count {
+  color: #2e2a24;
   font-size: 17px;
+  font-weight: 750;
 }
 
-.goal-reason {
+.tab-summary-reason {
   margin: 12px 0 0;
   padding: 14px 16px;
   border: 1px solid #f3b400;
@@ -1383,57 +1370,5 @@ onMounted(async () => {
   background: #fff;
   font-size: 14px;
   cursor: pointer;
-}
-
-.consumption-summary {
-  margin-top: 15px;
-  padding: 0 2px;
-}
-
-.summary-eyebrow {
-  display: block;
-  margin-bottom: 3px;
-  color: #8c847a;
-  font-size: 11px;
-}
-
-.summary-count {
-  color: #2e2a24;
-  font-size: 17px;
-  font-weight: 750;
-}
-
-.consumption-message {
-  margin: 11px 0 0;
-  padding: 13px 14px;
-  border-radius: 12px;
-  background: #fff9e8;
-  color: #625a50;
-  font-size: 12px;
-  line-height: 1.55;
-  word-break: keep-all;
-}
-
-.consumption-chip-list {
-  display: flex;
-  gap: 7px;
-  margin-top: 9px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.consumption-chip-list::-webkit-scrollbar {
-  display: none;
-}
-
-.consumption-chip {
-  flex-shrink: 0;
-  padding: 7px 11px;
-  border: 1px solid #eadfca;
-  border-radius: 16px;
-  background: #fff;
-  color: #685f53;
-  font-size: 11px;
-  white-space: nowrap;
 }
 </style>
