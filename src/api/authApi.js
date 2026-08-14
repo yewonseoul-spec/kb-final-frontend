@@ -26,6 +26,26 @@ export default {
     return data;
   },
 
+  // 아이디 찾기 — 비로그인 API 라 instance(401 인터셉터)를 쓰지 않는다
+  async findId(email) {
+    const { data } = await axios.post(`${BASE_URL}/find-id`, { email });
+    return data;
+  },
+
+  // 비밀번호 재설정 본인확인
+  async verifyResetPassword(loginId, email) {
+    await axios.post(`${BASE_URL}/reset-password-verify`, { loginId, email });
+  },
+
+  // 비밀번호 재설정 — 서버가 아이디+이메일을 다시 확인하므로 그대로 함께 보낸다
+  async resetPassword(loginId, email, newPassword) {
+    await axios.post(`${BASE_URL}/reset-password`, {
+      loginId,
+      email,
+      newPassword,
+    });
+  },
+
   // 로그아웃 - 인증이 필요하므로 instance(토큰 자동 첨부) 사용
   async logout() {
     const { data } = await instance.post(`${BASE_URL}/logout`);
