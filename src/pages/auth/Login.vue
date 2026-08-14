@@ -64,10 +64,17 @@ const login = async () => {
     </form>
 
     <p class="login-footer">
-      아이디 조회 · 암호 설정
-      <RouterLink class="signup-link" :to="{ name: 'SignUp' }"
-        >회원가입</RouterLink
-      >
+      <RouterLink class="footer-link" :to="{ name: 'FindId' }">
+        아이디 찾기
+      </RouterLink>
+      <span class="footer-divider" aria-hidden="true"></span>
+      <RouterLink class="footer-link" :to="{ name: 'ResetPassword' }">
+        비밀번호 재설정
+      </RouterLink>
+      <span class="footer-divider" aria-hidden="true"></span>
+      <RouterLink class="footer-link" :to="{ name: 'SignUp' }">
+        회원가입
+      </RouterLink>
     </p>
     <!-- 로그인 화면은 hideTabBar 라 탭바가 없다. 첫 화면으로 뜨는 만큼
            로그인하지 않고 나갈 출구가 하나는 있어야 한다 -->
@@ -126,16 +133,36 @@ const login = async () => {
   margin-top: 8px;
 }
 
+/* 로그인 버튼과 붙어 보이지 않게 간격을 벌린다 */
 .login-footer {
-  margin: 24px 0 0;
+  margin: 32px 0 0;
   text-align: center;
   font-size: 13px;
   color: #908980;
 }
 
-.signup-link {
-  color: #2e2a24;
-  font-weight: 600;
+/* 밑줄은 브라우저 기본값이라 명시적으로 꺼야 한다.
+       짧은 링크 3개에 선이 세 번 그어지면 줄이 어수선해진다 */
+.footer-link {
+  display: inline-block;
+  padding: 6px 4px;
+  color: #908980;
+  text-decoration: none;
+}
+
+/* 점 대신 얇은 선. 글자가 아니라 도형이라 크기·색을 정확히 통제할 수 있다 */
+.footer-divider {
+  display: inline-block;
+  width: 1px;
+  height: 10px;
+  margin: 0 8px;
+  background-color: #ddd8ce;
+  vertical-align: middle;
+}
+
+.browse-row {
+  margin-top: 20px;
+  text-align: center;
 }
 
 .browse-row {
