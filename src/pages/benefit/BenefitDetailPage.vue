@@ -7,7 +7,9 @@
     <section v-else-if="errorMessage" class="state-box error">
       <p>{{ errorMessage }}</p>
 
-      <button type="button" @click="loadDetail">다시 불러오기</button>
+       <div class="empty-action">
+      <KbButton @click="loadDetail">다시 불러오기</KbButton>
+      </div>
     </section>
 
     <template v-else-if="detail">
@@ -157,6 +159,7 @@ import { useRoute } from 'vue-router';
 import { getBenefitDetail } from '@/api/benefitApi';
 
 import mypageApi from '@/api/mypageApi';
+import KbButton from '@/components/common/KbButton.vue';
 import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
@@ -726,5 +729,11 @@ onMounted(() => {
 
 .state-box.error button {
   margin-top: 15px;
+}
+
+.empty-action {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
 }
 </style>
