@@ -5,25 +5,25 @@ const BASE_URL = '/api/stress'
 /**
  * 스트레스 테스트 API
  * 회원번호는 보내지 않는다. 서버가 토큰에서 꺼내 쓴다.
+ * 세계와 강도의 정의는 화면이 가지고 있고 서버에는 충격 값만 보낸다.
  */
 export default {
   /**
-   * 세계 목록을 조회한다
-   */
-  async getScenarios() {
-    const { data } = await instance.get(`${BASE_URL}/scenarios`)
-    return data
-  },
-
-  /**
-   * 선택한 세계를 내 통장에 적용한 결과를 조회한다
+   * 결과를 계산한다
    *
-   * @param {string} scenarioCode INFLATION / RENT / MEDICAL / COMPLEX / JOB_LOSS
-   * @param {string} shockLevel   LOW / MID / HIGH
+   * @param {object} payload
+   *   worldCode      세계 코드
+   *   stageLabel     화면에 표시할 조건 문구
+   *   expenseRate    생활밀접 지출 증가 비율 0~1
+   *   incomeRate     소득 감소 비율 0~1
+   *   fixedExpense   정액 월 지출 증가액
+   *   oneTimeAmount  일회성 충격 금액
+   *   adjustments    [{ categoryName, reductionRate }]
    */
-  async getResult(scenarioCode, shockLevel) {
-    const { data } = await instance.post(`${BASE_URL}/result`, null, {
-      params: { scenarioCode, shockLevel },
+  async getResult(payload) {
+    const { data } = await instance.post(`${BASE_URL}/result`, {
+      adjustments: [],
+      ...payload,
     })
     return data
   },
