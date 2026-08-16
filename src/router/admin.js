@@ -21,6 +21,17 @@ export default [
         name: 'adminSyncLog',
         component: () => import('../pages/admin/SyncLog.vue'),
       },
+
+      {
+  path: "/admin/recommendKeyword",
+  name: "RecommendKeyword",
+  component: () =>
+    import("@/pages/admin/RecommendKeywordPage.vue"),
+  meta: {
+    requiresAuth: true,
+    requiresAdmin: true,
+  },
+},
     ],
   },
 ];
