@@ -64,4 +64,43 @@ export default {
     });
     return data;
   },
+  
+// ADMIN-04 추천검색어 전체 조회
+  async getRecommendKeywords() {
+    const { data } = await instance.get(
+      `${BASE_URL}/recommend-keywords`,
+    );
+    return data;
+  },
+
+  // ADMIN-04 추천검색어 추가
+  async createRecommendKeyword(keywordName) {
+    const { data } = await instance.post(
+      `${BASE_URL}/recommend-keywords`,
+      {
+        keywordName,
+      },
+    );
+    return data;
+  },
+
+  // ADMIN-04 추천검색어 활성/비활성 변경
+  async changeRecommendKeywordActive(keywordCode, isActive) {
+    const { data } = await instance.patch(
+      `${BASE_URL}/recommend-keywords/${keywordCode}/status`,
+      {
+        isActive,
+      },
+    );
+    return data;
+  },
+
+  // ADMIN-04 추천검색어 삭제
+  async deleteRecommendKeyword(keywordCode) {
+    const { data } = await instance.delete(
+      `${BASE_URL}/recommend-keywords/${keywordCode}`,
+    );
+    return data;
+  },
+  
 };
