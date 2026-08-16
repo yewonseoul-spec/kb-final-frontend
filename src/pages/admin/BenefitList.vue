@@ -2,7 +2,7 @@
   <div>
     <div class="mb-4">
       <h4 class="mb-1 fw-bold">혜택 관리</h4>
-      <small class="text-muted">온통청년에서 수집한 청년혜택을 조회하고 활성 상태를 관리합니다.</small>
+      <small class="text-muted">온통청년에서 수집한 청년혜택을 조회하고 노출 상태를 관리합니다.</small>
     </div>
 
     <!-- 필터 -->
@@ -18,7 +18,7 @@
 
           <div class="col-auto">
             <button class="btn btn-sm btn-dark px-4" @click="search">조회</button>
-            <button class="btn btn-sm btn-link text-muted" @click="resetFilters">초기화</button>
+            <button class="btn btn-sm btn-outline-secondary" @click="resetFilters">초기화</button>
           </div>
         </div>
 
@@ -26,7 +26,7 @@
 
         <div class="d-flex flex-wrap gap-4">
           <div>
-            <div class="small text-muted mb-1">활성 상태</div>
+            <div class="small text-muted mb-1">노출 상태</div>
             <div class="btn-group btn-group-sm">
               <button v-for="opt in activeOptions" :key="opt.value"
                       class="btn"
@@ -72,6 +72,18 @@
                       @click="selectConflict(true)">관리 대상</button>
             </div>
           </div>
+
+          <div>
+            <div class="small text-muted mb-1">관리자 지정</div>
+            <div class="btn-group btn-group-sm">
+              <button class="btn"
+                      :class="!filters.adminManagedOnly ? 'btn-dark' : 'btn-outline-secondary'"
+                      @click="selectAdminManaged(false)">전체</button>
+              <button class="btn"
+                      :class="filters.adminManagedOnly ? 'btn-dark' : 'btn-outline-secondary'"
+                      @click="selectAdminManaged(true)">지정한 것만</button>
+            </div>
+          </div>
         </div>
 
         <!--
@@ -86,6 +98,16 @@
           <span class="badge rule rule-external">외부</span> 우리 DB에 없는 제도라 안내만 함
           <span class="sep">·</span>
           <span class="badge rule rule-review">검수</span> 아직 확인 전이라 엔진이 무시함
+        </div>
+
+        <div v-if="deletedOnly" class="rule-legend mt-3">
+          온통청년 오픈 API에서 더 이상 제공되지 않는 정책입니다.
+          데이터는 삭제하지 않고 숨김 처리만 하므로, 다시 제공되면 자동으로 복구됩니다.
+        </div>
+
+        <div v-if="filters.adminManagedOnly" class="rule-legend mt-3">
+          관리자가 노출 상태를 직접 지정한 정책입니다.
+          지정값은 동기화 대상이 아니므로 온통청년 값이 바뀌어도 유지됩니다.
         </div>
       </div>
     </div>
@@ -120,7 +142,7 @@
               <thead class="table-light">
                 <tr class="small text-muted">
                   <!-- 상태·카테고리·중복규칙은 위에 필터가 있어 정렬을 넣지 않는다 -->
-                  <th style="width:80px">상태</th>
+                  <th style="width:110px">상태</th>
                   <th style="width:90px">카테고리</th>
 
                   <th style="min-width:260px" class="sortable" @click="toggleSort('plcyNm')">
@@ -142,10 +164,23 @@
               </thead>
               <tbody>
                 <tr v-for="b in data.benefits" :key="b.benefitNo">
+                  <!--
+                    상태는 세 컬럼이 겹쳐 있어 서버가 하나로 합쳐 내려준다.
+                    관리자가 직접 지정한 경우에는 원본과 다르다는 것을 알려야
+                    '왜 API 값과 다르지'를 바로 판단할 수 있고,
+                    되돌릴 방법도 같은 자리에 있어야 관리가 된다.
+                  -->
                   <td>
-                    <span class="badge" :class="activeBadge(b.isActive)">
-                      {{ b.isActive === 'Y' ? '활성' : '비활성' }}
+                    <span class="badge" :class="statusBadge(b)">
+                      {{ statusText(b) }}
                     </span>
+                    <div v-if="b.adminIsActive && b.apiDeletedYn !== 'Y'" class="admin-mark">
+                      관리자 지정
+                      <button class="clear-link"
+                              :disabled="togglingNo === b.benefitNo"
+                              title="지정을 해제하고 다시 온통청년 값을 따릅니다"
+                              @click="askClear(b)">해제</button>
+                    </div>
                   </td>
                   <td>
                     <span class="badge cat" :class="categoryClass(b.categoryCode)">
@@ -198,11 +233,18 @@
                   <td>
                     <button class="btn btn-sm btn-outline-secondary me-1"
                             @click="openDetail(b.benefitNo)">상세</button>
-                    <button class="btn btn-sm"
-                            :class="b.isActive === 'Y' ? 'btn-outline-danger' : 'btn-outline-success'"
+
+                    <!-- 원천에서 사라진 정책은 켜도 보여줄 내용이 없으므로 잠근다 -->
+                    <button v-if="b.apiDeletedYn === 'Y'"
+                            class="btn btn-sm btn-outline-secondary" disabled
+                            title="온통청년에서 삭제된 정책이라 노출할 수 없습니다">
+                      삭제됨
+                    </button>
+                    <button v-else class="btn btn-sm"
+                            :class="b.effectiveStatus === 'Y' ? 'btn-outline-danger' : 'btn-outline-success'"
                             :disabled="togglingNo === b.benefitNo"
                             @click="askToggle(b)">
-                      {{ b.isActive === 'Y' ? '비활성화' : '활성화' }}
+                      {{ b.effectiveStatus === 'Y' ? '비활성화' : '활성화' }}
                     </button>
                   </td>
                 </tr>
@@ -239,23 +281,39 @@
     <div v-if="pendingToggle" class="modal-backdrop-custom" @click.self="pendingToggle = null">
       <div class="modal-box">
         <h6 class="fw-bold mb-3">
-          {{ pendingToggle.isActive === 'Y' ? '비활성화할까요?' : '다시 활성화할까요?' }}
+          {{ pendingToggle.effectiveStatus === 'Y' ? '비활성화할까요?' : '다시 활성화할까요?' }}
         </h6>
         <p class="small mb-2">{{ pendingToggle.plcyNm }}</p>
         <p class="small text-muted mb-4">
-          <template v-if="pendingToggle.isActive === 'Y'">
+          <template v-if="pendingToggle.effectiveStatus === 'Y'">
             비활성화하면 추천 대상에서 제외됩니다. 데이터는 삭제되지 않습니다.
           </template>
           <template v-else>
             다시 추천 대상에 포함됩니다.
           </template>
           <span class="d-block mt-2">
-            다음 동기화에서 온통청년 기준으로 다시 계산될 수 있습니다.
+            지정한 상태는 원본과 별도로 저장되므로 동기화를 실행해도 유지됩니다.
           </span>
         </p>
         <div class="d-flex justify-content-end gap-2">
           <button class="btn btn-sm btn-outline-secondary" @click="pendingToggle = null">취소</button>
           <button class="btn btn-sm btn-dark" @click="confirmToggle">확인</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 지정 해제 확인 -->
+    <div v-if="pendingClear" class="modal-backdrop-custom" @click.self="pendingClear = null">
+      <div class="modal-box">
+        <h6 class="fw-bold mb-3">관리자 지정을 해제할까요?</h6>
+        <p class="small mb-2">{{ pendingClear.plcyNm }}</p>
+        <p class="small text-muted mb-4">
+          해제하면 이 정책은 다시 온통청년이 내려주는 상태를 따릅니다.
+          다음 동기화에서 상태가 바뀔 수 있습니다.
+        </p>
+        <div class="d-flex justify-content-end gap-2">
+          <button class="btn btn-sm btn-outline-secondary" @click="pendingClear = null">취소</button>
+          <button class="btn btn-sm btn-dark" @click="confirmClear">해제</button>
         </div>
       </div>
     </div>
@@ -268,13 +326,23 @@
             <span class="badge cat me-1" :class="categoryClass(detail.categoryCode)">
               {{ categoryName(detail.categoryCode) }}
             </span>
-            <span class="badge" :class="activeBadge(detail.isActive)">
-              {{ detail.isActive === 'Y' ? '활성' : '비활성' }}
+            <span class="badge" :class="statusBadge(detail)">
+              {{ statusText(detail) }}
             </span>
+            <span v-if="detail.adminIsActive && detail.apiDeletedYn !== 'Y'"
+                  class="badge rule rule-custom ms-1"
+                  title="관리자가 지정한 상태입니다">지정값</span>
             <h6 class="fw-bold mt-2 mb-0">{{ detail.plcyNm }}</h6>
             <small class="text-muted">{{ detail.sprvsnInstCdNm }}</small>
           </div>
           <button class="btn-close" @click="closeDetail"></button>
+        </div>
+
+        <!-- 원천에서 사라진 정책은 왜 안 보이는지가 가장 먼저 필요한 정보다 -->
+        <div v-if="detail.apiDeletedYn === 'Y'" class="alert alert-danger py-2 px-3 small mb-3">
+          온통청년 오픈 API에서 더 이상 제공되지 않아
+          {{ formatDate(detail.apiDeletedDt) }}에 숨김 처리되었습니다.
+          데이터는 삭제되지 않았으며 다시 제공되면 자동으로 복구됩니다.
         </div>
 
         <dl class="row small mb-0">
@@ -319,7 +387,7 @@
 
         <!--
           신청 링크 관리.
-          원본과 지정값을 함께 보여주는 이유는, 원본이 비어 있거나 잘못된 값인 경우가
+          원본·참고·지정값을 함께 보여주는 이유는, 원본이 비어 있거나 잘못된 값인 경우가
           많아서 '왜 바꿔야 했는지'가 화면에서 바로 보여야 하기 때문이다.
           원본은 지우지 않으므로 지정을 해제하면 언제든 되돌아간다.
         -->
@@ -336,10 +404,17 @@
           </div>
 
           <div class="url-row">
+            <span class="url-label">참고</span>
+            <span v-if="refText" class="url-value">{{ refText }}</span>
+            <span v-else class="url-value text-muted">없음</span>
+          </div>
+
+          <div class="url-row">
             <span class="url-label">사용자 노출</span>
             <span v-if="effectiveUrl" class="url-value">
               {{ effectiveUrl }}
               <span v-if="detail.customApplyUrl" class="badge rule rule-custom ms-1">지정값</span>
+              <span v-else-if="!originText && refText" class="badge rule rule-external ms-1">참고</span>
             </span>
             <span v-else class="url-value text-danger">
               없음 — 사용자 화면에서 신청 버튼이 비활성됩니다
@@ -385,10 +460,13 @@ const CATEGORY = {
   1: '일자리', 2: '주거', 3: '교육', 4: '복지·문화', 5: '참여·권리',
 };
 
+// 'D'는 관리자가 끈 것이 아니라 원천에서 사라진 것이라 다른 축이지만,
+// 관리자 입장에서는 '이 혜택이 지금 보이느냐'라는 하나의 질문이므로 같은 줄에 둔다
 const activeOptions = [
   { value: '', label: '전체' },
   { value: 'Y', label: '활성' },
   { value: 'N', label: '비활성' },
+  { value: 'D', label: 'API 삭제' },
 ];
 
 const categoryOptions = [
@@ -406,7 +484,11 @@ const filters = reactive({
   categoryCode: '',
   deadlineSoon: false,
   hasConflict: false,
+  adminManagedOnly: false,
 });
+
+// 서버는 활성 필터와 삭제 필터를 따로 받는다
+const deletedOnly = computed(() => filters.isActive === 'D');
 
 // 정렬은 서버가 처리한다. 목록이 2,700건이라 현재 페이지 20건만 정렬하면
 // '마감 임박순'이 전체 기준이 아니게 되어 잘못된 결과를 보여준다.
@@ -425,6 +507,7 @@ const loadError = ref('');
 const data = ref(null);
 const detail = ref(null);
 const pendingToggle = ref(null);
+const pendingClear = ref(null);
 const togglingNo = ref(null);
 
 // 신청 링크 지정
@@ -442,11 +525,16 @@ const sortLabel = computed(() => {
 // 원본은 빈 문자열·공백만 있는 경우가 많아 그대로 쓰면 '값이 있는 것처럼' 보인다
 const originText = computed(() => (detail.value?.aplyUrlAddr || '').trim());
 
-// 사용자에게 실제로 나가는 링크. 서버의 COALESCE 와 같은 규칙이라
+// 참고 주소. 신청 주소가 비어 있을 때 공고 확인용으로 쓰인다
+const refText = computed(() => (detail.value?.refUrlAddr1 || '').trim());
+
+// 사용자에게 실제로 나가는 링크. 서버의 폴백 순서와 같은 규칙이라
 // 관리자가 저장 전에 결과를 미리 확인할 수 있다
 const effectiveUrl = computed(() => {
   if (!detail.value) return '';
-  return (detail.value.customApplyUrl || '').trim() || originText.value;
+  return (detail.value.customApplyUrl || '').trim()
+      || originText.value
+      || refText.value;
 });
 
 // 현재 페이지 주변 최대 5개만 노출한다
@@ -469,7 +557,10 @@ async function load(page = 1) {
   try {
     data.value = await adminApi.getBenefits({
       keyword: filters.keyword || undefined,
-      isActive: filters.isActive || undefined,
+      // 'D'는 삭제 필터로 보내고 활성 필터는 비운다
+      isActive: deletedOnly.value ? undefined : (filters.isActive || undefined),
+      deletedOnly: deletedOnly.value || undefined,
+      adminManagedOnly: filters.adminManagedOnly || undefined,
       categoryCode: filters.categoryCode || undefined,
       deadlineSoon: filters.deadlineSoon || undefined,
       hasConflict: filters.hasConflict || undefined,
@@ -533,12 +624,20 @@ function selectConflict(value) {
   search();
 }
 
+// 관리자가 손댄 정책만 모아 본다. 2,700건 중에서 되짚을 방법이 없으면
+// 지정 기능이 있어도 관리가 되지 않는다
+function selectAdminManaged(value) {
+  filters.adminManagedOnly = value;
+  search();
+}
+
 function resetFilters() {
   filters.keyword = '';
   filters.isActive = '';
   filters.categoryCode = '';
   filters.deadlineSoon = false;
   filters.hasConflict = false;
+  filters.adminManagedOnly = false;
   sort.key = '';
   sort.order = 'asc';
   search();
@@ -632,17 +731,43 @@ function askToggle(benefit) {
 
 async function confirmToggle() {
   const b = pendingToggle.value;
-  const next = b.isActive === 'Y' ? 'N' : 'Y';
+  const next = b.effectiveStatus === 'Y' ? 'N' : 'Y';
 
   pendingToggle.value = null;
   togglingNo.value = b.benefitNo;
 
   try {
     await adminApi.changeBenefitActive(b.benefitNo, next);
-    // 목록 전체를 다시 부르지 않고 해당 행만 갱신한다
-    b.isActive = next;
+    // 목록 전체를 다시 부르지 않고 해당 행만 갱신한다.
+    // 지정값과 최종 상태를 함께 바꿔야 배지와 버튼이 동시에 맞는다
+    b.adminIsActive = next;
+    b.effectiveStatus = next;
   } catch (e) {
     loadError.value = '상태 변경에 실패했습니다.';
+    console.error(e);
+  } finally {
+    togglingNo.value = null;
+  }
+}
+
+// 해제하면 다음 동기화에서 상태가 바뀔 수 있으므로 한 번 확인한다
+function askClear(benefit) {
+  pendingClear.value = benefit;
+}
+
+async function confirmClear() {
+  const b = pendingClear.value;
+
+  pendingClear.value = null;
+  togglingNo.value = b.benefitNo;
+
+  try {
+    // 빈 값을 보내면 서버가 지정을 해제하고 다시 원본을 따르게 한다
+    const updated = await adminApi.changeBenefitActive(b.benefitNo, '');
+    b.adminIsActive = null;
+    b.effectiveStatus = updated.effectiveStatus;
+  } catch (e) {
+    loadError.value = '지정 해제에 실패했습니다.';
     console.error(e);
   } finally {
     togglingNo.value = null;
@@ -666,8 +791,22 @@ function categoryClass(code) {
   return `cat-${CATEGORY[code] ? code : 'etc'}`;
 }
 
-function activeBadge(isActive) {
-  return isActive === 'Y' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary';
+/**
+ * 최종 노출 상태의 색과 문구.
+ * 세 컬럼(api_deleted_yn · admin_is_active · is_active)을 서버가 합쳐
+ * effectiveStatus 하나로 내려주므로 화면은 그것만 본다.
+ * 화면이 직접 계산하면 서버의 우선순위와 어긋날 수 있다.
+ */
+function statusBadge(b) {
+  if (b.effectiveStatus === 'D') return 'bg-danger-subtle text-danger';
+  return b.effectiveStatus === 'Y'
+    ? 'bg-success-subtle text-success'
+    : 'bg-secondary-subtle text-secondary';
+}
+
+function statusText(b) {
+  if (b.effectiveStatus === 'D') return 'API 삭제';
+  return b.effectiveStatus === 'Y' ? '활성' : '비활성';
 }
 
 // apply_end_date가 NULL인 경우가 상시모집(0057002)과 마감(0057003) 두 가지라
@@ -751,6 +890,27 @@ onMounted(() => {
   opacity: 0.55;
   margin-left: 2px;
 }
+
+/* 관리자가 지정한 상태임을 배지 아래 작게 알리고 되돌릴 길을 함께 둔다 */
+.admin-mark {
+  font-size: 10px;
+  color: #8a857c;
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
+.clear-link {
+  border: 0;
+  background: none;
+  padding: 0 0 0 5px;
+  font-size: 10px;
+  color: #8a857c;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.clear-link:hover { color: #2e2a24; }
+.clear-link:disabled { opacity: .4; cursor: default; }
 
 /* 카테고리 색상 — 목록에서 같은 분야가 한눈에 묶이도록 한다 */
 .cat {
