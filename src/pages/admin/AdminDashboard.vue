@@ -100,6 +100,8 @@
                   <th style="width:100px">결과</th>
                   <th class="text-end" style="width:100px">신규(추정)</th>
                   <th class="text-end" style="width:100px">갱신(추정)</th>
+                  <!-- API 응답에서 사라져 숨김 처리된 건수 -->
+                  <th class="text-end" style="width:70px">삭제(추정)</th>
                   <th class="text-end" style="width:80px">소요</th>
                   <th style="min-width:180px">오류 내용</th>
                 </tr>
@@ -120,6 +122,10 @@
                   </td>
                   <td class="text-end small">{{ log.insertCnt }}건</td>
                   <td class="text-end small">{{ log.updateCnt }}건</td>
+                  <td class="text-end small">
+                    <span v-if="log.deleteCnt > 0" class="text-danger">{{ log.deleteCnt }}건</span>
+                    <span v-else class="text-muted">-</span>
+                  </td>
                   <td class="text-end small">{{ formatDuration(log.durationMs) }}</td>
 
                   <!-- 요약만 보여준다. 원문 확인은 '전체 보기'의 동기화 로그 화면에서 한다 -->

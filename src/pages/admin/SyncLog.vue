@@ -183,6 +183,14 @@
                   >
                     갱신(추정)
                   </th>
+                  <!-- API 응답에서 사라져 숨김 처리된 건수.
+                       데이터는 지우지 않고 노출만 막으므로 복구가 가능하다 -->
+                  <th
+                    class="text-end"
+                    style="width: 80px"
+                  >
+                    삭제
+                  </th>
                   <th
                     class="text-end"
                     style="width: 80px"
@@ -219,6 +227,12 @@
                   <td class="text-end small">{{ log.totalCnt }}건</td>
                   <td class="text-end small">{{ log.insertCnt }}건</td>
                   <td class="text-end small">{{ log.updateCnt }}건</td>
+                  <td class="text-end small">
+                    <span v-if="log.deleteCnt > 0" class="text-danger">
+                      {{ log.deleteCnt }}건
+                    </span>
+                    <span v-else class="text-muted">-</span>
+                  </td>
                   <td class="text-end small">
                     {{ formatDuration(log.durationMs) }}
                   </td>
@@ -410,6 +424,9 @@
             <span class="text-primary"
               >갱신 <strong>{{ updateCount }}</strong></span
             >
+            <span class="text-danger"
+              >삭제 <strong>{{ deleteCount }}</strong></span
+            >
             <span class="text-warning-emphasis"
               >내용 변경 <strong>{{ changedCount }}</strong></span
             >
@@ -441,13 +458,9 @@
                   <td>
                     <span
                       class="badge"
-                      :class="
-                        d.actionType === 'I'
-                          ? 'bg-success-subtle text-success'
-                          : 'bg-primary-subtle text-primary'
-                      "
+                      :class="actionBadge(d.actionType)"
                     >
-                      {{ d.actionType === "I" ? "신규" : "갱신" }}
+                      {{ actionLabel(d.actionType) }}
                     </span>
                   </td>
                   <td>
@@ -467,7 +480,7 @@
                       v-else
                       class="text-muted"
                     >
-                      {{ d.actionType === "I" ? "신규 등록" : "변경 없음" }}
+                      {{ emptySummaryText(d.actionType) }}
                     </span>
                   </td>
                   <td class="small text-muted">{{ d.sprvsnInstCdNm }}</td>
@@ -558,10 +571,38 @@ const insertCount = computed(
 const updateCount = computed(
   () => details.value.filter((d) => d.actionType === "U").length,
 );
+// API 응답에서 사라져 숨김 처리된 건. 갱신과 성격이 달라 따로 센다
+const deleteCount = computed(
+  () => details.value.filter((d) => d.actionType === "D").length,
+);
 // 갱신 대상이어도 내용이 그대로인 경우가 많아 실제로 값이 바뀐 건수를 따로 센다
 const changedCount = computed(
   () => details.value.filter((d) => d.changedSummary).length,
 );
+
+/**
+ * 처리 구분 표시.
+ * I는 새로 들어온 정책, U는 기존 정책 갱신,
+ * D는 온통청년 응답에 없어 숨김 처리된 정책이다.
+ */
+function actionLabel(type) {
+  if (type === "I") return "신규";
+  if (type === "D") return "삭제";
+  return "갱신";
+}
+
+function actionBadge(type) {
+  if (type === "I") return "bg-success-subtle text-success";
+  if (type === "D") return "bg-danger-subtle text-danger";
+  return "bg-primary-subtle text-primary";
+}
+
+// 변경 요약이 없을 때 대신 보여줄 문구
+function emptySummaryText(type) {
+  if (type === "I") return "신규 등록";
+  if (type === "D") return "API 응답에 없음";
+  return "변경 없음";
+}
 
 const statCards = computed(() => {
   if (!data.value) return [];

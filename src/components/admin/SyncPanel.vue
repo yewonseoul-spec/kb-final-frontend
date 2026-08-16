@@ -65,6 +65,13 @@
           </div>
         </div>
 
+        <!-- 기간별 동기화는 숨김 판정을 하지 않으므로 값이 있을 때만 보여준다.
+             전체 목록을 다 받은 것이 아니라 '응답에 없다'를 삭제로 볼 수 없기 때문이다 -->
+        <div v-if="result.deleteCnt > 0" class="alert alert-warning mt-3 mb-0 py-2 small">
+          이번 동기화에서 {{ formatCount(result.deleteCnt) }}건이 삭제 처리되었습니다.
+          데이터는 보존되며 다시 제공되면 자동으로 복구됩니다.
+        </div>
+
         <small class="text-muted d-block mt-3">
           신규·갱신 건수는 동기화 전후 전체 정책 수의 차이로 계산한 추정치입니다.
         </small>
