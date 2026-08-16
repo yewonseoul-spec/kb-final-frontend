@@ -1340,12 +1340,14 @@ onMounted(async () => {
   font-weight: 750;
 }
 
+/* 누를 수 없는 안내 문구다. 노란 강조는 CTA(.profile-completion-banner)에만 남긴다.
+     테두리·배경은 앱 표준 카드(KbCard)와 같은 값을 쓴다 */
 .tab-summary-reason {
   margin: 12px 0 0;
   padding: 14px 16px;
-  border: 1px solid #f3b400;
-  border-radius: 16px;
-  background: #fffdf7;
+  border: 1px solid #cfe0fb;
+  border-radius: 14px;
+  background: #eef4fe;
   color: #2e2a24;
   font-size: 13px;
   line-height: 1.6;
