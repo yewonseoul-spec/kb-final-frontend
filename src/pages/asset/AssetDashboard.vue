@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getAssetDashboard } from '@/api/assetApi'
 
@@ -31,9 +31,12 @@ const fetchDashboard = async () => {
   }
 }
 
+// 보유 계좌는 3개까지만 보여준다
+const visibleAccounts = computed(() => dashboard.accounts.slice(0, 3))
+
 const goProducts = () => router.push('/asset/products')
 const goRatio = () => router.push('/asset/ratio')
-const goAllAccounts = () => router.push('/asset/accounts')
+const goAllAccounts = () => router.push('/asset/balance')
 
 onMounted(fetchDashboard)
 </script>
@@ -60,8 +63,8 @@ onMounted(fetchDashboard)
       <div v-if="loading" class="empty">불러오는 중...</div>
       <div v-else-if="dashboard.accounts.length === 0" class="empty">등록된 계좌가 없습니다.</div>
       <ul v-else class="account-list">
-        <li v-for="acc in dashboard.accounts" :key="acc.accountId" class="account-item">
-          <div class="account-info">
+        <li v-for="acc in visibleAccounts" :key="acc.accountId" class="account-item">
+          <div class="account-card">
             <p class="bank-name">{{ acc.bankName }}</p>
             <p class="account-no">{{ acc.accountNo }}</p>
           </div>

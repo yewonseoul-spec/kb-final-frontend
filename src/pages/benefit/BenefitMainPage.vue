@@ -1,11 +1,7 @@
 <template>
   <main class="benefit-main-page">
     <!-- 검색창 -->
-    <button
-      type="button"
-      class="search-entry"
-      @click="moveToSearch"
-    >
+    <button type="button" class="search-entry" @click="moveToSearch">
       <span class="search-icon">⌕</span>
 
       <span> 혜택을 검색해보세요 </span>
@@ -48,10 +44,7 @@
         </button>
       </div>
 
-      <div
-        v-if="activeFilterChips.length"
-        class="filter-chip-list"
-      >
+      <div v-if="activeFilterChips.length" class="filter-chip-list">
         <button
           v-for="chip in activeFilterChips"
           :key="chip.key"
@@ -63,14 +56,23 @@
       </div>
     </section>
 
+    <!-- 요약 : 건수 · 목표 · 추천 이유 -->
+    <section
+      v-if="activeRecommendation === 'goal' && !loading && hasGoalBenefits"
+      class="tab-summary"
+    >
+      <div class="tab-summary-header">
+        <span class="tab-summary-label">{{ goalName }} 목표 추천 혜택</span>
+
+        <strong class="tab-summary-count">{{ goalTotalCount }}건</strong>
+      </div>
+
+      <p v-if="goalReason" class="tab-summary-reason">{{ goalReason }}</p>
+    </section>
+
     <!-- 프로필 미완성 안내 배너 -->
     <button
-      v-if="
-        activeRecommendation === 'condition' &&
-        auth.isLogin &&
-        profileLoaded &&
-        !isProfileComplete
-      "
+      v-if="showProfileBanner"
       type="button"
       class="profile-completion-banner"
       @click="moveToProfile"
@@ -102,27 +104,38 @@
     </button>
 
     <!-- 로딩 -->
-    <section
-      v-if="loading"
-      class="state-box"
-    >
-      맞춤 혜택을 찾고 있어요.
-    </section>
+    <section v-if="loading" class="state-box">맞춤 혜택을 찾고 있어요.</section>
 
     <section
       v-if="!loading && activeRecommendation === 'consumption'"
-      class="consumption-summary"
+      class="tab-summary"
     >
-      <span class="summary-eyebrow"> 소비 조건에 맞는 혜택 </span>
+      <div class="tab-summary-header">
+        <span class="tab-summary-label">소비 조건에 맞는 혜택</span>
 
-      <div class="summary-count">{{ totalCount }}건</div>
+        <strong class="tab-summary-count">{{ totalCount }}건</strong>
+      </div>
 
-      <p class="consumption-message">
+      <p v-if="consumptionMessage" class="tab-summary-reason">
         {{ consumptionMessage }}
       </p>
+    </section>
 
     
     </section>
+    <!-- 조건 탭 외 : 프로필 입력 안내 (한 줄) -->
+    <button
+      v-if="showProfileHint"
+      type="button"
+      class="profile-completion-banner profile-hint"
+      @click="moveToProfile"
+    >
+      <div class="profile-banner-bottom">
+        <p>프로필 조건을 입력하면 혜택 추천이 더 정확해져요.</p>
+
+        <span class="profile-arrow"> › </span>
+      </div>
+    </button>
 
     <!-- 조건 기반 추천 -->
     <section
@@ -158,7 +171,7 @@
             :aria-pressed="favoriteNos.has(item.benefitNo)"
             @click.stop="toggleFavorite(item.benefitNo)"
           >
-            {{ favoriteNos.has(item.benefitNo) ? "♥" : "♡" }}
+            {{ favoriteNos.has(item.benefitNo) ? '♥' : '♡' }}
           </button>
         </template>
       </BenefitCard>
@@ -171,13 +184,84 @@
       </div>
     </section>
 
-    <!-- 목표 기반 추천 임시 화면 -->
-    <section
-      v-if="!loading && activeRecommendation === 'goal'"
-      class="state-box"
-    >
-      등록한 목표를 기반으로 혜택을 추천할 예정이에요.
-    </section>
+    <!-- 목표 기반 추천 -->
+    <template v-if="!loading && activeRecommendation === 'goal'">
+      <!-- 비로그인 -->
+      <section v-if="!auth.isLogin" class="state-box goal-empty">
+        <p>로그인하면 목표에 맞는 혜택을 추천해 드려요.</p>
+
+        <KbButton @click="moveToLogin">로그인하러 가기</KbButton>
+      </section>
+
+      <!-- 조회 실패 -->
+      <section v-else-if="goalError" class="state-box">
+        목표 혜택을 불러오지 못했어요.
+      </section>
+
+      <!-- 목표 미설정 -->
+      <section v-else-if="goalLoaded && !goalType" class="state-box goal-empty">
+        <p>아직 목표를 정하지 않았어요.</p>
+
+        <KbButton @click="moveToGoal">목표 설정하러 가기</KbButton>
+      </section>
+
+      <!-- 목표는 있지만 조건에 맞는 혜택이 없음 -->
+      <section v-else-if="goalLoaded && !hasGoalBenefits" class="empty-box">
+        목표에 맞으면서 내 조건으로 받을 수 있는 혜택이 없어요.
+      </section>
+
+      <!-- 추천 결과 -->
+      <template v-else>
+        <section
+          v-for="section in goalSections"
+          :key="section.key"
+          class="goal-section"
+        >
+          <h2 class="goal-section-title">{{ section.title }}</h2>
+
+          <div class="benefit-list">
+            <BenefitCard
+              v-for="item in section.benefits"
+              :key="item.benefitNo"
+              :benefit="item"
+              class="benefit-card-item"
+              role="button"
+              tabindex="0"
+              @click="moveToDetail(item.benefitNo)"
+              @keydown.enter="moveToDetail(item.benefitNo)"
+            >
+              <template #action>
+                <button
+                  type="button"
+                  class="favorite-button"
+                  :class="{
+                    'is-on': favoriteNos.has(item.benefitNo),
+                  }"
+                  :aria-label="
+                    favoriteNos.has(item.benefitNo)
+                      ? '관심 혜택 해제'
+                      : '관심 혜택 등록'
+                  "
+                  :aria-pressed="favoriteNos.has(item.benefitNo)"
+                  @click.stop="toggleFavorite(item.benefitNo)"
+                >
+                  {{ favoriteNos.has(item.benefitNo) ? '♥' : '♡' }}
+                </button>
+              </template>
+            </BenefitCard>
+          </div>
+
+          <button
+            v-if="section.hasMore"
+            type="button"
+            class="goal-more-button"
+            @click="showMoreGoalBenefits(section.key)"
+          >
+            더 보기
+          </button>
+        </section>
+      </template>
+    </template>
 
     <!-- 기존 필터 모달 재사용 -->
     <BenefitFilterModal
@@ -205,49 +289,50 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 
-import { useRoute, useRouter } from "vue-router";
+import { useRoute, useRouter } from 'vue-router';
 
 import {
   getBenefit,
+  getBenefitGoalRecommend,
   getBenefitProfileFilter,
   getConsumptionRecommendedBenefits,
-} from "@/api/benefitApi";
+} from '@/api/benefitApi';
 
-import BenefitCard from "@/components/benefit/BenefitCard.vue";
+import BenefitCard from '@/components/benefit/BenefitCard.vue';
+import KbButton from '@/components/common/KbButton.vue';
 
-import BenefitFilterModal from "@/components/benefit/BenefitFilterModal.vue";
-import mypageApi from "@/api/mypageApi";
-import { useAuthStore } from "@/stores/auth";
+import BenefitFilterModal from '@/components/benefit/BenefitFilterModal.vue';
+import mypageApi from '@/api/mypageApi';
+import { useAuthStore } from '@/stores/auth';
 
 const route = useRoute();
 const router = useRouter();
 const auth = useAuthStore();
-const consumptionMessage = ref("");
-const consumptionCategories = ref([]);
+const consumptionMessage = ref('');
 
 const recommendationTabs = [
   {
-    label: "조건 기반 추천",
-    value: "condition",
+    label: '조건 기반 추천',
+    value: 'condition',
   },
   {
-    label: "소비 기반 추천",
-    value: "consumption",
+    label: '소비 기반 추천',
+    value: 'consumption',
   },
   {
-    label: "목표 기반 추천",
-    value: "goal",
+    label: '목표 기반 추천',
+    value: 'goal',
   },
 ];
 
-const validTabs = ["condition", "consumption", "goal"];
+const validTabs = ['condition', 'consumption', 'goal'];
 
 const getTabFromRoute = () => {
   const tab = route.query.tab;
 
-  return validTabs.includes(tab) ? tab : "condition";
+  return validTabs.includes(tab) ? tab : 'condition';
 };
 
 const activeRecommendation = ref(getTabFromRoute());
@@ -262,11 +347,11 @@ const consumptionBenefits = ref([]);
 const consumptionTotalCount = ref(0);
 
 const benefitList = computed(() => {
-  if (activeRecommendation.value === "consumption") {
+  if (activeRecommendation.value === 'consumption') {
     return consumptionBenefits.value;
   }
 
-  if (activeRecommendation.value === "condition") {
+  if (activeRecommendation.value === 'condition') {
     return conditionBenefits.value;
   }
 
@@ -274,11 +359,11 @@ const benefitList = computed(() => {
 });
 
 const totalCount = computed(() => {
-  if (activeRecommendation.value === "consumption") {
+  if (activeRecommendation.value === 'consumption') {
     return consumptionTotalCount.value;
   }
 
-  if (activeRecommendation.value === "condition") {
+  if (activeRecommendation.value === 'condition') {
     return conditionTotalCount.value;
   }
 
@@ -286,33 +371,146 @@ const totalCount = computed(() => {
 });
 const favoriteNos = ref(new Set());
 const pendingNos = ref(new Set());
+/*
+ * 프로필 배너 판정용. filter 와 따로 둔다.
+ * filter 는 사용자가 필터 모달에서 직접 바꾸는 값이라
+ * 프로필 입력 여부의 근거로 쓸 수 없다.
+ */
+const memberProfile = ref(null);
+
+// 프로필 기본 필터는 한 번만 건다. 두 번 걸면 사용자가 모달에서 고친 값이 덮인다
+const profileFilterApplied = ref(false);
+
+// 조회를 시도했는지. 응답 전에 배너가 0/6 으로 깜빡이는 것을 막는다
 const profileLoaded = ref(false);
+
+/*
+ * 목표 기반 추천
+ *
+ * 섹션 정의를 배열로 둔다. 나중에 "한 목록으로 합치자"가 되면
+ * 이 배열을 하나로 줄이고 로드에서 두 응답을 이어 붙이면 끝난다.
+ * 카드 렌더링·하트·상세 이동은 손대지 않는다.
+ */
+const GOAL_SECTIONS = [
+  {
+    key: 'primary',
+    title: '목표에 딱 맞는 혜택',
+  },
+  {
+    key: 'secondary',
+    title: '함께 보면 좋은 혜택',
+  },
+];
+
+// 처음 보여 줄 건수. "더 보기"를 누를 때마다 이만큼 늘린다
+const GOAL_PAGE_SIZE = 20;
+/*
+ * goal_type ENUM → 표시명.
+ * GoalSelect.vue 의 GOALS · MyPage.vue 의 GOALS 와 같은 값이고,
+ * 여기서는 이름만 쓰므로 아이콘·예시는 두지 않는다.
+ */
+const GOAL_NAMES = {
+  INDEPENDENCE: '독립',
+  EMPLOYMENT: '취업',
+  STARTUP: '창업',
+  MARRIAGE: '결혼',
+  STUDY_ABROAD: '유학',
+};
+
+const goalType = ref(null);
+const goalError = ref(false);
+// 조회를 끝냈는지. 응답 전에 '목표 미설정' 으로 오판되는 것을 막는다
+const goalLoaded = ref(false);
+
+const goalGroups = reactive({
+  primary: {
+    benefits: [],
+    visibleCount: GOAL_PAGE_SIZE,
+  },
+
+  secondary: {
+    benefits: [],
+    visibleCount: GOAL_PAGE_SIZE,
+  },
+});
+/*
+ * 섹션별로 백엔드가 좁힌 중분류 이름. 칩과 설명 문구에 쓴다.
+ *
+ * goalGroups 에 합치지 않는다.
+ * goalSections 는 결과 0건인 섹션을 filter 로 걸러 내는데,
+ * 칩·설명은 매핑 기준이라 결과가 0건이어도 이름은 떠야 한다.
+ */
+const goalCategories = reactive({
+  primary: [],
+  secondary: [],
+});
+
+const goalSections = computed(() =>
+  GOAL_SECTIONS.map((section) => {
+    const group = goalGroups[section.key];
+
+    return {
+      key: section.key,
+      title: section.title,
+      benefits: group.benefits.slice(0, group.visibleCount),
+      hasMore: group.benefits.length > group.visibleCount,
+    };
+  }).filter((section) => section.benefits.length),
+);
+
+const hasGoalBenefits = computed(() => goalSections.value.length > 0);
+
+// setGoalGroup 이 CLOSED 를 이미 걸렀으므로 실제로 보이는 건수와 같다
+const goalTotalCount = computed(() =>
+  GOAL_SECTIONS.reduce(
+    (sum, { key }) => sum + goalGroups[key].benefits.length,
+    0,
+  ),
+);
+
+const goalName = computed(() => GOAL_NAMES[goalType.value] || '');
+
+const goalReason = computed(() => {
+  const { primary, secondary } = goalCategories;
+
+  if (!goalName.value || !primary.length) {
+    return '';
+  }
+
+  const primaryText = `${goalName.value} 목표에 맞춰 ${primary.join('·')} 혜택을`;
+
+  if (!secondary.length) {
+    return `${primaryText} 추천했어요.`;
+  }
+
+  return `${primaryText} 먼저 보여드리고, ${secondary.join('·')} 혜택을 함께 추천했어요.`;
+});
 
 const filter = reactive({
   // 카테고리는 기본 전체
-  categoryCode: "",
-  categoryName: "전체",
+  categoryCode: '',
+  categoryName: '전체',
 
-  provinceCode: "",
-  provinceName: "전국",
+  provinceCode: '',
+  provinceName: '전국',
 
-  cityCode: "",
-  cityName: "",
+  cityCode: '',
+  cityName: '',
 
-  districtCode: "",
-  districtName: "",
+  districtCode: '',
+  districtName: '',
 
-  plcyMajorCd: "",
-  majorName: "전체",
+  plcyMajorCd: '',
+  majorName: '전체',
 
-  schoolCd: "",
-  schoolName: "전체",
+  schoolCd: '',
+  schoolName: '전체',
 
-  jobCd: "",
-  jobName: "전체",
+  jobCd: '',
+  jobName: '전체',
 
-  mrgSttsCd: "",
-  marriageName: "전체",
+  mrgSttsCd: '',
+  marriageName: '전체',
 
   age: null,
 });
@@ -348,71 +546,68 @@ const selectedRegionLabel = computed(() => {
   if (
     filter.provinceCode &&
     filter.provinceName &&
-    filter.provinceName !== "전국"
+    filter.provinceName !== '전국'
   ) {
     regionNames.push(filter.provinceName);
   }
 
-  if (
-    filter.cityCode &&
-    filter.cityName
-  ) {
+  if (filter.cityCode && filter.cityName) {
     regionNames.push(filter.cityName);
   }
 
   if (
     filter.districtCode &&
     filter.districtName &&
-    filter.districtName !== "분류"
+    filter.districtName !== '분류'
   ) {
     regionNames.push(filter.districtName);
   }
 
-  return regionNames.join(" ");
+  return regionNames.join(' ');
 });
 
 const activeFilterChips = computed(() => {
   const chips = [];
 
   // 지역
-  if (selectedRegionLabel.value && selectedRegionLabel.value !== "전국") {
+  if (selectedRegionLabel.value && selectedRegionLabel.value !== '전국') {
     chips.push({
-      key: "region",
+      key: 'region',
       label: selectedRegionLabel.value,
     });
   }
 
-  if (filter.age !== null && filter.age !== undefined && filter.age !== "") {
+  if (filter.age !== null && filter.age !== undefined && filter.age !== '') {
     chips.push({
-      key: "age",
+      key: 'age',
       label: `만 ${filter.age}세`,
     });
   }
 
-  if (filter.majorName && filter.majorName !== "전체") {
+  if (filter.majorName && filter.majorName !== '전체') {
     chips.push({
-      key: "major",
+      key: 'major',
       label: filter.majorName,
     });
   }
 
-  if (filter.schoolName && filter.schoolName !== "전체") {
+  if (filter.schoolName && filter.schoolName !== '전체') {
     chips.push({
-      key: "school",
+      key: 'school',
       label: filter.schoolName,
     });
   }
 
-  if (filter.jobName && filter.jobName !== "전체") {
+  if (filter.jobName && filter.jobName !== '전체') {
     chips.push({
-      key: "job",
+      key: 'job',
       label: filter.jobName,
     });
   }
 
-  if (filter.marriageName && filter.marriageName !== "전체") {
+  if (filter.marriageName && filter.marriageName !== '전체') {
     chips.push({
-      key: "marriage",
+      key: 'marriage',
       label: filter.marriageName,
     });
   }
@@ -420,32 +615,36 @@ const activeFilterChips = computed(() => {
   return chips;
 });
 
-const profileItems = computed(() => [
-  {
-    label: "거주지역",
-    completed: !!filter.provinceCode,
-  },
-  {
-    label: "나이",
-    completed: filter.age != null,
-  },
-  {
-    label: "전공",
-    completed: !!filter.plcyMajorCd,
-  },
-  {
-    label: "학력",
-    completed: !!filter.schoolCd,
-  },
-  {
-    label: "취업상태",
-    completed: !!filter.jobCd,
-  },
-  {
-    label: "혼인 여부",
-    completed: !!filter.mrgSttsCd,
-  },
-]);
+const profileItems = computed(() => {
+  const profile = memberProfile.value;
+
+  return [
+    {
+      label: '거주지역',
+      completed: !!profile?.provinceCode,
+    },
+    {
+      label: '나이',
+      completed: profile?.age != null,
+    },
+    {
+      label: '전공',
+      completed: !!profile?.plcyMajorCd,
+    },
+    {
+      label: '학력',
+      completed: !!profile?.schoolCd,
+    },
+    {
+      label: '취업상태',
+      completed: !!profile?.jobCd,
+    },
+    {
+      label: '혼인 여부',
+      completed: !!profile?.mrgSttsCd,
+    },
+  ];
+});
 
 const completedProfileCount = computed(
   () => profileItems.value.filter((item) => item.completed).length,
@@ -461,16 +660,16 @@ const missingProfileLabels = computed(() =>
 
 const profileGuideText = computed(() => {
   if (!missingProfileLabels.value.length) {
-    return "프로필을 모두 입력했어요.";
+    return '프로필을 모두 입력했어요.';
   }
 
   return `${missingProfileLabels.value.join(
-    ", ",
+    ', ',
   )}을 입력하면 맞춤 혜택 추천이 더 정확해져요.`;
 });
 
 const moveToProfile = () => {
-  router.push("/mypage/profile");
+  router.push('/mypage/profile');
 };
 
 const applyProfileFilter = (profile) => {
@@ -479,38 +678,38 @@ const applyProfileFilter = (profile) => {
    * 41000처럼 시도 단위이므로
    * provinceCode에 설정한다.
    */
-  filter.provinceCode = profile.provinceCode || profile.zipCd || "";
+  filter.provinceCode = profile.provinceCode || profile.zipCd || '';
 
-  filter.provinceName = profile.provinceName || profile.regionName || "전국";
+  filter.provinceName = profile.provinceName || profile.regionName || '전국';
 
-  filter.cityCode = profile.cityCode || "";
+  filter.cityCode = profile.cityCode || '';
 
-  filter.cityName = profile.cityName || "";
+  filter.cityName = profile.cityName || '';
 
-  filter.districtCode = profile.districtCode || "";
+  filter.districtCode = profile.districtCode || '';
 
-  filter.districtName = profile.districtName || "";
+  filter.districtName = profile.districtName || '';
 
   filter.age = profile.age ?? null;
 
-  filter.plcyMajorCd = profile.plcyMajorCd || "";
+  filter.plcyMajorCd = profile.plcyMajorCd || '';
 
-  filter.majorName = profile.majorName || "전체";
+  filter.majorName = profile.majorName || '전체';
 
-  filter.schoolCd = profile.schoolCd || "";
+  filter.schoolCd = profile.schoolCd || '';
 
-  filter.schoolName = profile.schoolName || "전체";
+  filter.schoolName = profile.schoolName || '전체';
 
-  filter.jobCd = profile.jobCd || "";
+  filter.jobCd = profile.jobCd || '';
 
-  filter.jobName = profile.jobName || "전체";
+  filter.jobName = profile.jobName || '전체';
 
-  filter.mrgSttsCd = profile.mrgSttsCd || "";
+  filter.mrgSttsCd = profile.mrgSttsCd || '';
 
-  filter.marriageName = profile.marriageName || "전체";
+  filter.marriageName = profile.marriageName || '전체';
 
-  filter.categoryCode = "";
-  filter.categoryName = "전체";
+  filter.categoryCode = '';
+  filter.categoryName = '전체';
 };
 
 const loadBenefits = async () => {
@@ -524,14 +723,14 @@ const loadBenefits = async () => {
       : response.content || response.list || response.benefits || [];
 
     const activeBenefits = benefits.filter(
-      (item) => item.benefitStatus !== "CLOSED",
+      (item) => item.benefitStatus !== 'CLOSED',
     );
 
     conditionBenefits.value = activeBenefits;
 
     conditionTotalCount.value = activeBenefits.length;
   } catch (error) {
-    console.error("맞춤 혜택 조회 실패:", error);
+    console.error('맞춤 혜택 조회 실패:', error);
 
     conditionBenefits.value = [];
     conditionTotalCount.value = 0;
@@ -540,34 +739,188 @@ const loadBenefits = async () => {
   }
 };
 
-const loadProfileRecommendation = async () => {
-  loading.value = true;
-  profileLoaded.value = false;
+const loadMemberProfile = async () => {
+  if (!auth.isLogin) {
+    memberProfile.value = null;
+    profileLoaded.value = true;
+
+    return null;
+  }
 
   try {
-    if (!auth.isLogin) {
-      await loadBenefits();
-      return;
-    }
-
     const profile = await getBenefitProfileFilter();
 
-    applyProfileFilter(profile);
+    memberProfile.value = profile;
 
-    await loadBenefits();
+    return profile;
   } catch (error) {
-    console.error("프로필 기본 필터 조회 실패:", error);
-
     /*
-     * 프로필이 없거나 비로그인 상태라면
-     * 전체 혜택으로 대체
+     * 프로필 미입력이면 404 다.
+     * 오류가 아니라 '아직 안 채운 상태'로 다뤄 배너가 뜨게 둔다.
      */
-    await loadBenefits();
+    console.error('프로필 기본 필터 조회 실패:', error);
+
+    memberProfile.value = null;
+
+    return null;
   } finally {
     profileLoaded.value = true;
+  }
+};
+
+const ensureProfileFilter = async () => {
+  // 마운트 중에 프로필이 바뀔 일이 없으므로 한 번만 받는다
+  const profile = profileLoaded.value
+    ? memberProfile.value
+    : await loadMemberProfile();
+
+  /*
+   * 기본 필터는 한 번만 건다.
+   * 두 번 걸면 사용자가 필터 모달에서 고친 값이 조용히 덮인다.
+   */
+  if (profile && !profileFilterApplied.value) {
+    applyProfileFilter(profile);
+
+    profileFilterApplied.value = true;
+  }
+};
+
+const loadProfileRecommendation = async () => {
+  loading.value = true;
+
+  try {
+    await ensureProfileFilter();
+
+    await loadBenefits();
+  } finally {
     loading.value = false;
   }
 };
+
+const setGoalGroup = (key, benefits) => {
+  /*
+   * 조건 기반 탭과 같은 규칙으로 마감 혜택은 뺀다.
+   * 상한 안에 마감이 섞여 오면 그만큼 줄어든다.
+   */
+  goalGroups[key].benefits = (benefits || []).filter(
+    (item) => item.benefitStatus !== 'CLOSED',
+  );
+
+  goalGroups[key].visibleCount = GOAL_PAGE_SIZE;
+};
+
+const resetGoalGroups = () => {
+  setGoalGroup('primary', []);
+  setGoalGroup('secondary', []);
+
+  goalCategories.primary = [];
+  goalCategories.secondary = [];
+};
+
+const loadGoalRecommendation = async () => {
+  goalError.value = false;
+
+  /*
+   * 🔴 비로그인 가드 필수.
+   * 401 을 받으면 인터셉터가 로그인 화면으로 튕긴다.
+   */
+  if (!auth.isLogin) {
+    goalType.value = null;
+
+    resetGoalGroups();
+
+    goalLoaded.value = true;
+
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    // 배너 판정에 필요하다. 목표 탭도 프로필로 걸러진 결과를 보여 준다
+    await loadMemberProfile();
+
+    const data = await getBenefitGoalRecommend();
+
+    goalType.value = data.goalType || null;
+
+    /*
+     * 응답 키가 GOAL_SECTIONS 의 key 와 같아 그대로 돈다.
+     * { goalType, primary: { categories, benefits }, secondary: { ... } }
+     */
+    GOAL_SECTIONS.forEach(({ key }) => {
+      const section = data[key] || {};
+
+      setGoalGroup(key, section.benefits);
+
+      goalCategories[key] = section.categories || [];
+    });
+  } catch (error) {
+    console.error('목표 기반 추천 조회 실패:', error);
+
+    /*
+     * 실패를 '목표 미설정' 으로 보이게 하면 안 된다.
+     * 이미 목표를 정한 사람에게 목표를 정하라고 안내하게 된다.
+     */
+    goalError.value = true;
+
+    goalType.value = null;
+
+    resetGoalGroups();
+  } finally {
+    goalLoaded.value = true;
+
+    loading.value = false;
+  }
+};
+
+const showMoreGoalBenefits = (key) => {
+  goalGroups[key].visibleCount += GOAL_PAGE_SIZE;
+};
+
+const moveToGoal = () => {
+  router.push('/mypage/goal');
+};
+
+const moveToLogin = () => {
+  router.push({
+    name: 'Login',
+  });
+};
+
+// 프로필이 덜 찼고 안내를 띄울 수 있는 상태인지. 표시 형태는 탭별로 가른다
+const needsProfileGuide = computed(
+  () => auth.isLogin && profileLoaded.value && !isProfileComplete.value,
+);
+
+const showProfileBanner = computed(
+  () => needsProfileGuide.value && activeRecommendation.value === 'condition',
+);
+
+/*
+ * 목표 탭은 진행바 배너 대신 한 줄 안내만 띄운다.
+ * 요약 블록(건수·추천 이유·칩) 위에 배너까지 쌓이면
+ * 정작 혜택 카드가 첫 화면 밖으로 밀린다.
+ *
+ * 목표가 없으면 목표 설정 CTA 가 먼저다 — 한 화면에 CTA 는 하나.
+ */
+/*
+ * 조건 탭 외에는 진행바 배너 대신 한 줄 안내만 띄운다.
+ * 요약 블록 위에 배너까지 쌓이면 정작 혜택 카드가 첫 화면 밖으로 밀린다.
+ *
+ * 목표 탭은 목표가 없을 때 숨긴다 — 목표 설정 CTA 가 먼저다. 한 화면에 CTA 는 하나.
+ */
+const showProfileHint = computed(() => {
+  if (!needsProfileGuide.value || loading.value) {
+    return false;
+  }
+
+  if (activeRecommendation.value === 'consumption') {
+    return true;
+  }
+
+  return activeRecommendation.value === 'goal' && !!goalType.value;
+});
 
 const loadFavorites = async () => {
   if (!auth.isLogin) return;
@@ -579,36 +932,14 @@ const loadFavorites = async () => {
   } catch (error) {
     favoriteNos.value = new Set();
 
-    console.error("관심 혜택 조회 실패:", error);
-  }
-};
-
-const ensureProfileFilter = async () => {
-  if (!auth.isLogin) {
-    return;
-  }
-
-  if (profileLoaded.value) {
-    return;
-  }
-
-  try {
-    const profile = await getBenefitProfileFilter();
-
-    applyProfileFilter(profile);
-
-    profileLoaded.value = true;
-  } catch (error) {
-    console.error("프로필 기본 필터 조회 실패:", error);
-
-    profileLoaded.value = true;
+    console.error('관심 혜택 조회 실패:', error);
   }
 };
 
 const handleApplyFilter = async (appliedFilter) => {
   Object.assign(filter, appliedFilter);
 
-  if (filter.age === "") {
+  if (filter.age === '') {
     filter.age = null;
   }
 
@@ -630,21 +961,22 @@ watch(
   () => route.query.tab,
 
   async (newTab) => {
-    const tab = validTabs.includes(newTab) ? newTab : "condition";
+    const tab = validTabs.includes(newTab) ? newTab : 'condition';
 
     activeRecommendation.value = tab;
 
-    if (tab === "condition") {
+    if (tab === 'condition') {
       await loadProfileRecommendation();
       return;
     }
 
-    if (tab === "consumption") {
+    if (tab === 'consumption') {
       await loadConsumptionRecommendation();
       return;
     }
 
-    if (tab === "goal") {
+    if (tab === 'goal') {
+      await loadGoalRecommendation();
       return;
     }
   },
@@ -652,13 +984,13 @@ watch(
 
 const moveToSearch = () => {
   router.push({
-    name: "BenefitSearch",
+    name: 'BenefitSearch',
   });
 };
 
 const moveToDetail = (benefitNo) => {
   router.push({
-    name: "benefit-detail",
+    name: 'benefit-detail',
     params: {
       benefitNo,
     },
@@ -698,39 +1030,11 @@ const toggleFavorite = async (benefitNo) => {
       }
     }
 
-    console.error("관심 혜택 변경 실패:", error);
+    console.error('관심 혜택 변경 실패:', error);
   } finally {
     pendingNos.value.delete(benefitNo);
   }
 };
-
-watch(
-  () => route.query.tab,
-  async (newTab, oldTab) => {
-    const tab = validTabs.includes(newTab) ? newTab : "condition";
-
-    if (newTab === oldTab && activeRecommendation.value === tab) {
-      return;
-    }
-
-    activeRecommendation.value = tab;
-
-    if (tab === "condition") {
-      await loadProfileRecommendation();
-      return;
-    }
-
-    if (tab === "consumption") {
-      await loadConsumptionRecommendation();
-      return;
-    }
-
-    benefitList.value = [];
-    totalCount.value = 0;
-    consumptionMessage.value = "";
-    consumptionCategories.value = [];
-  },
-);
 
 //소비기반 추천함수
 const loadConsumptionRecommendation = async () => {
@@ -745,25 +1049,19 @@ const loadConsumptionRecommendation = async () => {
     const benefits = Array.isArray(response?.benefits) ? response.benefits : [];
 
     consumptionBenefits.value = benefits.filter(
-      (item) => item.benefitStatus !== "CLOSED",
+      (item) => item.benefitStatus !== 'CLOSED',
     );
 
     consumptionTotalCount.value = consumptionBenefits.value.length;
 
-    consumptionMessage.value = response?.message || "";
-
-    consumptionCategories.value = Array.isArray(response?.spendingCategories)
-      ? response.spendingCategories
-      : [];
+    consumptionMessage.value = response?.message || '';
   } catch (error) {
-    console.error("소비 기반 추천 조회 실패:", error);
+    console.error('소비 기반 추천 조회 실패:', error);
 
     consumptionBenefits.value = [];
     consumptionTotalCount.value = 0;
 
-    consumptionMessage.value = "소비 기반 추천을 불러오지 못했어요.";
-
-    consumptionCategories.value = [];
+    consumptionMessage.value = '소비 기반 추천을 불러오지 못했어요.';
   } finally {
     loading.value = false;
   }
@@ -776,13 +1074,18 @@ onMounted(async () => {
 
   activeRecommendation.value = tab;
 
-  if (tab === "condition") {
+  if (tab === 'condition') {
     await loadProfileRecommendation();
     return;
   }
 
-  if (tab === "consumption") {
+  if (tab === 'consumption') {
     await loadConsumptionRecommendation();
+    return;
+  }
+
+  if (tab === 'goal') {
+    await loadGoalRecommendation();
   }
 });
 </script>
@@ -1009,55 +1312,91 @@ onMounted(async () => {
   font-size: 20px;
 }
 
-.consumption-summary {
-  margin-top: 15px;
-  padding: 0 2px;
+/*
+   * 목표 탭 전용. 조건 탭 배너에서 진행바와 n/6 을 뺀 한 줄짜리다.
+   * 껍데기는 .profile-completion-banner 를 그대로 쓰고 여백·글자만 덮는다.
+*/
+.profile-hint {
+  margin-top: 10px;
+  padding: 12px 16px;
 }
 
-.summary-eyebrow {
-  display: block;
-  margin-bottom: 3px;
-  color: #8c847a;
-  font-size: 11px;
+/* 진행바가 사라졌으므로 위 여백이 필요 없다 */
+.profile-hint .profile-banner-bottom {
+  margin-top: 0;
 }
 
-.summary-count {
+/* 이제 배너의 유일한 내용이라 11px·연회색은 너무 묻힌다 */
+.profile-hint .profile-banner-bottom p {
+  color: #2e2a24;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.profile-hint .profile-arrow {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tab-summary {
+  margin-top: 14px;
+}
+
+.tab-summary-header {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tab-summary-label {
+  color: #8b847b;
+  font-size: 12px;
+}
+
+.tab-summary-count {
   color: #2e2a24;
   font-size: 17px;
   font-weight: 750;
 }
 
-.consumption-message {
-  margin: 11px 0 0;
-  padding: 13px 14px;
-  border-radius: 12px;
-  background: #fff9e8;
-  color: #625a50;
-  font-size: 12px;
-  line-height: 1.55;
-  word-break: keep-all;
-}
-
-.consumption-chip-list {
-  display: flex;
-  gap: 7px;
-  margin-top: 9px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.consumption-chip-list::-webkit-scrollbar {
-  display: none;
-}
-
-.consumption-chip {
-  flex-shrink: 0;
-  padding: 7px 11px;
-  border: 1px solid #eadfca;
+.tab-summary-reason {
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  border: 1px solid #f3b400;
   border-radius: 16px;
+  background: #fffdf7;
+  color: #2e2a24;
+  font-size: 13px;
+  line-height: 1.6;
+  word-break: keep-all; /* 한글을 음절이 아니라 어절 단위로 끊는다*/
+}
+
+.goal-section {
+  margin-top: 24px;
+}
+
+.goal-section-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.goal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.goal-more-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
   background: #fff;
-  color: #685f53;
-  font-size: 11px;
-  white-space: nowrap;
+  font-size: 14px;
+  cursor: pointer;
 }
 </style>
