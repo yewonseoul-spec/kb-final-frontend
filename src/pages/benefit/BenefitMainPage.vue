@@ -120,7 +120,7 @@
         {{ consumptionMessage }}
       </p>
     </section>
-
+    
     <!-- 조건 탭 외 : 프로필 입력 안내 (한 줄) -->
     <button
       v-if="showProfileHint"
@@ -431,17 +431,6 @@ const goalGroups = reactive({
     visibleCount: GOAL_PAGE_SIZE,
   },
 });
-/*
- * 섹션별로 백엔드가 좁힌 중분류 이름. 칩과 설명 문구에 쓴다.
- *
- * goalGroups 에 합치지 않는다.
- * goalSections 는 결과 0건인 섹션을 filter 로 걸러 내는데,
- * 칩·설명은 매핑 기준이라 결과가 0건이어도 이름은 떠야 한다.
- */
-const goalCategories = reactive({
-  primary: [],
-  secondary: [],
-});
 
 const goalSections = computed(() =>
   GOAL_SECTIONS.map((section) => {
@@ -468,21 +457,9 @@ const goalTotalCount = computed(() =>
 
 const goalName = computed(() => GOAL_NAMES[goalType.value] || '');
 
-const goalReason = computed(() => {
-  const { primary, secondary } = goalCategories;
-
-  if (!goalName.value || !primary.length) {
-    return '';
-  }
-
-  const primaryText = `${goalName.value} 목표에 맞춰 ${primary.join('·')} 혜택을`;
-
-  if (!secondary.length) {
-    return `${primaryText} 추천했어요.`;
-  }
-
-  return `${primaryText} 먼저 보여드리고, ${secondary.join('·')} 혜택을 함께 추천했어요.`;
-});
+const goalReason = computed(() =>
+  goalName.value ? `${goalName.value} 목표에 맞는 혜택을 추천했어요.` : '',
+);
 
 const filter = reactive({
   // 카테고리는 기본 전체
@@ -810,9 +787,6 @@ const setGoalGroup = (key, benefits) => {
 const resetGoalGroups = () => {
   setGoalGroup('primary', []);
   setGoalGroup('secondary', []);
-
-  goalCategories.primary = [];
-  goalCategories.secondary = [];
 };
 
 const loadGoalRecommendation = async () => {
@@ -850,8 +824,6 @@ const loadGoalRecommendation = async () => {
       const section = data[key] || {};
 
       setGoalGroup(key, section.benefits);
-
-      goalCategories[key] = section.categories || [];
     });
   } catch (error) {
     console.error('목표 기반 추천 조회 실패:', error);
@@ -1052,7 +1024,17 @@ const loadConsumptionRecommendation = async () => {
 
     consumptionTotalCount.value = consumptionBenefits.value.length;
 
-    consumptionMessage.value = response?.message || '';
+    /*
+     * 백엔드 message 는 "{소비 카테고리} 소비가 많은 패턴을 바탕으로
+     * {혜택 카테고리} 혜택을 추천했어요." 로 카테고리를 두 번 나열해 길다.
+     * 무엇을 많이 썼는지만 남기고 혜택 중분류 언급은 뺀다.
+     * 소비 내역이 없을 때는 백엔드 안내 문구를 그대로 쓴다.
+     */
+    const spending = response?.spendingCategories || [];
+
+    consumptionMessage.value = spending.length
+      ? `${spending.join('·')} 소비가 많은 패턴을 바탕으로 혜택을 추천했어요.`
+      : response?.message || '';
   } catch (error) {
     console.error('소비 기반 추천 조회 실패:', error);
 
@@ -1358,12 +1340,14 @@ onMounted(async () => {
   font-weight: 750;
 }
 
+/* 누를 수 없는 안내 문구다. 노란 강조는 CTA(.profile-completion-banner)에만 남긴다.
+     테두리·배경은 앱 표준 카드(KbCard)와 같은 값을 쓴다 */
 .tab-summary-reason {
   margin: 12px 0 0;
   padding: 14px 16px;
-  border: 1px solid #f3b400;
-  border-radius: 16px;
-  background: #fffdf7;
+  border: 1px solid #cfe0fb;
+  border-radius: 14px;
+  background: #eef4fe;
   color: #2e2a24;
   font-size: 13px;
   line-height: 1.6;

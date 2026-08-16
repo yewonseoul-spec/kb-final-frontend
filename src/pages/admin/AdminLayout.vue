@@ -22,6 +22,10 @@
         <router-link to="/admin/synclog" class="admin-nav-item" active-class="is-active">
           동기화 로그
         </router-link>
+
+        <router-link to="/admin/recommendKeyword" class="admin-nav-item" active-class="is-active">
+        추천검색어 설정  
+        </router-link>
       </nav>
     </aside>
 
