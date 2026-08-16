@@ -159,7 +159,7 @@
                   </th>
 
                   <th style="width:150px">중복규칙</th>
-                  <th style="width:170px">관리</th>
+                  <th style="width:140px">관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -231,21 +231,23 @@
                   </td>
 
                   <td>
-                    <button class="btn btn-sm btn-outline-secondary me-1"
+                    <div class="d-flex gap-1">
+                    <button class="btn btn-xs btn-outline-secondary"
                             @click="openDetail(b.benefitNo)">상세</button>
 
                     <!-- 원천에서 사라진 정책은 켜도 보여줄 내용이 없으므로 잠근다 -->
                     <button v-if="b.apiDeletedYn === 'Y'"
-                            class="btn btn-sm btn-outline-secondary" disabled
+                            class="btn btn-xs btn-outline-secondary" disabled
                             title="온통청년에서 삭제된 정책이라 노출할 수 없습니다">
                       삭제됨
                     </button>
-                    <button v-else class="btn btn-sm"
+                    <button v-else class="btn btn-xs"
                             :class="b.effectiveStatus === 'Y' ? 'btn-outline-danger' : 'btn-outline-success'"
                             :disabled="togglingNo === b.benefitNo"
                             @click="askToggle(b)">
                       {{ b.effectiveStatus === 'Y' ? '비활성화' : '활성화' }}
                     </button>
+                    </div>
                   </td>
                 </tr>
 
@@ -341,8 +343,22 @@
         <!-- 원천에서 사라진 정책은 왜 안 보이는지가 가장 먼저 필요한 정보다 -->
         <div v-if="detail.apiDeletedYn === 'Y'" class="alert alert-danger py-2 px-3 small mb-3">
           온통청년 오픈 API에서 더 이상 제공되지 않아
-          {{ formatDate(detail.apiDeletedDt) }}에 숨김 처리되었습니다.
-          데이터는 삭제되지 않았으며 다시 제공되면 자동으로 복구됩니다.
+          {{ formatDate(detail.apiDeletedDt) }}에 삭제 처리되었습니다.
+          데이터는 지워지지 않았으며 다시 제공되면 자동으로 복구됩니다.
+        </div>
+
+        <!--
+          관리자 지정이 있으면 온통청년 원본과 무엇이 다른지 보여준다.
+          목록에는 '관리자 지정'만 나오는데, 관리자가 실제로 알아야 할 것은
+          '지금 API는 뭐라고 하는가'다. 두 값이 같아지면 자동으로 해제되므로
+          이 배너는 아직 API가 관리자 판단을 따라오지 않았다는 뜻이기도 하다.
+        -->
+        <div v-else-if="detail.adminIsActive" class="alert alert-warning py-2 px-3 small mb-3">
+          온통청년은 이 정책을
+          <strong>{{ detail.apiIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 주고 있으나,
+          관리자가
+          <strong>{{ detail.adminIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 지정해 두었습니다.
+          온통청년 값이 같아지면 지정은 자동으로 해제됩니다.
         </div>
 
         <dl class="row small mb-0">
@@ -737,11 +753,15 @@ async function confirmToggle() {
   togglingNo.value = b.benefitNo;
 
   try {
-    await adminApi.changeBenefitActive(b.benefitNo, next);
     // 목록 전체를 다시 부르지 않고 해당 행만 갱신한다.
-    // 지정값과 최종 상태를 함께 바꿔야 배지와 버튼이 동시에 맞는다
-    b.adminIsActive = next;
-    b.effectiveStatus = next;
+    // 내가 보낸 값이 아니라 응답을 그대로 반영해야 한다.
+    // API 원본과 같은 값을 지정하면 서버가 지정을 만들지 않고 바로 해제하는데,
+    // 보낸 값을 쓰면 화면만 '지정됨'으로 남아 새로고침해야 맞아진다.
+    const updated = await adminApi.changeBenefitActive(b.benefitNo, next);
+    b.isActive = updated.isActive;
+    b.adminIsActive = updated.adminIsActive;
+    b.apiIsActive = updated.apiIsActive;
+    b.effectiveStatus = updated.effectiveStatus;
   } catch (e) {
     loadError.value = '상태 변경에 실패했습니다.';
     console.error(e);
@@ -764,7 +784,9 @@ async function confirmClear() {
   try {
     // 빈 값을 보내면 서버가 지정을 해제하고 다시 원본을 따르게 한다
     const updated = await adminApi.changeBenefitActive(b.benefitNo, '');
-    b.adminIsActive = null;
+    b.isActive = updated.isActive;
+    b.adminIsActive = updated.adminIsActive;
+    b.apiIsActive = updated.apiIsActive;
     b.effectiveStatus = updated.effectiveStatus;
   } catch (e) {
     loadError.value = '지정 해제에 실패했습니다.';
@@ -889,6 +911,15 @@ onMounted(() => {
   font-size: 10px;
   opacity: 0.55;
   margin-left: 2px;
+}
+
+/* 목록 안의 조작 버튼. 행 높이를 키우지 않도록 부트스트랩 btn-sm 보다 작게 둔다 */
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  border-radius: 6px;
+  white-space: nowrap;
 }
 
 /* 관리자가 지정한 상태임을 배지 아래 작게 알리고 되돌릴 길을 함께 둔다 */
