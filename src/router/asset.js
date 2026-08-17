@@ -16,5 +16,11 @@ export default [
   name: 'AssetRatio',
   component: () => import('@/pages/asset/AssetRatio.vue'),
   meta: { title: '자산 비율 분석' },
+},
+{
+  path: '/asset/products',
+  name: 'FinanceProducts',
+  component: () => import('@/pages/asset/FinanceProducts.vue'),
+  meta: { title: '금융 상품 조회' },
 }
 ];
