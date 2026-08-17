@@ -79,7 +79,7 @@ onMounted(fetchDashboard)
     <!-- 만기일 조회 -->
     <section class="list-section">
       <div class="section-header">
-        <h2> 금융 상품 만기일 조회</h2>
+        <h2>금융 상품 만기일</h2>
       </div>
 
       <div v-if="loading" class="empty">불러오는 중...</div>

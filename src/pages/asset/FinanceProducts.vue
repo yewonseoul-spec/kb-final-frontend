@@ -376,6 +376,12 @@ function goToProductPage(categoryKey) {
     cursor: pointer;
     text-align: left;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+    outline: none;
+}
+
+.empty-product-card:focus-visible {
+    outline: 2px solid #FFCC00;
+    outline-offset: 2px;
 }
 
 .empty-title {
