@@ -6,11 +6,14 @@ import ExpectedEdit from '@/pages/consumption/ExpectedEdit.vue';
 import AiAnalysis from '@/pages/consumption/AiAnalysis.vue';
 import MonthlyTrendChart from './MonthlyTrendChart.vue';
 import CategoryAmountList from './CategoryAmountList.vue';
+import { useRoute } from 'vue-router'
+
+const route = useRoute();
 
 const consumptionStore = useConsumptionStore();
 
 // 상단 탭: '소비 캘린더' / '패턴 분석' 중 지금 보고 있는 화면
-const activeTab = ref('calendar');
+const activeTab = computed(() => route.query.tab === 'analysis' ? 'pattern' : 'calendar');
 
 const currentDate = ref(new Date());
 const selectedDay = ref(null);
@@ -184,6 +187,32 @@ const categories = computed(() => {
     }))
   ];
 });
+
+// "전체"는 항상 맨 앞에 고정, 나머지는 건수 많은 순서로 정렬
+const sortedCategories = computed(() => {
+  const all = categories.value[0]; // "전체" 칩
+  const rest = categories.value.slice(1).sort((a, b) => b.count - a.count);
+  return [all, ...rest];
+});
+
+// 처음엔 "전체" 포함 5개까지만 보여준다
+const CHIP_VISIBLE_COUNT = 5;
+
+// 카테고리 바 펼친 상태인지 여부
+const chipsExpanded = ref(false);
+
+// 실제로 화면에 그리는 목록. 안 펼쳤으면 상위 5개만, 펼쳤으면 전체 다
+const visibleCategories = computed(() => {
+  if (chipsExpanded.value) return sortedCategories.value;
+  return sortedCategories.value.slice(0, CHIP_VISIBLE_COUNT);
+});
+
+// 칩이 CHIP_VISIBLE_COUNT보다 많을 때만 더보기 버튼을 보여준다
+const hasMoreChips = computed(() => sortedCategories.value.length > CHIP_VISIBLE_COUNT);
+
+function toggleChipsExpanded() {
+  chipsExpanded.value = !chipsExpanded.value;
+}
 
 function toggleCategory(name) {
   if (name === '전체') {
@@ -433,12 +462,13 @@ async function onEditSaved() {
   <div class="container">
 
     <div class="tabs">
-      <button class="tab" :class="{ active: activeTab === 'calendar' }" @click="activeTab = 'calendar'">
+      <router-link :to="{ path: route.path }" class="tab" :class="{ active: activeTab === 'calendar' }">
         소비 캘린더
-      </button>
-      <button class="tab" :class="{ active: activeTab === 'pattern' }" @click="activeTab = 'pattern'">
+      </router-link>
+      <router-link :to="{ path: route.path, query: { tab: 'analysis' } }" class="tab"
+        :class="{ active: activeTab === 'pattern' }">
         패턴 분석
-      </button>
+      </router-link>
     </div>
 
     <template v-if="activeTab === 'calendar'">
@@ -461,9 +491,12 @@ async function onEditSaved() {
       </div>
 
       <div class="chips">
-        <button v-for="c in categories" :key="c.name" @click="toggleCategory(c.name)"
+        <button v-for="c in visibleCategories" :key="c.name" @click="toggleCategory(c.name)"
           :class="{ active: selectedCategories.includes(c.name) }" :style="chipStyle(c)">
           {{ c.icon }} {{ c.name }} {{ c.count }}
+        </button>
+        <button v-if="hasMoreChips" class="more-toggle-btn" @click="toggleChipsExpanded">
+          {{ chipsExpanded ? '접기 ⌃' : '더보기 ⌄' }}
         </button>
       </div>
 
@@ -613,6 +646,8 @@ async function onEditSaved() {
   color: #999;
   cursor: pointer;
   text-align: center;
+  text-decoration: none;
+  display: block;
 }
 
 .tab.active {
@@ -704,13 +739,22 @@ async function onEditSaved() {
   color: #7B61FF;
 }
 
-
 .chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
   margin-bottom: 20px;
-  padding-bottom: 2px;
+}
+
+.more-toggle-btn {
+  border: 1px dashed #ccc;
+  background: #fff;
+  color: #999;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
 }
 
 .chips button {
