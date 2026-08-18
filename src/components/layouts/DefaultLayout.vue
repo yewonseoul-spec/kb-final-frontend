@@ -1,13 +1,17 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
 import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
+import { useAuthStore } from '@/stores/auth';
+import { getUnreadCount } from '@/api/notificationApi';
 
 const router = useRouter();
 const route = useRoute();
+const auth = useAuthStore();
 
 const isMenuOpen = ref(false);
+const unread = ref(0);
 
 /*
  * 뒤로가기가 기본이다. 나갈 길이 따로 있는 화면(홈·로그인·관리자 대시보드·404)만
@@ -27,6 +31,22 @@ const goBack = () => {
   }
   router.push({ name: 'Home' });
 };
+
+// 배지는 부가 정보다. 실패해도 화면을 막지 않는다.
+const loadUnread = async () => {
+  if (!auth.isLogin) {
+    unread.value = 0;
+    return;
+  }
+  try {
+    unread.value = await getUnreadCount();
+  } catch (e) {
+    unread.value = 0;
+  }
+};
+
+// 화면을 옮길 때마다 다시 센다.
+watch(() => route.fullPath, loadUnread, { immediate: true });
 </script>
 
 <template>
@@ -49,6 +69,33 @@ const goBack = () => {
       </div>
 
       <div class="header-right">
+        <button
+          v-if="auth.isLogin"
+          type="button"
+          class="noti-btn"
+          aria-label="알림"
+          @click="router.push({ name: 'Notification' })"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+
+          <span v-if="unread > 0" class="noti-dot">
+            {{ unread > 99 ? '99+' : unread }}
+          </span>
+        </button>
+
         <button
           type="button"
           class="hamburger-btn"
@@ -144,5 +191,36 @@ const goBack = () => {
   color: #2e2a24;
   font-size: 22px;
   cursor: pointer;
+}
+
+.noti-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #2e2a24;
+  cursor: pointer;
+}
+
+.noti-dot {
+  position: absolute;
+  top: 4px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background-color: #d64545;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 </style>
