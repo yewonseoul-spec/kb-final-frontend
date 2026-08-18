@@ -51,4 +51,12 @@ export default {
     const { data } = await instance.post(`${BASE_URL}/logout`);
     return data;
   },
+
+  // 토큰 재발급 — instance 를 쓰면 인터셉터가 자기 자신을 다시 부른다
+  async refresh(refreshToken) {
+    const { data } = await axios.post(`${BASE_URL}/refresh`, {
+      refreshToken,
+    });
+    return data;
+  },
 };
