@@ -321,7 +321,7 @@ function close() {
     background: rgba(0, 0, 0, .4);
     display: flex;
     align-items: flex-end;
-    z-index: 100;
+    z-index: 3000;
 }
 
 .sheet {
