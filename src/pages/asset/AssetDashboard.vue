@@ -34,6 +34,9 @@ const fetchDashboard = async () => {
 // 보유 계좌는 3개까지만 보여준다
 const visibleAccounts = computed(() => dashboard.accounts.slice(0, 3))
 
+// 만기일은 3개까지만 보여준다
+const visibleMaturities = computed(() => dashboard.maturities.slice(0, 3))
+
 const goProducts = () => router.push('/asset/products')
 const goRatio = () => router.push('/asset/ratio')
 const goAllAccounts = () => router.push('/asset/balance')
@@ -76,13 +79,13 @@ onMounted(fetchDashboard)
     <!-- 만기일 조회 -->
     <section class="list-section">
       <div class="section-header">
-        <h2>만기일 조회</h2>
+        <h2>금융 상품 만기일</h2>
       </div>
 
       <div v-if="loading" class="empty">불러오는 중...</div>
       <div v-else-if="dashboard.maturities.length === 0" class="empty">가입 상품이 없습니다.</div>
       <ul v-else class="maturity-list">
-        <li v-for="item in dashboard.maturities" :key="item.linkNo" class="maturity-item">
+        <li v-for="item in visibleMaturities" :key="item.linkNo" class="maturity-item">
           <span class="dot">•</span>
           <span class="product-name">{{ item.productName }}</span>
           <span class="maturity-date">{{ item.maturityDate }}</span>
