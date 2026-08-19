@@ -4,6 +4,7 @@ import axios from 'axios';
 
 const initState = {
   token: '', // 접근 토큰(JWT)
+  refreshToken: '', // 재발급 토큰
   user: {
     loginId: '', // 사용자 ID
     email: '', // Email
@@ -49,6 +50,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   const getToken = () => state.value.token;
 
+  // 재발급 성공 시 액세스 토큰만 갈아끼운다
+  const setToken = (token) => {
+    state.value.token = token;
+    localStorage.setItem('auth', JSON.stringify(state.value));
+  };
+
+  const getRefreshToken = () => state.value.refreshToken;
+
   const changeProfile = (member) => {
     state.value.user.email = member.email;
     localStorage.setItem('auth', JSON.stringify(state.value));
@@ -61,10 +70,14 @@ export const useAuthStore = defineStore('auth', () => {
     const saved = JSON.parse(auth);
     const expiry = getTokenExpiry(saved.token);
 
-    // 만료됐거나 해석 불가능한 토큰이면 저장된 로그인 정보를 버린다
+    // 액세스가 만료됐어도 리프레시가 살아 있으면 버리지 않는다
+    // (첫 요청의 401 에서 인터셉터가 되살린다)
     if (expiry == null || expiry <= Date.now()) {
-      localStorage.removeItem('auth');
-      return;
+      const refreshExpiry = getTokenExpiry(saved.refreshToken);
+      if (refreshExpiry == null || refreshExpiry <= Date.now()) {
+        localStorage.removeItem('auth');
+        return;
+      }
     }
 
     state.value = saved;
@@ -82,5 +95,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     getToken,
+    setToken,
+    getRefreshToken,
   };
 });

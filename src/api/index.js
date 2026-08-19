@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 import router from '@/router';
+import authApi from '@/api/authApi';
 
 const instance = axios.create({
   timeout: 10000,
@@ -16,17 +17,56 @@ instance.interceptors.request.use((config) => {
   return config;
 });
 
-// 응답 인터셉터 — 401이면 토큰이 만료·위조된 것이므로 로그아웃 후 로그인 페이지로
+// 재발급이 진행 중이면 그 Promise 를 공유한다. 동시에 401 을 받은 요청들이 각자 재발급하지 않도록
+let refreshing = null;
+
+// 세 갈래에서 같은 처리를 하므로 묶어 둔다
+const forceLogin = (message) => {
+  const { logout } = useAuthStore();
+  logout();
+  router.push({ name: 'Login', query: { error: 'login_required' } });
+  return Promise.reject({ error: message });
+};
+
+// 응답 인터셉터 — 401 이면 리프레시 토큰으로 한 번 재발급해 재시도하고, 그래도 안 되면 로그아웃
 instance.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const { logout } = useAuthStore();
-      logout();
-      router.push({ name: 'Login', query: { error: 'login_required' } });
-      return Promise.reject({ error: '로그인이 필요한 서비스입니다.' });
+  async (error) => {
+    const status = error.response?.status;
+    const original = error.config;
+
+    if (status !== 401) {
+      return Promise.reject(error);
     }
-    return Promise.reject(error);
+
+    // 이미 재시도한 요청이면 더 시도하지 않는다
+    if (original?._retried) {
+      return forceLogin('로그인이 필요한 서비스입니다.');
+    }
+
+    const auth = useAuthStore();
+    const refreshToken = auth.getRefreshToken();
+
+    if (!refreshToken) {
+      return forceLogin('로그인이 필요한 서비스입니다.');
+    }
+
+    try {
+      if (!refreshing) {
+        refreshing = authApi.refresh(refreshToken).finally(() => {
+          refreshing = null;
+        });
+      }
+      const data = await refreshing;
+
+      auth.setToken(data.token);
+
+      original._retried = true;
+      original.headers['Authorization'] = `Bearer ${data.token}`;
+      return instance(original);
+    } catch (e) {
+      return forceLogin('다시 로그인해 주세요.');
+    }
   },
 );
 
