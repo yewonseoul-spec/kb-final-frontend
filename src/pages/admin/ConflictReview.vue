@@ -32,105 +32,126 @@
         <small>다음 동기화에 재확인</small>
       </div>
       <div class="s-item me">
-        <em>내가 확인할 것</em><b>{{ sum.review }}</b>
+        <em>내가 확인할 것</em><b>{{ reviewCount + deferredCount }}</b>
       </div>
     </div>
 
     <div v-if="loading" class="empty">불러오는 중...</div>
-    <div v-else-if="!queue.length" class="empty done">확인할 항목이 없습니다.</div>
 
     <div v-else>
-      <div class="progress">
-        <span class="count">{{ index + 1 }} / {{ queue.length }}</span>
-        <div class="bar"><div class="fill" :style="{ width: pct + '%' }"></div></div>
+      <!-- 목록 구분 -->
+      <div class="tabs">
+        <button class="tab" :class="{ on: mode === 'review' }" @click="switchMode('review')">
+          확인 필요 <em>{{ reviewCount }}</em>
+        </button>
+        <button class="tab" :class="{ on: mode === 'deferred' }" @click="switchMode('deferred')">
+          보류 중 <em>{{ deferredCount }}</em>
+        </button>
       </div>
 
-      <!-- 왜 이 건이 왔는지 -->
-      <div class="reason" :class="reasonClass">
-        <strong>{{ reasonLabel }}</strong>
-        <span>{{ reasonHelp }}</span>
+      <div v-if="!queue.length" class="empty done">
+        {{ mode === 'review' ? '확인할 항목이 없습니다.' : '보류 중인 항목이 없습니다.' }}
       </div>
 
-      <!-- 좌우 비교 -->
-      <div class="compare">
-        <section class="card">
-          <span class="tag base">기준 정책</span>
-          <h3>{{ cur.source_plcy_nm }}</h3>
-          <p class="inst">{{ cur.source_inst }}</p>
-
-          <div class="why">
-            <b>왜 기준 정책인가요?</b>
-            <p>이 정책의 공고문에서 다른 정책과의 중복 제한 문구가 발견되었습니다.</p>
-          </div>
-
-          <div class="label">공고문 근거</div>
-          <div class="evidence" v-html="highlighted"></div>
-          <span v-if="cur.evidence_verified === 'N'" class="warn">
-            아래 정책명이 이 문장 안에 없습니다. 다른 곳에서 가져왔거나 잘못 추출했을 수 있습니다.
-          </span>
-        </section>
-
-        <section class="card">
-          <span class="tag cmp">비교 정책</span>
-          <h3>{{ cur.mapped_plcy_nm || cur.target_name_raw }}</h3>
-          <p class="inst">
-            {{ cur.mapped_inst }}
-            <em v-if="cur.mapped_active && cur.mapped_active !== 'Y'">· 마감</em>
-          </p>
-
-          <div class="why">
-            <b>왜 이 정책과 비교하나요?</b>
-            <p>기준 정책 공고문에 이 정책명이 적혀 있어 시스템이 연결했습니다.</p>
-          </div>
-
-          <div class="label">상대 공고 확인</div>
-          <div class="cross">
-            <div class="c-row">
-              <span>기준 정책 언급</span>
-              <strong :class="crossOk ? 'ok' : 'no'">{{ crossMention }}</strong>
-            </div>
-            <div class="c-row">
-              <span>본문에 적힌 이름</span>
-              <strong>{{ cur.target_name_raw }}</strong>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- 시스템이 확인한 것과 못한 것 -->
-      <section class="card facts">
-        <div class="label">현재까지 확인된 내용</div>
-        <ul>
-          <li class="ok">{{ factKnown }}</li>
-          <li class="no">{{ factUnknown }}</li>
-        </ul>
-      </section>
-
-      <!-- 판정 -->
-      <section class="card decide">
-        <h4>이 두 정책은 어떤 관계입니까?</h4>
-        <div class="btns">
-          <button class="b block" :disabled="busy" @click="onDecide('BLOCK')">
-            <b>중복 불가</b><small>함께 신청할 수 없음</small>
-          </button>
-          <button class="b partial" :disabled="busy" @click="onDecide('PARTIAL')">
-            <b>금액 조정</b><small>함께 받되 지원금이 줄어듦</small>
-          </button>
-          <button class="b not" :disabled="busy" @click="onDecide('NOT_CONFLICT')">
-            <b>중복 관계 아님</b><small>제한 관계가 아님</small>
-          </button>
-          <button class="b defer" :disabled="busy" @click="onDefer">
-            <b>판단 보류</b><small>근거가 부족함</small>
-          </button>
+      <div v-else>
+        <div class="progress">
+          <span class="count">{{ index + 1 }} / {{ queue.length }}</span>
+          <div class="bar"><div class="fill" :style="{ width: pct + '%' }"></div></div>
         </div>
-        <p class="effect">{{ effectText }}</p>
-      </section>
 
-      <button class="link" @click="showTech = !showTech">
-        시스템 분석 상세 {{ showTech ? '접기' : '보기' }}
-      </button>
-      <div v-if="showTech" class="tech">
-        <span v-for="m in techChips" :key="m.k"><em>{{ m.k }}</em>{{ m.v }}</span>
+        <!-- 왜 이 건이 왔는지 -->
+        <div class="reason" :class="reasonClass">
+          <strong>{{ reasonLabel }}</strong>
+          <span>{{ reasonHelp }}</span>
+        </div>
+
+        <!-- 보류 건 안내 -->
+        <div v-if="mode === 'deferred'" class="defer-note">
+          {{ formatDeferred(cur.deferred_until) }}까지 보류 중입니다.
+          지금 판정하면 즉시 반영됩니다.
+        </div>
+
+        <!-- 좌우 비교 -->
+        <div class="compare">
+          <section class="card">
+            <span class="tag base">기준 정책</span>
+            <h3>{{ cur.source_plcy_nm }}</h3>
+            <p class="inst">{{ cur.source_inst }}</p>
+
+            <div class="why">
+              <b>왜 기준 정책인가요?</b>
+              <p>이 정책의 공고문에서 다른 정책과의 중복 제한 문구가 발견되었습니다.</p>
+            </div>
+
+            <div class="label">공고문 근거</div>
+            <div class="evidence" v-html="highlighted"></div>
+            <span v-if="cur.evidence_verified === 'N'" class="warn">
+              아래 정책명이 이 문장 안에 없습니다. 다른 곳에서 가져왔거나 잘못 추출했을 수 있습니다.
+            </span>
+          </section>
+
+          <section class="card">
+            <span class="tag cmp">비교 정책</span>
+            <h3>{{ cur.mapped_plcy_nm || cur.target_name_raw }}</h3>
+            <p class="inst">
+              {{ cur.mapped_inst }}
+              <em v-if="cur.mapped_active && cur.mapped_active !== 'Y'">· 마감</em>
+            </p>
+
+            <div class="why">
+              <b>왜 이 정책과 비교하나요?</b>
+              <p>기준 정책 공고문에 이 정책명이 적혀 있어 시스템이 연결했습니다.</p>
+            </div>
+
+            <div class="label">상대 공고 확인</div>
+            <div class="cross">
+              <div class="c-row">
+                <span>기준 정책 언급</span>
+                <strong :class="crossOk ? 'ok' : 'no'">{{ crossMention }}</strong>
+              </div>
+              <div class="c-row">
+                <span>본문에 적힌 이름</span>
+                <strong>{{ cur.target_name_raw }}</strong>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- 시스템이 확인한 것과 못한 것 -->
+        <section class="card facts">
+          <div class="label">현재까지 확인된 내용</div>
+          <ul>
+            <li class="ok">{{ factKnown }}</li>
+            <li class="no">{{ factUnknown }}</li>
+          </ul>
+        </section>
+
+        <!-- 판정 -->
+        <section class="card decide">
+          <h4>이 두 정책은 어떤 관계입니까?</h4>
+          <div class="btns">
+            <button class="b block" :disabled="busy" @click="onDecide('BLOCK')">
+              <b>함께 받을 수 없음</b><small>둘 중 하나만 가능</small>
+            </button>
+            <button class="b partial" :disabled="busy" @click="onDecide('PARTIAL')">
+              <b>함께 받되 제한 있음</b><small>지원 금액이나 범위가 달라짐</small>
+            </button>
+            <button class="b not" :disabled="busy" @click="onDecide('NOT_CONFLICT')">
+              <b>중복 관계 아님</b><small>제한 관계가 아님</small>
+            </button>
+            <button v-if="mode === 'review'" class="b defer" :disabled="busy" @click="onDefer">
+              <b>판단 보류</b><small>근거가 부족함</small>
+            </button>
+          </div>
+          <p class="effect">{{ effectText }}</p>
+        </section>
+
+        <button class="link" @click="showTech = !showTech">
+          시스템 분석 상세 {{ showTech ? '접기' : '보기' }}
+        </button>
+        <div v-if="showTech" class="tech">
+          <span v-for="m in techChips" :key="m.k"><em>{{ m.k }}</em>{{ m.v }}</span>
+        </div>
       </div>
     </div>
 
@@ -144,7 +165,9 @@
 import { ref, computed, onMounted } from 'vue'
 import conflictApi from '@/api/conflictApi'
 
-const queue = ref([])
+const mode = ref('review')
+const reviewList = ref([])
+const deferredList = ref([])
 const sum = ref(null)
 const index = ref(0)
 const loading = ref(true)
@@ -152,6 +175,10 @@ const busy = ref(false)
 const publishing = ref(false)
 const showTech = ref(false)
 const toast = ref('')
+
+const queue = computed(() => (mode.value === 'review' ? reviewList.value : deferredList.value))
+const reviewCount = computed(() => reviewList.value.length)
+const deferredCount = computed(() => deferredList.value.length)
 
 const cur = computed(() => queue.value[index.value] || {})
 const pct = computed(() =>
@@ -223,8 +250,8 @@ const effectText = computed(() => {
   if (crossOk.value) {
     return '중복 불가로 확정하면 두 정책이 함께 든 추천 조합이 제외됩니다.'
   }
-  return '한쪽 공고에만 근거가 있으므로, 중복 불가를 선택해도 조합에서 제외하지 않고 '
-       + '사용자에게 확인 안내만 표시합니다.'
+  return '한쪽 공고에만 근거가 있으므로, 함께 받을 수 없음을 선택해도 '
+       + '조합에서 제외하지 않고 사용자에게 확인 안내만 표시합니다.'
 })
 
 const LABELS = {
@@ -262,17 +289,50 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
 
+// 보류 만료일 표시.
+// DB 의 DATETIME 이 JSON 으로 나갈 때 문자열이 아니라
+// 숫자(밀리초)나 배열로 바뀌는 경우가 있어 세 형태를 모두 받는다.
+function formatDeferred(v) {
+  if (v === null || v === undefined || v === '') return ''
+
+  // [2026, 8, 26, 18, 36, 14] 형태
+  if (Array.isArray(v)) {
+    return `${Number(v[1])}월 ${Number(v[2])}일`
+  }
+
+  // "2026-08-26 18:36:14" 형태
+  if (typeof v === 'string') {
+    const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (m) return `${Number(m[2])}월 ${Number(m[3])}일`
+  }
+
+  // 1787133374000 형태
+  const d = new Date(v)
+  return isNaN(d.getTime()) ? '' : `${d.getMonth() + 1}월 ${d.getDate()}일`
+}
+
+function switchMode(m) {
+  mode.value = m
+  index.value = 0
+  showTech.value = false
+}
+
 async function load() {
   loading.value = true
   try {
-    // 요약은 보조 정보다. 실패해도 목록은 보여야 한다.
-    // 하나로 묶으면 요약이 터졌을 때 검수 자체를 못 한다.
-    queue.value = await conflictApi.getQueue()
+    const [r, d] = await Promise.all([
+      conflictApi.getQueue(),
+      conflictApi.getDeferred(),
+    ])
+    reviewList.value = r
+    deferredList.value = d
     index.value = 0
   } finally {
     loading.value = false
   }
 
+  // 요약은 보조 정보다. 실패해도 목록은 보여야 한다.
+  // 함께 조회하면 요약이 터졌을 때 검수 자체를 못 한다.
   try {
     sum.value = await conflictApi.getSummary()
   } catch (e) {
@@ -280,12 +340,12 @@ async function load() {
   }
 }
 
-// 처리한 항목은 큐에서 빼고 같은 자리에 다음 것이 오게 한다.
+// 처리한 항목은 지금 보고 있는 목록에서만 뺀다.
 // 목록 전체를 다시 불러오면 위치를 잃어 흐름이 끊긴다.
 function next(msg) {
-  queue.value.splice(index.value, 1)
-  if (index.value >= queue.value.length) index.value = Math.max(0, queue.value.length - 1)
-  if (sum.value) sum.value.review = Math.max(0, Number(sum.value.review) - 1)
+  const list = mode.value === 'review' ? reviewList.value : deferredList.value
+  list.splice(index.value, 1)
+  if (index.value >= list.length) index.value = Math.max(0, list.length - 1)
   showTech.value = false
   toast.value = msg
   setTimeout(() => { toast.value = '' }, 2500)
@@ -296,8 +356,8 @@ async function onDecide(decision) {
   try {
     await conflictApi.decide(cur.value.candidate_no, decision)
     const msg = {
-      BLOCK: '중복 불가로 처리했습니다.',
-      PARTIAL: '금액 조정으로 처리했습니다.',
+      BLOCK: '함께 받을 수 없는 관계로 처리했습니다.',
+      PARTIAL: '함께 받되 제한이 있는 관계로 처리했습니다.',
       NOT_CONFLICT: '중복 관계 아님으로 처리했습니다.',
     }[decision]
     next(msg)
@@ -310,7 +370,9 @@ async function onDefer() {
   busy.value = true
   try {
     await conflictApi.defer(cur.value.candidate_no, 7)
-    next('판단을 보류했습니다. 7일 후 다시 표시됩니다.')
+    next('판단을 보류했습니다. 보류 목록에서 다시 볼 수 있습니다.')
+    // 보류 목록에 새로 들어갔으므로 다시 읽는다
+    deferredList.value = await conflictApi.getDeferred()
   } finally {
     busy.value = false
   }
@@ -348,6 +410,11 @@ h2 { font-size: 20px; font-weight: 700; margin: 0; }
 .s-item.me { margin-left: auto; padding-left: 16px; border-left: 1px solid #e5e7eb; }
 .s-item.me b { color: #b45309; }
 
+.tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+.tab { border: 1px solid #e5e7eb; background: #fff; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #4b5563; }
+.tab.on { background: #2a201a; color: #fff; border-color: #2a201a; }
+.tab em { font-style: normal; margin-left: 6px; font-weight: 700; }
+
 .empty { padding: 60px; text-align: center; color: #9ca3af; }
 .empty.done { color: #059669; font-weight: 600; }
 
@@ -363,6 +430,8 @@ h2 { font-size: 20px; font-weight: 700; margin: 0; }
 .r-dir  { background: #fefce8; border: 1px solid #fde68a; }
 .r-cond { background: #f5f3ff; border: 1px solid #ddd6fe; }
 .r-bad  { background: #fef2f2; border: 1px solid #fecaca; }
+
+.defer-note { font-size: 12px; color: #b45309; background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 9px 12px; margin-bottom: 14px; line-height: 1.6; }
 
 .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: stretch; }
 .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 18px; }

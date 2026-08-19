@@ -15,6 +15,12 @@ export default {
     return data;
   },
 
+  // 보류 중인 건. 만료 전에도 다시 판정할 수 있다
+  async getDeferred() {
+    const { data } = await instance.get(`${BASE_URL}/review/deferred`);
+    return data;
+  },
+
   // decision — BLOCK / PARTIAL / NOT_CONFLICT
   async decide(candidateNo, decision, reason) {
     const params = { decision };
@@ -22,7 +28,7 @@ export default {
     await instance.post(`${BASE_URL}/review/${candidateNo}/decide`, null, { params });
   },
 
-  // 판단 보류. 잠금은 유지되고 만료 후 다시 표시된다
+  // 판단 보류. 잠금은 유지되고 보류 목록에서 다시 볼 수 있다
   async defer(candidateNo, days = 7) {
     await instance.post(`${BASE_URL}/review/${candidateNo}/defer`, null, {
       params: { days },
