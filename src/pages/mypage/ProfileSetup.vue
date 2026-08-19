@@ -17,7 +17,6 @@ const form = reactive({
   income: '',
   employStatus: '',
   major: '',
-  householdSize: '',
   education: '',
   mrgSttsCd: '',
 });

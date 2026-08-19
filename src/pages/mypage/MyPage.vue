@@ -21,7 +21,7 @@ const moveToDetail = (benefitNo) => {
 };
 
 // 추천 엔진의 필수 필드와 같은 목록.
-// 소득·가구원수는 추천에 쓰지 않기로 해서 뺐다.
+// 소득은 추천에 쓰지 않기로 해서 뺐다.
 const PROFILE_FIELDS = [
   { key: 'birthDate', label: '생년월일' },
   { key: 'regionCode', label: '지역' },
