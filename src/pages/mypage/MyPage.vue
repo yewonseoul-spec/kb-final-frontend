@@ -25,7 +25,7 @@ const moveToDetail = (benefitNo) => {
 const PROFILE_FIELDS = [
   { key: 'birthDate', label: '생년월일' },
   { key: 'regionCode', label: '지역' },
-  { key: 'employStatus', label: '고용상태' },
+  { key: 'employStatus', label: '취업상태' },
   { key: 'major', label: '전공' },
   { key: 'education', label: '학력' },
   { key: 'mrgSttsCd', label: '혼인 여부' },
@@ -36,27 +36,27 @@ const GOALS = {
   INDEPENDENCE: {
     icon: '🏠',
     name: '독립',
-    examples: ['보증금·월세 지원', '청년 주택'],
+    examples: ['보증금·월세 지원', '전세자금 대출이자 지원'],
   },
   EMPLOYMENT: {
     icon: '💼',
     name: '취업',
-    examples: ['구직활동지원금', '내일채움공제'],
+    examples: ['구직활동 지원', '인턴·일자리 지원'],
   },
   STARTUP: {
     icon: '🚀',
     name: '창업',
-    examples: ['창업지원금', '창업사관학교'],
+    examples: ['창업 지원금'],
   },
   MARRIAGE: {
     icon: '💍',
     name: '결혼',
-    examples: ['신혼 전세대출', '주택 특별공급'],
+    examples: ['신혼부부 전세자금 지원', '주거비 지원'],
   },
   STUDY_ABROAD: {
     icon: '✈️',
     name: '유학',
-    examples: ['국비 장학', '어학연수 지원'],
+    examples: ['장학금 지원', '학자금·교육비 지원'],
   },
 };
 
