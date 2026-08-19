@@ -265,15 +265,18 @@ function esc(s) {
 async function load() {
   loading.value = true
   try {
-    const [s, q] = await Promise.all([
-      conflictApi.getSummary(),
-      conflictApi.getQueue(),
-    ])
-    sum.value = s
-    queue.value = q
+    // 요약은 보조 정보다. 실패해도 목록은 보여야 한다.
+    // 하나로 묶으면 요약이 터졌을 때 검수 자체를 못 한다.
+    queue.value = await conflictApi.getQueue()
     index.value = 0
   } finally {
     loading.value = false
+  }
+
+  try {
+    sum.value = await conflictApi.getSummary()
+  } catch (e) {
+    sum.value = null
   }
 }
 
