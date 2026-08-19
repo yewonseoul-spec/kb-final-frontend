@@ -60,10 +60,6 @@ export const validateProfile = (profile) => {
   if (profile.income !== '' && Number(profile.income) < 0) {
     errors.income = '0 이상으로 입력해 주세요.';
   }
-  // member_profile 에 CHECK (household_size >= 1) 가 있어 0 을 보내면 400 이 난다.
-  if (profile.householdSize !== '' && Number(profile.householdSize) < 1) {
-    errors.householdSize = '본인을 포함해 1명 이상이어야 해요.';
-  }
 
   return errors;
 };
