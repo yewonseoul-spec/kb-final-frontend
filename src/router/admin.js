@@ -32,6 +32,19 @@ export default [
     requiresAdmin: true,
   },
 },
+{
+        path: 'conflict',
+        name: 'AdminConflictReview',
+        component: () => import('@/pages/admin/ConflictReview.vue'),
+        meta: { title: '중복수혜 검수' },
+      },
+
+      {
+        path: 'prompt',
+        name: 'AdminPromptCenter',
+        component: () => import('@/pages/admin/PromptCenter.vue'),
+        meta: { title: 'AI 프롬프트 관리' },
+      },
     ],
   },
 ];

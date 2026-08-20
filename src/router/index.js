@@ -10,6 +10,7 @@ import guide from './guide.js';
 import engine from './engine.js';
 import { useAuthStore } from '@/stores/auth.js';
 import stress from './stress.js';
+import notification from './notification.js';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +31,7 @@ const router = createRouter({
     ...guide,
     ...engine,
     ...stress,
+    ...notification,
     // 매칭 실패한 모든 주소. name 이 있어야 App.vue 의 탭바 조건을 통과한다
     {
       path: '/:pathMatch(.*)*',

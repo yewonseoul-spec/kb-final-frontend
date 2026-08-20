@@ -19,14 +19,27 @@
           혜택 관리
         </router-link>
 
+        <!-- 중복수혜 검수. 남은 건수를 배지로 보여준다.
+             검수는 미뤄도 되는 일이라 화면에 들어오지 않으면 잊게 되고,
+             그러면 확정 대기가 계속 쌓인다. -->
+        <router-link to="/admin/conflict" class="admin-nav-item" active-class="is-active">
+          <span>중복수혜 검수</span>
+          <span v-if="reviewCount > 0" class="admin-badge">{{ reviewCount }}</span>
+        </router-link>
+        
+        <router-link to="/admin/prompt" class="admin-nav-item" active-class="is-active">
+          AI 프롬프트 관리
+        </router-link>
+
         <router-link to="/admin/synclog" class="admin-nav-item" active-class="is-active">
           동기화 로그
         </router-link>
 
         <router-link to="/admin/recommendKeyword" class="admin-nav-item" active-class="is-active">
-        추천검색어 설정  
+          추천검색어 설정
         </router-link>
       </nav>
+      
     </aside>
 
     <!-- 본문 -->
@@ -40,6 +53,22 @@
 // 관리자 화면 공통 레이아웃.
 // 사용자 화면(/engine 등)과 달리 데스크톱 기준으로 만든다.
 // 표를 좌우로 넓게 보는 것이 관리자 화면의 목적이기 때문이다.
+
+import { ref, onMounted } from 'vue'
+import conflictApi from '@/api/conflictApi'
+
+const reviewCount = ref(0)
+
+// 배지 조회가 실패해도 사이드바는 그대로 떠야 한다.
+// 이 숫자 때문에 관리자 화면 전체가 안 열리면 손해가 더 크다.
+onMounted(async () => {
+  try {
+    const queue = await conflictApi.getQueue()
+    reviewCount.value = Array.isArray(queue) ? queue.length : 0
+  } catch (e) {
+    reviewCount.value = 0
+  }
+})
 </script>
 
 <style scoped>
@@ -88,7 +117,10 @@
 }
 
 .admin-nav-item {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 11px 14px;
   border-radius: 8px;
   color: #cfc7c0;
@@ -119,6 +151,19 @@
   color: #7a706a;
 }
 
+.admin-badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: #ffcc00;
+  color: #2a201a;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.5;
+}
+
 /* ---- 본문 ---- */
 .admin-main {
   flex: 1;
@@ -137,6 +182,9 @@
   .admin-nav {
     flex-direction: row;
     overflow-x: auto;
+  }
+  .admin-nav-item {
+    white-space: nowrap;
   }
   .admin-main {
     padding: 20px 16px;

@@ -267,10 +267,56 @@ onMounted(async () => {
           class="banner"
           @click="router.push(b.to)"
         >
-          <svg class="banner-icon" width="22" height="22" viewBox="0 0 24 24">
+          <!-- 드로어 메뉴(KbMenuDrawer)와 같은 아이콘. 배너마다 달라 key 로 가른다 -->
+          <svg
+            v-if="b.key === 'engine'"
+            class="banner-icon"
+            width="22"
+            height="22"
+            viewBox="0 -3 20 20"
+            fill="none"
+          >
+            <rect
+              x="2.9"
+              y="6.1"
+              width="14.2"
+              height="7.1"
+              rx="2"
+              stroke="#ffbc00"
+              stroke-width="1.9"
+            />
             <path
-              d="M12 2 L14 10 L22 12 L14 14 L12 22 L10 14 L2 12 L10 10 Z"
-              fill="#ffbc00"
+              d="M4.9 3.7H15.1"
+              stroke="#ffbc00"
+              stroke-width="1.9"
+              stroke-linecap="round"
+            />
+            <path
+              d="M6.7 1.3H13.3"
+              stroke="#ffbc00"
+              stroke-width="1.9"
+              stroke-linecap="round"
+            />
+          </svg>
+          <svg
+            v-else
+            class="banner-icon"
+            width="22"
+            height="22"
+            viewBox="0 -3 20 20"
+            fill="none"
+          >
+            <path
+              d="M3.5 12.45A6.5 6.5 0 0 1 16.5 12.45"
+              stroke="#ffbc00"
+              stroke-width="1.9"
+              stroke-linecap="round"
+            />
+            <path
+              d="M10 12.45L13 8.2"
+              stroke="#ffbc00"
+              stroke-width="1.9"
+              stroke-linecap="round"
             />
           </svg>
           <div class="banner-text">

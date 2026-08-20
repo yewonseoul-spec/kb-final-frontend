@@ -20,7 +20,6 @@ const FIELDS = [
   'income',
   'employStatus',
   'major',
-  'householdSize',
   'education',
   'mrgSttsCd',
 ];

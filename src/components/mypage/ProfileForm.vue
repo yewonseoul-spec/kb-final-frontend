@@ -100,15 +100,6 @@ const MARITAL_OPTIONS = [
       :options="MAJOR_OPTIONS"
     />
 
-    <KbInput
-      v-model="profile.householdSize"
-      type="number"
-      label="가구원 수"
-      placeholder="본인 포함"
-      :is-error="!!errors.householdSize"
-      :error-message="errors.householdSize"
-    />
-
     <ProfileSelect
       v-model="profile.education"
       label="학력"
