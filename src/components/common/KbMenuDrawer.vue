@@ -74,10 +74,16 @@
               </span>
               <div class="text-group">
                 <span class="title">자산</span>
-                <div class="sub-links">
-                  <span class="sub">금융 상품 조회</span>
-                  <span class="sub">자산 비율 분석</span>
-                  <span class="sub">계좌별 잔액</span>
+                <div class="sub-links" @click.stop="emit('close')">
+                  <RouterLink class="sub" :to="{ name: 'FinanceProducts' }">
+                    금융 상품 조회
+                  </RouterLink>
+                  <RouterLink class="sub" :to="{ name: 'AssetRatio' }">
+                    자산 비율 분석
+                  </RouterLink>
+                  <RouterLink class="sub" :to="{ name: 'AssetBalance' }">
+                    계좌별 잔액
+                  </RouterLink>
                 </div>
               </div>
             </div>
@@ -109,9 +115,16 @@
               </span>
               <div class="text-group">
                 <span class="title">소비</span>
-                <div class="sub-links">
-                  <span class="sub">소비 캘린더</span>
-                  <span class="sub">패턴 분석</span>
+                <div class="sub-links" @click.stop="emit('close')">
+                  <RouterLink class="sub" :to="{ path: '/consumption' }">
+                    소비 캘린더
+                  </RouterLink>
+                  <RouterLink
+                    class="sub"
+                    :to="{ path: '/consumption', query: { tab: 'analysis' } }"
+                  >
+                    패턴 분석
+                  </RouterLink>
                 </div>
               </div>
             </div>
@@ -488,8 +501,13 @@ watch(
   justify-content: space-between;
   align-items: flex-start;
   cursor: pointer;
-  padding-bottom: 15px;
+  padding-bottom: 12px;
   border-bottom: 1px solid #efece4;
+}
+
+.menu-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
 }
 
 .menu-main {
@@ -526,9 +544,10 @@ watch(
 }
 
 .sub {
-  font-size: 12px;
+  font-size: 13px;
   color: #908980;
-  line-height: 1.4;
+  line-height: 1.5;
+  padding: 3px 0;
   text-decoration: none !important;
 }
 
