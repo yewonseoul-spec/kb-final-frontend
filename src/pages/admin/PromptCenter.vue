@@ -101,7 +101,7 @@
         </div>
 
         <!-- 시험 실행 -->
-        <div class="test">
+        <div v-if="canTest" class="test">
           <div class="t-head">
             <b>시험 실행</b>
             <span>DB에 저장하지 않습니다. 몇 번을 돌려도 안전합니다.</span>
@@ -147,6 +147,12 @@
             </div>
           </div>
         </div>
+
+        <!-- 시험 실행을 지원하지 않는 기능 -->
+        <div v-else class="test-off">
+          시험 실행은 현재 중복수혜 분석에만 지원됩니다.
+          이 기능은 입력 형식이 달라 전용 실행 화면이 필요합니다.
+        </div>
       </section>
     </div>
 
@@ -165,12 +171,13 @@ const KEY_LABEL = {
   CONSUMPTION_VERIFICATION: '소비 분석 재검증',
 }
 
-// 시험 실행에 자주 쓰는 정책. 유형이 달라 프롬프트 변화를 보기 좋다
+// 시험 실행에 자주 쓰는 정책. 유형이 달라 프롬프트 변화를 보기 좋다.
+// DB 를 재적재하면 정책번호가 바뀌므로 값이 안 맞을 수 있다.
 const SAMPLES = [
-  { no: 35063, label: '양방향 (결혼식 지원)' },
-  { no: 1283,  label: '범주형 (청년위원회)' },
-  { no: 39,    label: '같은 사업 중복 (자격증)' },
-  { no: 26366, label: '조건부 (응시료)' },
+  { no: 2663, label: '한쪽 근거 (청년 소모임)' },
+  { no: 115,  label: '추출 오류 (내일채움공제)' },
+  { no: 836,  label: '이사비 지원' },
+  { no: 1723, label: '학자금 신용회복' },
 ]
 
 const SCOPE = {
@@ -205,10 +212,11 @@ const toast = ref('')
 const askMemo = ref(false)
 const memo = ref('')
 
-
-// 줄 끝 공백과 앞뒤 공백은 의미 없는 차이다.
-// 커서를 잘못 눌러 스페이스 하나가 들어간 것을 수정으로 보면
-// 실수로 새 버전이 만들어진다.
+/**
+ * 줄 끝 공백과 앞뒤 공백은 의미 없는 차이다.
+ * 커서를 잘못 눌러 스페이스 하나가 들어간 것을 수정으로 보면
+ * 실수로 새 버전이 만들어진다.
+ */
 function normalize(s) {
   return String(s || '')
     .replace(/\r\n/g, '\n')
@@ -224,9 +232,19 @@ const dirty = computed(() =>
 )
 
 const canSave = computed(() => (draft.value || dirty.value) && content.value.trim().length > 0)
+
 const nextVersion = computed(() =>
   versions.value.length ? Math.max(...versions.value.map(v => v.version)) + 1 : 1
 )
+
+/**
+ * 시험 실행은 지금 중복수혜 분석 전용이다.
+ * 정책번호를 받아 공고문을 AI 에 보내는 구조라
+ * 소비 분석처럼 입력 형식이 다른 기능에는 그대로 쓸 수 없다.
+ * 안 되는 버튼을 보여주는 것보다 감추는 편이 낫다.
+ */
+const canTest = computed(() => curKey.value === 'CONFLICT_DETECTION')
+
 const scopeClass = computed(() => {
   const s = result.value?.scope
   if (s === 'OTHER_POLICY') return 'go'
@@ -337,8 +355,10 @@ async function remove() {
   }
 }
 
-// 저장하지 않은 내용으로도 돌려볼 수 있어야 한다.
-// 저장 후에만 시험할 수 있으면 버전 이력이 시험용으로 지저분해진다
+/**
+ * 저장하지 않은 내용으로도 돌려볼 수 있어야 한다.
+ * 저장 후에만 시험할 수 있으면 버전 이력이 시험용으로 지저분해진다.
+ */
 async function runTest() {
   testing.value = true
   result.value = null
@@ -409,6 +429,8 @@ textarea { width: 100%; height: 420px; border: 1px solid #e5e7eb; border-radius:
 .t-samples { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
 .t-samples button { border: 1px dashed #d1d5db; background: #fff; border-radius: 20px; padding: 5px 11px; font-size: 11px; color: #4b5563; cursor: pointer; }
 .t-samples button:hover { background: #f9fafb; }
+
+.test-off { margin-top: 18px; border-top: 1px solid #f3f4f6; padding-top: 16px; font-size: 12px; color: #6b7280; line-height: 1.7; }
 
 .t-result { margin-top: 14px; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; }
 .r-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
