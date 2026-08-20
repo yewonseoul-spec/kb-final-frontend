@@ -4,7 +4,7 @@ export default [
   {
     path: '/consumption',
     name: '/consumption',
-    meta: { title: '소비' },
+    meta: { requiresAuth: true, title: '소비' },
     component: ConsumptionCalView,
   },
 ];

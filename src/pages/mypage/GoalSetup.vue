@@ -40,8 +40,8 @@ const onSubmit = async () => {
     } else {
       await mypageApi.createGoal(goalType.value);
     }
-    // 목적지가 지연 로딩이라 isSaving 을 끄지 않는다(끄면 화면이 깜빡였다 사라진다)
-    router.replace({ name: 'MyPage' });
+    // 이중 제출을 막으려고 isSaving 을 켜 둔 채로 넘긴다
+    router.replace({ name: 'Home' });
   } catch (e) {
     // 401 은 api/index.js 인터셉터가 로그인 페이지로 보낸다(그 경우 e.response 가 없다)
     submitError.value = errorMessage(
@@ -54,7 +54,7 @@ const onSubmit = async () => {
 
 // 건너뛰기는 '아무것도 바꾸지 않는다' 이므로 기존 목표를 지우지 않는다
 const onSkip = () => {
-  router.replace({ name: 'MyPage' });
+  router.replace({ name: 'Home' });
 };
 </script>
 
