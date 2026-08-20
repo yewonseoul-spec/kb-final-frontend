@@ -10,8 +10,10 @@ import {
 } from '@/api/notificationApi';
 import KbCard from '@/components/common/KbCard.vue';
 import KbButton from '@/components/common/KbButton.vue';
+import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter();
+const notiStore = useNotificationStore();
 
 const items = ref([]);
 const loading = ref(true);
@@ -79,6 +81,9 @@ const load = async () => {
   error.value = '';
   try {
     items.value = await getNotifications();
+    // 이 조회가 오늘 첫 조회면 서버가 마감 알림을 새로 만든다.
+    // 헤더는 그 전에 개수를 받아 갔을 수 있으므로 여기서 다시 맞춘다.
+    notiStore.refresh();
   } catch (e) {
     error.value = errorMessage(e, '알림을 불러오지 못했어요.');
   } finally {
@@ -92,6 +97,8 @@ const onCardClick = async (n) => {
     n.isRead = 'Y'; // 먼저 반영한다. 실패해도 되돌리지 않는다(부가 동작)
     try {
       await markRead(n.notiNo);
+      // 목록만 고치면 헤더 배지가 남는다. 서버 값으로 같이 맞춘다.
+      notiStore.refresh();
     } catch (e) {
       // 읽음 처리 실패로 이동까지 막을 이유는 없다
     }
@@ -108,6 +115,7 @@ const onMarkAll = async () => {
     items.value.forEach((n) => {
       n.isRead = 'Y';
     });
+    notiStore.refresh();
   } catch (e) {
     error.value = errorMessage(e, '읽음 처리에 실패했어요.');
   }
@@ -117,6 +125,7 @@ const onRemove = async (n) => {
   try {
     await removeNotification(n.notiNo);
     items.value = items.value.filter((item) => item.notiNo !== n.notiNo);
+    notiStore.refresh();
   } catch (e) {
     error.value = errorMessage(e, '삭제하지 못했어요.');
   }
