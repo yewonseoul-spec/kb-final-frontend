@@ -1,12 +1,14 @@
 <script setup>
 import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useNotificationStore } from '@/stores/notification';
 import KbInput from '@/components/common/KbInput.vue';
 import KbButton from '@/components/common/KbButton.vue';
 import mypageApi from '@/api/mypageApi';
 import { errorMessage } from '@/api';
 
 const router = useRouter();
+const notiStore = useNotificationStore();
 
 const form = reactive({
   oldPassword: '',
@@ -56,6 +58,8 @@ const onSave = async () => {
     touched.newPassword = false;
     touched.newPasswordConfirm = false;
     message.value = '비밀번호를 변경했어요.';
+    // 이 화면은 성공해도 머무르므로 헤더가 보안 알림 생성을 모른다. 직접 알린다.
+    notiStore.refresh();
   } catch (e) {
     // 현재 비밀번호 불일치는 서버가 400 + 문구를 준다.
     // 401 은 api/index.js 인터셉터가 처리한다.
