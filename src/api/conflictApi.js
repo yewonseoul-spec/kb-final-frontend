@@ -21,6 +21,14 @@ export default {
     return data;
   },
 
+  // 분석 전 구간 실행. 정책 수에 따라 몇 분이 걸린다
+  async runAll() {
+    const { data } = await instance.post(`${BASE_URL}/ai/run-all`, null, {
+      timeout: 1800000,
+    });
+    return data;
+  },
+
   // decision — BLOCK / PARTIAL / NOT_CONFLICT
   async decide(candidateNo, decision, reason) {
     const params = { decision };

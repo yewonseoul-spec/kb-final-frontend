@@ -205,9 +205,24 @@ const toast = ref('')
 const askMemo = ref(false)
 const memo = ref('')
 
+
+// 줄 끝 공백과 앞뒤 공백은 의미 없는 차이다.
+// 커서를 잘못 눌러 스페이스 하나가 들어간 것을 수정으로 보면
+// 실수로 새 버전이 만들어진다.
+function normalize(s) {
+  return String(s || '')
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map(line => line.replace(/\s+$/, ''))
+    .join('\n')
+    .trim()
+}
+
 const dirty = computed(() =>
-  !draft.value && picked.value && content.value !== picked.value.content
+  !draft.value && picked.value
+    && normalize(content.value) !== normalize(picked.value.content)
 )
+
 const canSave = computed(() => (draft.value || dirty.value) && content.value.trim().length > 0)
 const nextVersion = computed(() =>
   versions.value.length ? Math.max(...versions.value.map(v => v.version)) + 1 : 1

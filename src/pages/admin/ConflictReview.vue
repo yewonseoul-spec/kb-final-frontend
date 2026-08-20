@@ -8,9 +8,14 @@
           공고문 근거를 확인한 뒤 관계를 선택해주세요.
         </p>
       </div>
-      <button class="btn-publish" :disabled="publishing" @click="onPublish">
-        {{ publishing ? '반영 중...' : '확정분 엔진 반영' }}
-      </button>
+      <div class="head-btns">
+        <button class="btn-run" :disabled="running" @click="onRunAll">
+          {{ running ? '분석 중...' : 'AI 분석 실행' }}
+        </button>
+        <button class="btn-publish" :disabled="publishing" @click="onPublish">
+          {{ publishing ? '반영 중...' : '확정분 엔진 반영' }}
+        </button>
+      </div>
     </div>
 
     <!-- 전체 그림. 한 건씩만 보여주면 무슨 일을 하는지 알 수 없다 -->
@@ -34,6 +39,11 @@
       <div class="s-item me">
         <em>내가 확인할 것</em><b>{{ reviewCount + deferredCount }}</b>
       </div>
+    </div>
+
+    <div v-if="running" class="running-note">
+      공고문을 분석하고 있습니다. 정책 수에 따라 몇 분이 걸릴 수 있습니다.
+      이 화면을 닫아도 분석은 계속 진행됩니다.
     </div>
 
     <div v-if="loading" class="empty">불러오는 중...</div>
@@ -173,6 +183,7 @@ const index = ref(0)
 const loading = ref(true)
 const busy = ref(false)
 const publishing = ref(false)
+const running = ref(false)
 const showTech = ref(false)
 const toast = ref('')
 
@@ -248,7 +259,7 @@ const factUnknown = computed(() => {
 // 특히 한쪽 근거만 있을 때 대칭 규칙이 되지 않는다는 점이 중요하다.
 const effectText = computed(() => {
   if (crossOk.value) {
-    return '중복 불가로 확정하면 두 정책이 함께 든 추천 조합이 제외됩니다.'
+    return '함께 받을 수 없음으로 확정하면 두 정책이 함께 든 추천 조합이 제외됩니다.'
   }
   return '한쪽 공고에만 근거가 있으므로, 함께 받을 수 없음을 선택해도 '
        + '조합에서 제외하지 않고 사용자에게 확인 안내만 표시합니다.'
@@ -291,22 +302,19 @@ function esc(s) {
 
 // 보류 만료일 표시.
 // DB 의 DATETIME 이 JSON 으로 나갈 때 문자열이 아니라
-// 숫자(밀리초)나 배열로 바뀌는 경우가 있어 세 형태를 모두 받는다.
+// 숫자나 배열로 바뀌는 경우가 있어 세 형태를 모두 받는다.
 function formatDeferred(v) {
   if (v === null || v === undefined || v === '') return ''
 
-  // [2026, 8, 26, 18, 36, 14] 형태
   if (Array.isArray(v)) {
     return `${Number(v[1])}월 ${Number(v[2])}일`
   }
 
-  // "2026-08-26 18:36:14" 형태
   if (typeof v === 'string') {
     const m = v.match(/^(\d{4})-(\d{2})-(\d{2})/)
     if (m) return `${Number(m[2])}월 ${Number(m[3])}일`
   }
 
-  // 1787133374000 형태
   const d = new Date(v)
   return isNaN(d.getTime()) ? '' : `${d.getMonth() + 1}월 ${d.getDate()}일`
 }
@@ -378,6 +386,32 @@ async function onDefer() {
   }
 }
 
+/**
+ * 분석 전 구간을 한 번에 실행한다.
+ * 정책 하나마다 AI 를 부르므로 몇 분이 걸린다.
+ */
+async function onRunAll() {
+  if (!window.confirm(
+    '전체 정책을 분석합니다.\n정책 수에 따라 몇 분이 걸릴 수 있습니다.\n계속할까요?'
+  )) return
+
+  running.value = true
+  try {
+    const r = await conflictApi.runAll()
+    const sec = Math.round((r.durationMs || 0) / 1000)
+    alert(
+      `분석 완료 (${sec}초)\n\n`
+      + `분석 대상 ${r.candidateTotal}건\n`
+      + `상대 공고 대조 ${r.crossCheck?.MUTUAL ?? 0}건 양방향 확인`
+    )
+    await load()
+  } catch (e) {
+    alert('분석 중 오류가 발생했습니다. 서버 로그를 확인해주세요.')
+  } finally {
+    running.value = false
+  }
+}
+
 async function onPublish() {
   publishing.value = true
   try {
@@ -396,6 +430,9 @@ onMounted(load)
 .head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 20px; }
 h2 { font-size: 20px; font-weight: 700; margin: 0; }
 .sub { color: #6b7280; font-size: 13px; margin: 5px 0 0; line-height: 1.6; }
+.head-btns { display: flex; gap: 6px; }
+.btn-run { background: #fff; color: #2a201a; border: 1px solid #2a201a; border-radius: 6px; padding: 10px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn-run:disabled { opacity: .5; cursor: default; }
 .btn-publish { background: #2a201a; color: #fff; border: 0; border-radius: 6px; padding: 10px 16px; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .btn-publish:disabled { opacity: .5; cursor: default; }
 
@@ -409,6 +446,8 @@ h2 { font-size: 20px; font-weight: 700; margin: 0; }
 .s-item.wait b { color: #6b7280; }
 .s-item.me { margin-left: auto; padding-left: 16px; border-left: 1px solid #e5e7eb; }
 .s-item.me b { color: #b45309; }
+
+.running-note { font-size: 12px; color: #1d4ed8; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 12px; margin-bottom: 14px; line-height: 1.6; }
 
 .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
 .tab { border: 1px solid #e5e7eb; background: #fff; border-radius: 6px; padding: 8px 14px; font-size: 13px; cursor: pointer; color: #4b5563; }
