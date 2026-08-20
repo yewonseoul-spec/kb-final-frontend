@@ -1,17 +1,21 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { storeToRefs } from 'pinia';
 
 import KbMenuDrawer from '@/components/common/KbMenuDrawer.vue';
 import { useAuthStore } from '@/stores/auth';
-import { getUnreadCount } from '@/api/notificationApi';
+import { useNotificationStore } from '@/stores/notification';
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
 
 const isMenuOpen = ref(false);
-const unread = ref(0);
+// 배지 개수는 알림 화면과 공유해야 한다. 지역 ref 로 두면
+// 화면을 옮기기 전까지 읽음·삭제가 배지에 반영되지 않는다.
+const notiStore = useNotificationStore();
+const { unread } = storeToRefs(notiStore);
 
 /*
  * 뒤로가기가 기본이다. 나갈 길이 따로 있는 화면(홈·로그인·관리자 대시보드·404)만
@@ -32,21 +36,12 @@ const goBack = () => {
   router.push({ name: 'Home' });
 };
 
-// 배지는 부가 정보다. 실패해도 화면을 막지 않는다.
-const loadUnread = async () => {
-  if (!auth.isLogin) {
-    unread.value = 0;
-    return;
-  }
-  try {
-    unread.value = await getUnreadCount();
-  } catch (e) {
-    unread.value = 0;
-  }
-};
-
 // 화면을 옮길 때마다 다시 센다.
-watch(() => route.fullPath, loadUnread, { immediate: true });
+watch(
+  () => route.fullPath,
+  () => notiStore.refresh(),
+  { immediate: true },
+);
 </script>
 
 <template>
