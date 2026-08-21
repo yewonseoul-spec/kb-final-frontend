@@ -11,12 +11,6 @@ import { useConsumptionStore } from '@/stores/consumptionStore';
 const auth = useAuthStore();
 const router = useRouter();
 
-const greeting = computed(() =>
-  auth.isLogin
-    ? `${auth.realName} 님, 오늘의 혜택 챙겨봐요 👋`
-    : '청년타파에 오신 걸 환영해요 👋',
-);
-
 const cardTitle = computed(() =>
   auth.isLogin
     ? '맞춤 청년혜택을 찾아드려요'
@@ -127,12 +121,7 @@ onMounted(async () => {
 
 <template>
   <div class="home">
-    <p class="greeting">{{ greeting }}</p>
     <section class="section">
-      <div class="section-head">
-        <h2 class="section-title">지금 받을 수 있는 혜택</h2>
-      </div>
-
       <KbCard yellow-bg>
         <p v-if="auth.isLogin" class="card-lead">
           {{ auth.realName }} 님 조건에 맞는
@@ -159,12 +148,6 @@ onMounted(async () => {
               <span class="popular-rank">{{ i + 1 }}</span>
               <div class="popular-body">
                 <p class="popular-name">{{ b.plcyNm }}</p>
-                <p class="popular-meta">
-                  {{ b.categoryName }}
-                  <template v-if="b.sprvsnInstCdNm">
-                    · {{ b.sprvsnInstCdNm }}</template
-                  >
-                </p>
               </div>
             </RouterLink>
           </li>
@@ -179,7 +162,6 @@ onMounted(async () => {
                 <span class="skeleton skeleton-line"></span>
                 <span class="skeleton skeleton-line short"></span>
               </div>
-              <span class="skeleton skeleton-meta"></span>
             </div>
           </li>
         </ol>
@@ -347,22 +329,14 @@ onMounted(async () => {
 .home {
   max-width: 500px;
   margin: 0 auto;
-  /* 탭바가 position:fixed 라 마지막 요소를 덮는다 */
-  padding-bottom: 96px;
-}
-
-.greeting {
-  margin: 0 0 28px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e2a24;
-  word-break: keep-all;
+  /* 마지막 배너가 탭바와 붙지 않을 정도의 여백만 남긴다 */
+  padding-bottom: 20px;
 }
 
 .section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 9px;
 }
 
 .section-head {
@@ -374,7 +348,7 @@ onMounted(async () => {
 
 .section-title {
   margin: 0;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   color: #2e2a24;
 }
@@ -388,13 +362,13 @@ onMounted(async () => {
 
 .card-lead {
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
   color: #908980;
 }
 
 .card-title {
   margin: 0;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -403,17 +377,17 @@ onMounted(async () => {
 /* KbButton 이 inline-flex 라서 grid 아이템으로 두어 폭을 꽉 채운다 */
 .cta-row {
   display: grid;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .popular {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 .popular-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -422,8 +396,8 @@ onMounted(async () => {
 .popular-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 66px;
+  gap: 10px;
+  min-height: 46px;
 }
 
 /* a 안에 div·p 를 넣는 건 허용된다(a 는 투명 콘텐츠 모델).
@@ -435,8 +409,8 @@ onMounted(async () => {
 
 .popular-rank {
   flex-shrink: 0;
-  width: 22px;
-  font-size: 16px;
+  width: 18px;
+  font-size: 14px;
   font-weight: 700;
   color: #ffbc00;
   text-align: center;
@@ -446,9 +420,6 @@ onMounted(async () => {
 .popular-body {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .skeleton {
@@ -463,7 +434,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   min-height: 2.8em;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .skeleton-line {
@@ -473,13 +444,6 @@ onMounted(async () => {
 
 .skeleton-line.short {
   width: 62%;
-}
-
-/* 13px × 1.4 = 18.2px */
-.skeleton-meta {
-  width: 45%;
-  height: 13px;
-  margin: 2.6px 0;
 }
 
 @keyframes skeleton-pulse {
@@ -503,37 +467,30 @@ onMounted(async () => {
   word-break: keep-all;
 }
 
-.popular-meta {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #908980;
-}
-
 .box {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 /* AssetDashboard.vue 의 .total-card 와 같은 값.
      홈 배너(#2e2a24)와 같은 계열이라 톤이 어긋나지 않는다 */
 .total-card {
   box-sizing: border-box;
-  padding: 18px 20px;
-  border-radius: 16px;
+  padding: 15px 17px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #4a4340 0%, #2b2725 100%);
   color: #ffffff;
   cursor: pointer;
 }
 
 .total-label {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin: 0 0 5px;
+  font-size: 12px;
   opacity: 0.8;
 }
 
 .total-amount {
-  font-size: 24px;
-  margin: 0 0 14px;
+  font-size: 20px;
+  margin: 0 0 10px;
   font-weight: 700;
 }
 
@@ -546,11 +503,11 @@ onMounted(async () => {
      Pretendard 를 쓰는 나머지 홈 요소와 어긋난다 */
 .asset-btn {
   flex: 1;
-  padding: 10px 0;
+  padding: 8px 0;
   border: none;
   border-radius: 10px;
   font: inherit;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -581,13 +538,13 @@ onMounted(async () => {
 }
 
 .summary-item span {
-  font-size: 13px;
+  font-size: 12px;
   color: #777;
   white-space: nowrap;
 }
 
 .summary-item strong {
-  font-size: 17px;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -616,7 +573,7 @@ onMounted(async () => {
 }
 
 .banners {
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 /* scroll-snap 으로 한 칸씩 넘긴다. 라이브러리 없이 브라우저 기능만 쓴다 */
@@ -638,9 +595,9 @@ onMounted(async () => {
   display: flex;
   flex: 0 0 100%;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   scroll-snap-align: start;
-  padding: 20px;
+  padding: 16px 18px;
   border: 0;
   border-radius: 14px;
   background-color: #2e2a24;
@@ -660,8 +617,8 @@ onMounted(async () => {
 }
 
 .banner-title {
-  margin: 0 0 4px;
-  font-size: 16px;
+  margin: 0 0 2px;
+  font-size: 14px;
   font-weight: 700;
   color: #ffffff;
   word-break: keep-all;
@@ -669,7 +626,7 @@ onMounted(async () => {
 
 .banner-desc {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.72);
   word-break: keep-all;
 }
@@ -684,14 +641,14 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   gap: 2px;
-  margin-top: 12px;
+  margin-top: 6px;
 }
 
 /* 점은 7px 이지만 버튼은 20px — 손가락으로 누를 수 있어야 한다 */
 .dot {
   display: flex;
   width: 20px;
-  height: 20px;
+  height: 14px;
   padding: 0;
   align-items: center;
   justify-content: center;
@@ -715,7 +672,14 @@ onMounted(async () => {
 
 /* KbCard 의 padding 은 공통 컴포넌트 값(20px)이라 홈 안에서만 줄인다 */
 .home :deep(.kb-card) {
-  padding: 16px;
+  padding: 14px 16px;
+  gap: 7px;
+}
+
+.home :deep(.kb-btn) {
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
 }
 
 /* KbCard 루트에 붙는다. 자식 컴포넌트 루트는 부모 스코프도 함께 받는다 */
