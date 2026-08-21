@@ -1,5 +1,5 @@
 <template>
-  <div class="card border-0 shadow-sm h-100">
+  <div class="card border-0 shadow-sm">
     <div class="card-body">
 
       <div class="d-flex justify-content-between align-items-start mb-3">
@@ -28,13 +28,9 @@
         </div>
       </div>
 
-      <div class="alert alert-light border mt-3 mb-0 py-2 small text-muted">
-        <div>정책이 온통청년에 <strong>처음 등록된 날짜</strong> 기준입니다. 신청 기간이 아닙니다.</div>
-        <div class="mt-1">
-          온통청년 API가 등록일 조회를 지원하지 않아 전체를 받아온 뒤 걸러냅니다.
-          기간을 좁혀도 소요 시간은 줄어들지 않습니다.
-        </div>
-      </div>
+      <p class="small text-muted mt-3 mb-0">
+        정책이 온통청년에 <strong>처음 등록된 날짜</strong> 기준입니다.
+      </p>
 
       <!-- 실행 결과 -->
       <div v-if="result" class="border rounded p-3 mt-3">

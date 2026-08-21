@@ -39,8 +39,35 @@
       <!-- 동기화 실행 · 마감 임박 -->
       <div class="row g-3 mb-4">
 
-        <div class="col-12 col-xl-7">
+        <div class="col-12 col-xl-7 d-flex flex-column gap-3">
           <SyncPanel @synced="loadDashboard" />
+
+          <router-link to="/admin/recommendKeyword"
+                       class="card border-0 shadow-sm text-decoration-none text-reset keyword-summary-card">
+            <div class="card-body keyword-summary-body">
+              <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                  <h6 class="mb-1 fw-bold">현재 활성 추천검색어</h6>
+                  <small class="text-muted">사용자 혜택 검색 화면에 현재 노출되고 있습니다.</small>
+                </div>
+                <strong class="keyword-count">{{ activeKeywords.length }}개</strong>
+              </div>
+
+              <div v-if="keywordLoading" class="small text-muted mt-3">
+                추천검색어를 불러오는 중입니다.
+              </div>
+              <div v-else-if="activeKeywords.length" class="keyword-chips mt-3">
+                <span v-for="item in activeKeywords"
+                      :key="item.keywordCode"
+                      class="keyword-chip">
+                  {{ item.keywordName }}
+                </span>
+              </div>
+              <div v-else class="small text-muted mt-3">
+                현재 활성화된 추천검색어가 없습니다.
+              </div>
+            </div>
+          </router-link>
         </div>
 
         <div class="col-12 col-xl-5">
@@ -165,6 +192,14 @@ const CATEGORY = {
 const loading = ref(false);
 const loadError = ref('');
 const data = ref(null);
+const keywords = ref([]);
+const keywordLoading = ref(false);
+
+const activeKeywords = computed(() =>
+  [...keywords.value]
+    .filter((item) => item.isActive === 'Y')
+    .sort((a, b) => Number(a.displayOrder ?? 0) - Number(b.displayOrder ?? 0)),
+);
 
 const cards = computed(() => {
   if (!data.value) return [];
@@ -198,6 +233,21 @@ async function loadDashboard() {
     console.error(e);
   } finally {
     loading.value = false;
+  }
+}
+
+async function loadKeywords() {
+  keywordLoading.value = true;
+  try {
+    const result = await adminApi.getRecommendKeywords();
+    keywords.value = Array.isArray(result)
+      ? result
+      : result?.content || result?.list || [];
+  } catch (e) {
+    keywords.value = [];
+    console.error('대시보드 추천검색어 조회 실패:', e);
+  } finally {
+    keywordLoading.value = false;
   }
 }
 
@@ -265,7 +315,10 @@ function formatDuration(ms) {
   return `${(ms / 1000).toFixed(1)}초`;
 }
 
-onMounted(loadDashboard);
+onMounted(() => {
+  loadDashboard();
+  loadKeywords();
+});
 </script>
 
 <style scoped>
@@ -275,4 +328,42 @@ onMounted(loadDashboard);
 /* 클릭 가능한 카드임을 hover로 알린다 */
 .card-link { transition: box-shadow .15s; }
 .card-link:hover { box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .1) !important; }
+
+.keyword-summary-card {
+  flex: 1 1 auto;
+  transition: box-shadow .15s, transform .15s;
+}
+
+.keyword-summary-card:hover {
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .1) !important;
+  transform: translateY(-1px);
+}
+
+.keyword-summary-body {
+  padding: 1.75rem 2rem;
+}
+
+.keyword-count {
+  color: #f4a000;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+
+.keyword-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+}
+
+.keyword-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: .35rem .9rem;
+  border: 1px solid #ead9bf;
+  border-radius: 999px;
+  background: #fffaf2;
+  color: #5f5140;
+  font-size: .82rem;
+}
 </style>
