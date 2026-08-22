@@ -1,92 +1,103 @@
 <template>
-  <div class="card border-0 shadow-sm h-100">
-    <div class="card-body">
+  <div class="a-card">
+    <div class="a-card-h">
+      <h2>정책 데이터 동기화</h2>
+    </div>
 
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <div>
-          <h6 class="mb-1 fw-bold">정책 데이터 동기화</h6>
-          <small class="text-muted">온통청년 API에서 청년정책을 가져와 DB에 반영합니다.</small>
-        </div>
-        <button class="btn btn-dark" :disabled="loading || !isPeriodValid" @click="executeSync">
-          <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
-          {{ loading ? '동기화 중…' : '동기화 실행' }}
-        </button>
-      </div>
+    <div class="a-card-b">
+      <p class="s-lead">온통청년 API에서 청년정책을 가져와 DB에 반영합니다.</p>
 
-      <div class="row g-3">
-        <div class="col-auto">
-          <label class="form-label small text-muted mb-1">시작일</label>
-          <input v-model="startDate" type="date"
-                 :max="endDate || today"
-                 class="form-control" style="width:180px" :disabled="loading" />
+      <div class="s-dates">
+        <div class="a-field">
+          <label>시작일</label>
+          <input v-model="startDate" type="date" class="a-num"
+                 :max="endDate || today" :disabled="loading" />
         </div>
-        <div class="col-auto">
-          <label class="form-label small text-muted mb-1">종료일</label>
-          <input v-model="endDate" type="date"
-                 :min="startDate" :max="today"
-                 class="form-control" style="width:180px" :disabled="loading" />
+        <div class="a-field">
+          <label>종료일</label>
+          <input v-model="endDate" type="date" class="a-num"
+                 :min="startDate" :max="today" :disabled="loading" />
         </div>
       </div>
 
-      <div class="alert alert-light border mt-3 mb-0 py-2 small text-muted">
-        <div>정책이 온통청년에 <strong>처음 등록된 날짜</strong> 기준입니다. 신청 기간이 아닙니다.</div>
-        <div class="mt-1">
+      <!--
+        이 안내가 이 카드에서 가장 중요한 문장이다.
+
+        없으면 관리자는 시작일·종료일을 신청 기간으로 읽는다.
+        그러면 "8월에 신청할 수 있는 정책만 가져오자" 하고 기간을 좁히는데,
+        실제로는 8월에 온통청년에 새로 등록된 정책만 들어온다.
+        결과가 예상과 다르게 나오고, 원인을 화면 어디에서도 찾을 수 없다.
+      -->
+      <div class="a-hint s-hint">
+        <div>정책이 온통청년에 <b>처음 등록된 날짜</b> 기준입니다. 신청 기간이 아닙니다.</div>
+        <div class="s-hint-sub">
           온통청년 API가 등록일 조회를 지원하지 않아 전체를 받아온 뒤 걸러냅니다.
           기간을 좁혀도 소요 시간은 줄어들지 않습니다.
         </div>
       </div>
 
+      <!--
+        실행 버튼을 안내 아래에 둔다.
+        제목 옆에 두면 좁은 칸에서 제목과 자리를 다투고,
+        무엇을 실행하는지 읽기 전에 먼저 눌리게 된다.
+      -->
+      <button class="a-btn a-btn-dark s-run"
+              :disabled="loading || !isPeriodValid" @click="executeSync">
+        <span v-if="loading" class="a-spin"></span>
+        {{ loading ? '동기화 중…' : '동기화 실행' }}
+      </button>
+
       <!-- 실행 결과 -->
-      <div v-if="result" class="border rounded p-3 mt-3">
-        <div class="d-flex align-items-center mb-3">
-          <h6 class="mb-0 me-2">실행 결과</h6>
-          <span class="badge" :class="statusBadge(result.resultStatus)">
+      <div v-if="result" class="s-result">
+        <div class="s-result-h">
+          <b>실행 결과</b>
+          <span class="a-bdg" :class="statusBadge(result.resultStatus)">
             {{ statusLabel(result.resultStatus) }}
           </span>
-          <span class="ms-auto small text-muted">{{ startDate }} ~ {{ endDate }}</span>
+          <span class="s-period a-num">{{ startDate }} ~ {{ endDate }}</span>
         </div>
 
-        <div class="row g-3 text-center">
-          <div class="col-6 col-md-3">
-            <div class="small text-muted">처리 건수</div>
-            <div class="fw-bold">{{ formatCount(result.totalCnt) }}</div>
+        <div class="s-stats">
+          <div class="s-stat">
+            <div class="s-stat-v a-num">{{ formatCount(result.totalCnt) }}</div>
+            <div class="s-stat-l">처리 건수</div>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="small text-muted">신규(추정)</div>
-            <div class="fw-bold">{{ formatCount(result.insertCnt) }}</div>
+          <div class="s-stat">
+            <div class="s-stat-v a-num">{{ formatCount(result.insertCnt) }}</div>
+            <div class="s-stat-l">신규 (추정)</div>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="small text-muted">갱신(추정)</div>
-            <div class="fw-bold">{{ formatCount(result.updateCnt) }}</div>
+          <div class="s-stat">
+            <div class="s-stat-v a-num">{{ formatCount(result.updateCnt) }}</div>
+            <div class="s-stat-l">갱신 (추정)</div>
           </div>
-          <div class="col-6 col-md-3">
-            <div class="small text-muted">소요 시간</div>
-            <div class="fw-bold">{{ (result.durationMs / 1000).toFixed(1) }}초</div>
+          <div class="s-stat">
+            <div class="s-stat-v a-num">{{ (result.durationMs / 1000).toFixed(1) }}초</div>
+            <div class="s-stat-l">소요 시간</div>
           </div>
         </div>
+
+        <p class="s-note">
+          신규·갱신 건수는 동기화 전후 전체 정책 수의 차이로 계산한 추정치입니다.
+        </p>
 
         <!-- 기간별 동기화는 숨김 판정을 하지 않으므로 값이 있을 때만 보여준다.
              전체 목록을 다 받은 것이 아니라 '응답에 없다'를 삭제로 볼 수 없기 때문이다 -->
-        <div v-if="result.deleteCnt > 0" class="alert alert-warning mt-3 mb-0 py-2 small">
-          이번 동기화에서 {{ formatCount(result.deleteCnt) }}건이 삭제 처리되었습니다.
-          데이터는 보존되며 다시 제공되면 자동으로 복구됩니다.
+        <div v-if="result.deleteCnt > 0" class="a-notice s-msg">
+          <div>
+            이번 동기화에서 <b>{{ formatCount(result.deleteCnt) }}</b>이 삭제 처리되었습니다.
+            데이터는 보존되며 다시 제공되면 자동으로 복구됩니다.
+          </div>
         </div>
 
-        <small class="text-muted d-block mt-3">
-          신규·갱신 건수는 동기화 전후 전체 정책 수의 차이로 계산한 추정치입니다.
-        </small>
-
-        <div v-if="result.errorMsg"
-             class="alert mt-3 mb-0 py-2 small"
-             :class="result.resultStatus === 'F' ? 'alert-danger' : 'alert-warning'">
-          {{ result.errorMsg }}
+        <div v-if="result.errorMsg" class="a-notice s-msg"
+             :class="result.resultStatus === 'F' ? 'a-notice-dngr' : ''">
+          <div>{{ result.errorMsg }}</div>
         </div>
       </div>
 
-      <div v-if="requestError" class="alert alert-danger py-2 small mt-3 mb-0">
-        {{ requestError }}
+      <div v-if="requestError" class="a-notice a-notice-dngr s-msg">
+        <div>{{ requestError }}</div>
       </div>
-
     </div>
   </div>
 </template>
@@ -94,10 +105,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import adminApi from '@/api/adminApi';
+
 // 동기화가 끝나면 부모(대시보드)가 통계를 다시 불러올 수 있게 알린다
 const emit = defineEmits(['synced']);
-
-
 
 const loading = ref(false);
 const result = ref(null);
@@ -132,9 +142,9 @@ function statusLabel(status) {
 }
 
 function statusBadge(status) {
-  if (status === 'S') return 'bg-success';
-  if (status === 'P') return 'bg-warning text-dark';
-  return 'bg-danger';
+  if (status === 'S') return 'a-bdg-ok';
+  if (status === 'P') return 'a-bdg-warn';
+  return 'a-bdg-dngr';
 }
 
 function formatCount(n) {
@@ -159,3 +169,107 @@ async function executeSync() {
   }
 }
 </script>
+
+<style scoped>
+.s-lead {
+  margin: 0 0 14px;
+  color: var(--a-c500);
+  font-size: var(--a-t-sm);
+  line-height: 1.6;
+}
+
+/* 좁은 칸(380px)에 두 개가 나란히 들어간다 */
+.s-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.s-dates .a-field { margin-bottom: 0; }
+
+.s-hint { margin-top: 12px; }
+.s-hint b { color: var(--a-c900); font-weight: 700; }
+.s-hint-sub { margin-top: 5px; }
+
+.s-run {
+  width: 100%;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+/* 실행 중 표시는 어두운 버튼 위에 얹히므로 색을 바꾼다 */
+.s-run .a-spin {
+  border-color: rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+}
+
+/* ---- 실행 결과 ---- */
+.s-result {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: var(--a-bd);
+}
+
+.s-result-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.s-result-h b {
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 700;
+}
+
+.s-period {
+  margin-left: auto;
+  font-size: var(--a-t-cap);
+  color: var(--a-c400);
+  white-space: nowrap;
+}
+
+/*
+  네 칸을 2×2로 놓는다.
+  좁은 칸에서 한 줄에 넷을 넣으면 '1,281건' 같은 값이 줄바꿈된다.
+*/
+.s-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: var(--a-bd);
+  border-radius: var(--a-r);
+  overflow: hidden;
+}
+
+.s-stat {
+  padding: 10px 12px;
+  border-right: var(--a-bd);
+  border-bottom: var(--a-bd);
+}
+
+.s-stat:nth-child(2n) { border-right: 0; }
+.s-stat:nth-child(n + 3) { border-bottom: 0; }
+
+.s-stat-v {
+  font-size: var(--a-t-lg);
+  letter-spacing: var(--a-ls-lg);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.s-stat-l {
+  color: var(--a-c500);
+  font-size: var(--a-t-cap);
+  margin-top: 2px;
+}
+
+.s-note {
+  margin: 9px 0 0;
+  color: var(--a-c400);
+  font-size: var(--a-t-cap);
+  line-height: 1.6;
+}
+
+.s-msg { margin-top: 12px; }
+</style>

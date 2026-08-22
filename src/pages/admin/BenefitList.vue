@@ -1,36 +1,29 @@
 <template>
   <div>
-    <div class="mb-4">
-      <h4 class="mb-1 fw-bold">혜택 관리</h4>
-      <small class="text-muted">온통청년에서 수집한 청년혜택을 조회하고 노출 상태를 관리합니다.</small>
+    <div class="a-head">
+      <div><h1>혜택 관리</h1></div>
+      <p>온통청년에서 수집한 청년혜택을 조회하고 노출 상태를 관리합니다.</p>
     </div>
 
     <!-- 필터 -->
-    <div class="card border-0 shadow-sm mb-3">
-      <div class="card-body">
-        <div class="row g-3 align-items-end">
-          <div class="col-auto">
-            <label class="form-label small text-muted mb-1">혜택명</label>
-            <input v-model="filters.keyword" type="text" placeholder="혜택명 검색"
-                   class="form-control form-control-sm" style="width:260px"
-                   @keyup.enter="search" />
+    <div class="a-card mb-3">
+      <div class="a-card-b">
+        <div class="f-top">
+          <div class="a-search">
+            <span class="f-ico">⌕</span>
+            <input v-model="filters.keyword" type="text"
+                   placeholder="혜택명 검색" @keyup.enter="search" />
           </div>
-
-          <div class="col-auto">
-            <button class="btn btn-sm btn-dark px-4" @click="search">조회</button>
-            <button class="btn btn-sm btn-outline-secondary" @click="resetFilters">초기화</button>
-          </div>
+          <button class="a-btn a-btn-dark a-btn-fix" @click="search">조회</button>
+          <button class="a-btn a-btn-fix" @click="resetFilters">초기화</button>
         </div>
 
-        <hr class="my-3" />
-
-        <div class="d-flex flex-wrap gap-4">
+        <div class="a-filters">
           <div>
-            <div class="small text-muted mb-1">노출 상태</div>
-            <div class="btn-group btn-group-sm">
+            <div class="a-fl">노출 상태</div>
+            <div class="a-seg">
               <button v-for="opt in activeOptions" :key="opt.value"
-                      class="btn"
-                      :class="filters.isActive === opt.value ? 'btn-dark' : 'btn-outline-secondary'"
+                      :class="{ 'is-on': filters.isActive === opt.value }"
                       @click="selectActive(opt.value)">
                 {{ opt.label }}
               </button>
@@ -38,11 +31,10 @@
           </div>
 
           <div>
-            <div class="small text-muted mb-1">카테고리</div>
-            <div class="btn-group btn-group-sm">
+            <div class="a-fl">카테고리</div>
+            <div class="a-seg">
               <button v-for="opt in categoryOptions" :key="opt.value"
-                      class="btn"
-                      :class="filters.categoryCode === opt.value ? 'btn-dark' : 'btn-outline-secondary'"
+                      :class="{ 'is-on': filters.categoryCode === opt.value }"
                       @click="selectCategory(opt.value)">
                 {{ opt.label }}
               </button>
@@ -50,38 +42,32 @@
           </div>
 
           <div>
-            <div class="small text-muted mb-1">마감</div>
-            <div class="btn-group btn-group-sm">
-              <button class="btn"
-                      :class="!filters.deadlineSoon ? 'btn-dark' : 'btn-outline-secondary'"
+            <div class="a-fl">마감</div>
+            <div class="a-seg">
+              <button :class="{ 'is-on': !filters.deadlineSoon }"
                       @click="selectDeadline(false)">전체</button>
-              <button class="btn"
-                      :class="filters.deadlineSoon ? 'btn-dark' : 'btn-outline-secondary'"
+              <button :class="{ 'is-on': filters.deadlineSoon }"
                       @click="selectDeadline(true)">30일 이내</button>
             </div>
           </div>
 
           <div>
-            <div class="small text-muted mb-1">중복수혜</div>
-            <div class="btn-group btn-group-sm">
-              <button class="btn"
-                      :class="!filters.hasConflict ? 'btn-dark' : 'btn-outline-secondary'"
+            <div class="a-fl">중복수혜</div>
+            <div class="a-seg">
+              <button :class="{ 'is-on': !filters.hasConflict }"
                       @click="selectConflict(false)">전체</button>
-              <button class="btn"
-                      :class="filters.hasConflict ? 'btn-dark' : 'btn-outline-secondary'"
+              <button :class="{ 'is-on': filters.hasConflict }"
                       @click="selectConflict(true)">관리 대상</button>
             </div>
           </div>
 
           <div>
-            <div class="small text-muted mb-1">관리자 지정</div>
-            <div class="btn-group btn-group-sm">
-              <button class="btn"
-                      :class="!filters.adminManagedOnly ? 'btn-dark' : 'btn-outline-secondary'"
+            <div class="a-fl">관리자 지정</div>
+            <div class="a-seg">
+              <button :class="{ 'is-on': !filters.adminManagedOnly }"
                       @click="selectAdminManaged(false)">전체</button>
-              <button class="btn"
-                      :class="filters.adminManagedOnly ? 'btn-dark' : 'btn-outline-secondary'"
-                      @click="selectAdminManaged(true)">지정한 것만</button>
+              <button :class="{ 'is-on': filters.adminManagedOnly }"
+                      @click="selectAdminManaged(true)">지정만</button>
             </div>
           </div>
         </div>
@@ -90,22 +76,22 @@
           배지 뜻풀이. 중복수혜 필터를 켰을 때만 보여준다.
           평소에는 표에 잘 안 걸리는 정보라 항상 띄우면 화면만 복잡해진다.
         -->
-        <div v-if="filters.hasConflict" class="rule-legend mt-3">
-          <span class="badge rule rule-group">G01</span> 같은 묶음의 혜택은 하나만 받을 수 있음
-          <span class="sep">·</span>
-          <span class="badge rule rule-pair">개별</span> 엔진이 후보에서 빼거나 감점함
-          <span class="sep">·</span>
-          <span class="badge rule rule-external">외부</span> 우리 DB에 없는 제도라 안내만 함
-          <span class="sep">·</span>
-          <span class="badge rule rule-review">검수</span> 아직 확인 전이라 엔진이 무시함
+        <div v-if="filters.hasConflict" class="a-hint f-legend">
+          <span class="a-bdg a-bdg-mute">G01</span> 같은 묶음의 혜택은 하나만 받을 수 있음
+          <span class="f-sep">·</span>
+          <span class="a-bdg a-bdg-info">개별</span> 엔진이 후보에서 빼거나 감점함
+          <span class="f-sep">·</span>
+          <span class="a-bdg a-bdg-warn">외부</span> 우리 DB에 없는 제도라 안내만 함
+          <span class="f-sep">·</span>
+          <span class="a-bdg a-bdg-plain a-bdg-dash">검수</span> 아직 확인 전이라 엔진이 무시함
         </div>
 
-        <div v-if="deletedOnly" class="rule-legend mt-3">
+        <div v-if="deletedOnly" class="a-hint f-legend">
           온통청년 오픈 API에서 더 이상 제공되지 않는 정책입니다.
           데이터는 삭제하지 않고 숨김 처리만 하므로, 다시 제공되면 자동으로 복구됩니다.
         </div>
 
-        <div v-if="filters.adminManagedOnly" class="rule-legend mt-3">
+        <div v-if="filters.adminManagedOnly" class="a-hint f-legend">
           관리자가 노출 상태를 직접 지정한 정책입니다.
           지정값은 동기화 대상이 아니므로 온통청년 값이 바뀌어도 유지됩니다.
         </div>
@@ -113,349 +99,340 @@
     </div>
 
     <!-- 목록 -->
-    <div class="card border-0 shadow-sm">
-      <div class="card-body">
+    <div class="a-card">
+      <div v-if="loading" class="a-loading">
+        <span class="a-spin"></span> 불러오는 중
+      </div>
 
-        <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-secondary" role="status">
-            <span class="visually-hidden">불러오는 중</span>
-          </div>
+      <!-- 목록 자체를 못 불러온 경우는 표가 있을 자리에 그대로 둔다.
+           토스트로 띄우면 잠시 뒤 사라져서 왜 비어 있는지 알 수 없다 -->
+      <div v-else-if="loadError" class="a-card-b">
+        <div class="a-notice a-notice-dngr">{{ loadError }}</div>
+      </div>
+
+      <template v-else-if="data">
+        <div class="a-card-h">
+          <h2>전체 <span class="a-num">{{ data.totalCount.toLocaleString() }}</span>건</h2>
+          <span class="a-sub">{{ sortLabel }}</span>
         </div>
 
-        <div v-else-if="loadError" class="alert alert-danger py-2 small mb-0">
-          {{ loadError }}
-        </div>
+        <div class="t-wrap">
+          <table class="a-tbl">
+            <!-- 혜택명만 폭을 정하지 않아 남는 공간을 가져간다 -->
+            <colgroup>
+              <col style="width:112px">
+              <col style="min-width:280px">
+              <col style="width:170px">
+              <col style="width:124px">
+              <col style="width:96px">
+              <col style="width:180px">
+              <col style="width:198px">
+            </colgroup>
+            <thead>
+              <tr>
+                <!-- 상태·중복수혜는 위에 필터가 있어 정렬을 넣지 않는다 -->
+                <th>상태</th>
 
-        <template v-else-if="data">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex align-items-baseline gap-2">
-              <h6 class="mb-0 fw-bold">전체 {{ data.totalCount.toLocaleString() }}건</h6>
-              <small class="text-muted">{{ sortLabel }}</small>
-            </div>
-            <small class="text-muted" v-if="data.totalPages > 0">
-              {{ data.page }} / {{ data.totalPages }} 페이지
-            </small>
-          </div>
+                <th class="a-th-sort" @click="toggleSort('plcyNm')">
+                  혜택명 <span class="a-th-mark">{{ sortMark('plcyNm') }}</span>
+                </th>
+                <th class="a-th-sort" @click="toggleSort('sprvsnInstCdNm')">
+                  주관기관 <span class="a-th-mark">{{ sortMark('sprvsnInstCdNm') }}</span>
+                </th>
+                <th class="a-th-sort" @click="toggleSort('deadline')">
+                  마감 <span class="a-th-mark">{{ sortMark('deadline') }}</span>
+                </th>
+                <th class="a-r a-th-sort" @click="toggleSort('inqCnt')">
+                  조회수 <span class="a-th-mark">{{ sortMark('inqCnt') }}</span>
+                </th>
 
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead class="table-light">
-                <tr class="small text-muted">
-                  <!-- 상태·카테고리·중복규칙은 위에 필터가 있어 정렬을 넣지 않는다 -->
-                  <th style="width:110px">상태</th>
-                  <th style="width:90px">카테고리</th>
-
-                  <th style="min-width:260px" class="sortable" @click="toggleSort('plcyNm')">
-                    혜택명 <span class="sort-mark">{{ sortMark('plcyNm') }}</span>
-                  </th>
-                  <th style="min-width:140px" class="sortable" @click="toggleSort('sprvsnInstCdNm')">
-                    주관기관 <span class="sort-mark">{{ sortMark('sprvsnInstCdNm') }}</span>
-                  </th>
-                  <th style="width:130px" class="sortable" @click="toggleSort('deadline')">
-                    마감 <span class="sort-mark">{{ sortMark('deadline') }}</span>
-                  </th>
-                  <th class="text-end sortable" style="width:90px" @click="toggleSort('inqCnt')">
-                    조회수 <span class="sort-mark">{{ sortMark('inqCnt') }}</span>
-                  </th>
-
-                  <th style="width:150px">중복규칙</th>
-                  <th style="width:140px">관리</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="b in data.benefits" :key="b.benefitNo">
-                  <!--
-                    상태는 세 컬럼이 겹쳐 있어 서버가 하나로 합쳐 내려준다.
-                    관리자가 직접 지정한 경우에는 원본과 다르다는 것을 알려야
-                    '왜 API 값과 다르지'를 바로 판단할 수 있고,
-                    되돌릴 방법도 같은 자리에 있어야 관리가 된다.
-                  -->
-                  <td>
-                    <span class="badge" :class="statusBadge(b)">
-                      {{ statusText(b) }}
-                    </span>
-                    <div v-if="b.adminIsActive && b.apiDeletedYn !== 'Y'" class="admin-mark">
-                      관리자 지정
-                      <button class="clear-link"
-                              :disabled="togglingNo === b.benefitNo"
-                              title="지정을 해제하고 다시 온통청년 값을 따릅니다"
-                              @click="askClear(b)">해제</button>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="badge cat" :class="categoryClass(b.categoryCode)">
-                      {{ categoryName(b.categoryCode) }}
-                    </span>
-                  </td>
-                  <td class="small">{{ b.plcyNm }}</td>
-                  <td class="small text-muted">{{ b.sprvsnInstCdNm }}</td>
-                  <!-- D-day는 남은 기간이라 언제 끝나는지는 알 수 없다.
-                       상세를 열지 않아도 판단할 수 있게 날짜를 같이 보여준다. -->
-                  <td class="small">
-                    <div :class="ddayTone(b)">{{ deadlineText(b) }}</div>
-                    <div v-if="b.applyEndDate" class="deadline-date">
-                      {{ formatDate(b.applyEndDate) }}
-                    </div>
-                  </td>
-                  <td class="text-end small">{{ (b.inqCnt ?? 0).toLocaleString() }}</td>
-
-                  <!--
-                    그룹 코드만 보여주면 개별쌍 규칙에만 걸린 혜택이 '-' 로 나와서,
-                    중복수혜 필터로 걸러낸 목록인데도 아무 표시가 없는 행이 생긴다.
-                    엔진의 처리 방식이 다르므로 합치지 않고 넷으로 나눠 보여준다.
-                  -->
-                  <td>
-                    <div v-if="hasRule(b)" class="d-flex flex-wrap gap-1">
-                      <span v-if="b.conflictGroupCode"
-                            class="badge rule rule-group"
-                            title="같은 그룹 코드가 붙은 혜택끼리는 하나만 받을 수 있습니다">
-                        {{ b.conflictGroupCode }}
-                      </span>
-                      <span v-if="b.pairRuleCount > 0"
-                            class="badge rule rule-pair"
-                            title="다른 혜택과 짝으로 등록된 규칙입니다. 엔진이 후보에서 빼거나 점수를 깎습니다">
-                        개별 {{ b.pairRuleCount }}
-                      </span>
-                      <span v-if="b.externalRuleCount > 0"
-                            class="badge rule rule-external"
-                            title="상대가 온통청년 정책이 아니라 우리 DB에 없습니다. 회원이 받고 있는지 알 수 없어 안내만 하고 점수는 건드리지 않습니다">
-                        외부 {{ b.externalRuleCount }}
-                      </span>
-                      <span v-if="b.reviewRuleCount > 0"
-                            class="badge rule rule-review"
-                            title="아직 공고문으로 확인되지 않은 규칙입니다. 엔진은 무시하며 관리자가 검수해야 합니다">
-                        검수 {{ b.reviewRuleCount }}
-                      </span>
-                    </div>
-                    <span v-else class="text-muted small">-</span>
-                  </td>
-
-                  <td>
-                    <div class="d-flex gap-1">
-                    <button class="btn btn-xs btn-outline-secondary"
-                            @click="openDetail(b.benefitNo)">상세</button>
-
-                    <!-- 원천에서 사라진 정책은 켜도 보여줄 내용이 없으므로 잠근다 -->
-                    <button v-if="b.apiDeletedYn === 'Y'"
-                            class="btn btn-xs btn-outline-secondary" disabled
-                            title="온통청년에서 삭제된 정책이라 노출할 수 없습니다">
-                      삭제됨
-                    </button>
-                    <button v-else class="btn btn-xs"
-                            :class="b.effectiveStatus === 'Y' ? 'btn-outline-danger' : 'btn-outline-success'"
+                <th>중복수혜</th>
+                <th class="a-r">관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="b in data.benefits" :key="b.benefitNo">
+                <!--
+                  상태는 세 컬럼이 겹쳐 있어 서버가 하나로 합쳐 내려준다.
+                  관리자가 직접 지정한 경우에는 원본과 다르다는 것을 알려야
+                  '왜 API 값과 다르지'를 바로 판단할 수 있고,
+                  되돌릴 방법도 같은 자리에 있어야 관리가 된다.
+                -->
+                <td>
+                  <span class="a-bdg a-bdg-fix" :class="statusBadge(b)">
+                    <span class="a-dot">{{ statusMark(b) }}</span>{{ statusText(b) }}
+                  </span>
+                  <div v-if="b.adminIsActive && b.apiDeletedYn !== 'Y'" class="t-mark">
+                    관리자 지정
+                    <button class="t-clear"
                             :disabled="togglingNo === b.benefitNo"
-                            @click="askToggle(b)">
-                      {{ b.effectiveStatus === 'Y' ? '비활성화' : '활성화' }}
-                    </button>
-                    </div>
-                  </td>
-                </tr>
+                            title="지정을 해제하고 다시 온통청년 값을 따릅니다"
+                            @click="askClear(b)">해제</button>
+                  </div>
+                </td>
 
-                <tr v-if="data.benefits.length === 0">
-                  <td colspan="8" class="text-center text-muted small py-5">
+                <!-- 카테고리는 별도 열이 아니라 이름 아래에 둔다.
+                     색으로 나누면 정해둔 다섯 가지 뜻 밖의 색이 늘어난다 -->
+                <td>
+                  <div class="a-t-name">{{ b.plcyNm }}</div>
+                  <div class="a-t-sub">{{ categoryName(b.categoryCode) }}</div>
+                </td>
+
+                <td class="a-dim">{{ b.sprvsnInstCdNm }}</td>
+
+                <!-- D-day는 남은 기간이라 언제 끝나는지는 알 수 없다.
+                     상세를 열지 않아도 판단할 수 있게 날짜를 같이 보여준다. -->
+                <td>
+                  <span class="a-bdg" :class="ddayBadge(b)">{{ deadlineText(b) }}</span>
+                  <div v-if="b.applyEndDate" class="a-t-sub a-num">
+                    {{ formatDate(b.applyEndDate) }}
+                  </div>
+                </td>
+
+                <td class="a-r a-num" :class="numClass(b.inqCnt)">
+                  {{ (b.inqCnt ?? 0).toLocaleString() }}
+                </td>
+
+                <!--
+                  그룹 코드만 보여주면 개별쌍 규칙에만 걸린 혜택이 '-' 로 나와서,
+                  중복수혜 필터로 걸러낸 목록인데도 아무 표시가 없는 행이 생긴다.
+                  엔진의 처리 방식이 다르므로 합치지 않고 넷으로 나눠 보여준다.
+                -->
+                <td>
+                  <div v-if="hasRule(b)" class="t-rules">
+                    <span v-if="b.conflictGroupCode"
+                          class="a-bdg a-bdg-mute"
+                          title="같은 그룹 코드가 붙은 혜택끼리는 하나만 받을 수 있습니다">
+                      {{ b.conflictGroupCode }}
+                    </span>
+                    <span v-if="b.pairRuleCount > 0"
+                          class="a-bdg a-bdg-info"
+                          title="다른 혜택과 짝으로 등록된 규칙입니다. 엔진이 후보에서 빼거나 점수를 깎습니다">
+                      개별 {{ b.pairRuleCount }}
+                    </span>
+                    <span v-if="b.externalRuleCount > 0"
+                          class="a-bdg a-bdg-warn"
+                          title="상대가 온통청년 정책이 아니라 우리 DB에 없습니다. 회원이 받고 있는지 알 수 없어 안내만 하고 점수는 건드리지 않습니다">
+                      외부 {{ b.externalRuleCount }}
+                    </span>
+                    <span v-if="b.reviewRuleCount > 0"
+                          class="a-bdg a-bdg-plain a-bdg-dash"
+                          title="아직 공고문으로 확인되지 않은 규칙입니다. 엔진은 무시하며 관리자가 검수해야 합니다">
+                      검수 {{ b.reviewRuleCount }}
+                    </span>
+                  </div>
+                  <span v-else class="a-none">—</span>
+                </td>
+
+                <td class="a-t-act">
+                  <button class="a-btn a-btn-xs a-btn-dark a-btn-fix-sm"
+                          @click="openDetail(b.benefitNo)">상세</button>
+
+                  <!-- 원천에서 사라진 정책은 켜도 보여줄 내용이 없으므로 잠근다 -->
+                  <button v-if="b.apiDeletedYn === 'Y'"
+                          class="a-btn a-btn-xs a-btn-fix-sm" disabled
+                          title="온통청년에서 삭제된 정책이라 노출할 수 없습니다">
+                    잠김
+                  </button>
+                  <button v-else class="a-btn a-btn-xs a-btn-quiet a-btn-fix-sm"
+                          :disabled="togglingNo === b.benefitNo"
+                          @click="askToggle(b)">
+                    {{ b.effectiveStatus === 'Y' ? '비활성화' : '활성화' }}
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="data.benefits.length === 0">
+                <td colspan="7">
+                  <div class="a-empty">
                     조건에 맞는 혜택이 없습니다. 검색어나 필터를 바꿔보세요.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <!-- 페이지네이션 -->
-          <nav v-if="data.totalPages > 1" class="mt-3">
-            <ul class="pagination pagination-sm justify-content-center mb-0">
-              <li class="page-item" :class="{ disabled: data.page <= 1 }">
-                <button class="page-link" @click="goPage(data.page - 1)">이전</button>
-              </li>
-              <li v-for="p in pageNumbers" :key="p"
-                  class="page-item" :class="{ active: p === data.page }">
-                <button class="page-link" @click="goPage(p)">{{ p }}</button>
-              </li>
-              <li class="page-item" :class="{ disabled: data.page >= data.totalPages }">
-                <button class="page-link" @click="goPage(data.page + 1)">다음</button>
-              </li>
-            </ul>
-          </nav>
-        </template>
-      </div>
-    </div>
-
-    <!-- 상태 변경 확인 -->
-    <div v-if="pendingToggle" class="modal-backdrop-custom" @click.self="pendingToggle = null">
-      <div class="modal-box">
-        <h6 class="fw-bold mb-3">
-          {{ pendingToggle.effectiveStatus === 'Y' ? '비활성화할까요?' : '다시 활성화할까요?' }}
-        </h6>
-        <p class="small mb-2">{{ pendingToggle.plcyNm }}</p>
-        <p class="small text-muted mb-4">
-          <template v-if="pendingToggle.effectiveStatus === 'Y'">
-            비활성화하면 추천 대상에서 제외됩니다. 데이터는 삭제되지 않습니다.
-          </template>
-          <template v-else>
-            다시 추천 대상에 포함됩니다.
-          </template>
-          <span class="d-block mt-2">
-            지정한 상태는 원본과 별도로 저장되므로 동기화를 실행해도 유지됩니다.
+        <!--
+          페이지 이동.
+          137페이지짜리 목록에서 번호를 직접 누르는 경우는 거의 없다.
+          지금 어디인지와 앞뒤로 옮기는 것만 남긴다.
+        -->
+        <div v-if="data.totalCount > 0" class="a-pager">
+          <span>
+            전체 <b class="a-num">{{ data.totalCount.toLocaleString() }}</b>건 중
+            <span class="a-num">{{ rangeText }}</span> 표시
           </span>
-        </p>
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-sm btn-outline-secondary" @click="pendingToggle = null">취소</button>
-          <button class="btn btn-sm btn-dark" @click="confirmToggle">확인</button>
+          <div class="a-pager-grp">
+            <span>
+              <b class="a-num">{{ data.page }}</b>
+              <span class="t-slash">/</span>
+              <span class="a-num">{{ data.totalPages }}</span>
+            </span>
+            <button class="a-pg" :disabled="data.page <= 1"
+                    @click="goPage(data.page - 1)">‹</button>
+            <button class="a-pg" :disabled="data.page >= data.totalPages"
+                    @click="goPage(data.page + 1)">›</button>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <!-- 지정 해제 확인 -->
-    <div v-if="pendingClear" class="modal-backdrop-custom" @click.self="pendingClear = null">
-      <div class="modal-box">
-        <h6 class="fw-bold mb-3">관리자 지정을 해제할까요?</h6>
-        <p class="small mb-2">{{ pendingClear.plcyNm }}</p>
-        <p class="small text-muted mb-4">
-          해제하면 이 정책은 다시 온통청년이 내려주는 상태를 따릅니다.
-          다음 동기화에서 상태가 바뀔 수 있습니다.
-        </p>
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-sm btn-outline-secondary" @click="pendingClear = null">취소</button>
-          <button class="btn btn-sm btn-dark" @click="confirmClear">해제</button>
-        </div>
-      </div>
+      </template>
     </div>
 
     <!-- 상세 -->
-    <div v-if="detail" class="modal-backdrop-custom" @click.self="closeDetail">
-      <div class="modal-box modal-wide">
-        <div class="d-flex justify-content-between align-items-start mb-3">
+    <div v-if="detail" class="a-modal-back" @click.self="closeDetail">
+      <div class="a-modal a-modal-wide">
+        <div class="a-modal-h">
           <div>
-            <span class="badge cat me-1" :class="categoryClass(detail.categoryCode)">
-              {{ categoryName(detail.categoryCode) }}
-            </span>
-            <span class="badge" :class="statusBadge(detail)">
-              {{ statusText(detail) }}
-            </span>
-            <span v-if="detail.adminIsActive && detail.apiDeletedYn !== 'Y'"
-                  class="badge rule rule-custom ms-1"
-                  title="관리자가 지정한 상태입니다">지정값</span>
-            <h6 class="fw-bold mt-2 mb-0">{{ detail.plcyNm }}</h6>
-            <small class="text-muted">{{ detail.sprvsnInstCdNm }}</small>
+            <div class="d-badges">
+              <span class="a-bdg a-bdg-plain">{{ categoryName(detail.categoryCode) }}</span>
+              <span class="a-bdg" :class="statusBadge(detail)">
+                <span class="a-dot">{{ statusMark(detail) }}</span>{{ statusText(detail) }}
+              </span>
+              <span v-if="detail.adminIsActive && detail.apiDeletedYn !== 'Y'"
+                    class="a-bdg a-bdg-ok"
+                    title="관리자가 지정한 상태입니다">지정값</span>
+            </div>
+            <div class="a-modal-t">{{ detail.plcyNm }}</div>
+            <div class="a-t-sub">{{ detail.sprvsnInstCdNm }}</div>
           </div>
-          <button class="btn-close" @click="closeDetail"></button>
+          <button class="a-modal-x" @click="closeDetail">✕</button>
         </div>
 
-        <!-- 원천에서 사라진 정책은 왜 안 보이는지가 가장 먼저 필요한 정보다 -->
-        <div v-if="detail.apiDeletedYn === 'Y'" class="alert alert-danger py-2 px-3 small mb-3">
-          온통청년 오픈 API에서 더 이상 제공되지 않아
-          {{ formatDate(detail.apiDeletedDt) }}에 삭제 처리되었습니다.
-          데이터는 지워지지 않았으며 다시 제공되면 자동으로 복구됩니다.
-        </div>
-
-        <!--
-          관리자 지정이 있으면 온통청년 원본과 무엇이 다른지 보여준다.
-          목록에는 '관리자 지정'만 나오는데, 관리자가 실제로 알아야 할 것은
-          '지금 API는 뭐라고 하는가'다. 두 값이 같아지면 자동으로 해제되므로
-          이 배너는 아직 API가 관리자 판단을 따라오지 않았다는 뜻이기도 하다.
-        -->
-        <div v-else-if="detail.adminIsActive" class="alert alert-warning py-2 px-3 small mb-3">
-          온통청년은 이 정책을
-          <strong>{{ detail.apiIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 주고 있으나,
-          관리자가
-          <strong>{{ detail.adminIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 지정해 두었습니다.
-          온통청년 값이 같아지면 지정은 자동으로 해제됩니다.
-        </div>
-
-        <dl class="row small mb-0">
-          <dt class="col-4 col-md-3 text-muted fw-normal">혜택번호</dt>
-          <dd class="col-8 col-md-9">{{ detail.plcyNo }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">신청 기간</dt>
-          <dd class="col-8 col-md-9">{{ periodText(detail) }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">연령</dt>
-          <dd class="col-8 col-md-9">{{ ageText(detail) }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">소득 조건</dt>
-          <dd class="col-8 col-md-9">
-            {{ incomeText(detail) }}
-            <div v-if="detail.earnEtcCn" class="text-muted mt-1">{{ detail.earnEtcCn }}</div>
-          </dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">지역 매핑</dt>
-          <dd class="col-8 col-md-9">
-            {{ detail.regionCount?.toLocaleString() }}개 지역
-            <span v-if="detail.regionCount > 200" class="text-warning-emphasis">
-              · 전국 코드가 부여된 혜택입니다
-            </span>
-          </dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">중복수혜 그룹</dt>
-          <dd class="col-8 col-md-9">{{ detail.conflictGroupCode || '없음' }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">조회수</dt>
-          <dd class="col-8 col-md-9">{{ (detail.inqCnt ?? 0).toLocaleString() }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">등록일</dt>
-          <dd class="col-8 col-md-9">{{ formatDate(detail.frstRegDt) }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">지원 내용</dt>
-          <dd class="col-8 col-md-9">{{ detail.plcySprtCn || '-' }}</dd>
-
-          <dt class="col-4 col-md-3 text-muted fw-normal">신청 방법</dt>
-          <dd class="col-8 col-md-9 mb-0">{{ detail.plcyAplyMthdCn || '-' }}</dd>
-        </dl>
-
-        <!--
-          신청 링크 관리.
-          원본·참고·지정값을 함께 보여주는 이유는, 원본이 비어 있거나 잘못된 값인 경우가
-          많아서 '왜 바꿔야 했는지'가 화면에서 바로 보여야 하기 때문이다.
-          원본은 지우지 않으므로 지정을 해제하면 언제든 되돌아간다.
-        -->
-        <div class="url-box mt-4">
-          <div class="d-flex justify-content-between align-items-baseline mb-2">
-            <div class="fw-bold small">신청 링크</div>
-            <small class="text-muted">동기화해도 지정값은 유지됩니다</small>
+        <div class="a-modal-b">
+          <!-- 원천에서 사라진 정책은 왜 안 보이는지가 가장 먼저 필요한 정보다 -->
+          <div v-if="detail.apiDeletedYn === 'Y'" class="a-notice a-notice-dngr mb-3">
+            <div>
+              <b>온통청년에서 더 이상 제공되지 않습니다.</b>
+              {{ formatDate(detail.apiDeletedDt) }}에 삭제 처리되었습니다.
+              데이터는 지워지지 않았으며 다시 제공되면 자동으로 복구됩니다.
+            </div>
           </div>
 
-          <div class="url-row">
-            <span class="url-label">원본</span>
-            <span v-if="originText" class="url-value">{{ originText }}</span>
-            <span v-else class="url-value text-muted">비어 있음 (온통청년이 값을 주지 않음)</span>
+          <!--
+            관리자 지정이 있으면 온통청년 원본과 무엇이 다른지 보여준다.
+            목록에는 '관리자 지정'만 나오는데, 관리자가 실제로 알아야 할 것은
+            '지금 API는 뭐라고 하는가'다. 두 값이 같아지면 자동으로 해제되므로
+            이 배너는 아직 API가 관리자 판단을 따라오지 않았다는 뜻이기도 하다.
+          -->
+          <div v-else-if="detail.adminIsActive" class="a-notice mb-3">
+            <div>
+              <b>온통청년 값과 다릅니다.</b>
+              온통청년은 이 정책을
+              <strong>{{ detail.apiIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 주고 있으나,
+              관리자가
+              <strong>{{ detail.adminIsActive === 'Y' ? '활성' : '비활성' }}</strong>으로 지정해 두었습니다.
+              온통청년 값이 같아지면 지정은 자동으로 해제됩니다.
+            </div>
           </div>
 
-          <div class="url-row">
-            <span class="url-label">참고</span>
-            <span v-if="refText" class="url-value">{{ refText }}</span>
-            <span v-else class="url-value text-muted">없음</span>
-          </div>
+          <dl class="a-dl">
+            <div class="a-dl-row">
+              <span class="a-dl-k">혜택번호</span>
+              <span class="a-dl-v a-num">{{ detail.plcyNo }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">신청 기간</span>
+              <span class="a-dl-v">{{ periodText(detail) }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">연령</span>
+              <span class="a-dl-v">{{ ageText(detail) }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">소득 조건</span>
+              <span class="a-dl-v">
+                {{ incomeText(detail) }}
+                <div v-if="detail.earnEtcCn" class="a-t-sub">{{ detail.earnEtcCn }}</div>
+              </span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">지역 매핑</span>
+              <span class="a-dl-v">
+                <span class="a-num">{{ detail.regionCount?.toLocaleString() }}</span>개 지역
+                <span v-if="detail.regionCount > 200" class="d-note">
+                  · 전국 코드가 부여된 혜택입니다
+                </span>
+              </span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">중복수혜 그룹</span>
+              <span class="a-dl-v">{{ detail.conflictGroupCode || '없음' }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">조회수</span>
+              <span class="a-dl-v a-num">{{ (detail.inqCnt ?? 0).toLocaleString() }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">등록일</span>
+              <span class="a-dl-v a-num">{{ formatDate(detail.frstRegDt) }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">지원 내용</span>
+              <span class="a-dl-v">{{ detail.plcySprtCn || '-' }}</span>
+            </div>
+            <div class="a-dl-row">
+              <span class="a-dl-k">신청 방법</span>
+              <span class="a-dl-v">{{ detail.plcyAplyMthdCn || '-' }}</span>
+            </div>
+          </dl>
 
-          <div class="url-row">
-            <span class="url-label">사용자 노출</span>
-            <span v-if="effectiveUrl" class="url-value">
-              {{ effectiveUrl }}
-              <span v-if="detail.customApplyUrl" class="badge rule rule-custom ms-1">지정값</span>
-              <span v-else-if="!originText && refText" class="badge rule rule-external ms-1">참고</span>
-            </span>
-            <span v-else class="url-value text-danger">
-              없음 — 사용자 화면에서 신청 버튼이 비활성됩니다
-            </span>
-          </div>
+          <!--
+            신청 링크 관리.
+            원본·참고·지정값을 함께 보여주는 이유는, 원본이 비어 있거나 잘못된 값인 경우가
+            많아서 '왜 바꿔야 했는지'가 화면에서 바로 보여야 하기 때문이다.
+            원본은 지우지 않으므로 지정을 해제하면 언제든 되돌아간다.
+          -->
+          <div class="d-url">
+            <div class="d-url-h">
+              <b>신청 링크</b>
+              <span class="a-t-sub">동기화해도 지정값은 유지됩니다</span>
+            </div>
 
-          <div class="d-flex gap-2 mt-3">
-            <input v-model="urlDraft" type="text"
-                   class="form-control form-control-sm"
-                   placeholder="https:// 로 시작하는 주소"
-                   :disabled="urlSaving"
-                   @keyup.enter="saveCustomUrl" />
-            <button class="btn btn-sm btn-dark px-3"
-                    :disabled="urlSaving"
-                    @click="saveCustomUrl">지정</button>
-            <button class="btn btn-sm btn-outline-secondary px-3"
-                    :disabled="urlSaving || !detail.customApplyUrl"
-                    @click="clearCustomUrl">해제</button>
-          </div>
+            <div class="d-url-row">
+              <span class="d-url-k">원본</span>
+              <span v-if="originText" class="d-url-v">{{ originText }}</span>
+              <span v-else class="d-url-v a-none">비어 있음 (온통청년이 값을 주지 않음)</span>
+            </div>
 
-          <div v-if="urlError" class="alert alert-danger py-2 px-3 small mt-2 mb-0">
-            {{ urlError }}
-          </div>
-          <div v-else-if="urlMessage" class="alert alert-success py-2 px-3 small mt-2 mb-0">
-            {{ urlMessage }}
+            <div class="d-url-row">
+              <span class="d-url-k">참고</span>
+              <span v-if="refText" class="d-url-v">{{ refText }}</span>
+              <span v-else class="d-url-v a-none">없음</span>
+            </div>
+
+            <div class="d-url-row">
+              <span class="d-url-k">사용자 노출</span>
+              <span v-if="effectiveUrl" class="d-url-v">
+                {{ effectiveUrl }}
+                <span v-if="detail.customApplyUrl" class="a-bdg a-bdg-ok">지정값</span>
+                <span v-else-if="!originText && refText" class="a-bdg a-bdg-warn">참고</span>
+              </span>
+              <span v-else class="d-url-v d-none">
+                없음 — 사용자 화면에서 신청 버튼이 비활성됩니다
+              </span>
+            </div>
+
+            <div class="d-url-form">
+              <input v-model="urlDraft" type="text"
+                     placeholder="https:// 로 시작하는 주소"
+                     :disabled="urlSaving"
+                     @keyup.enter="saveCustomUrl" />
+              <button class="a-btn a-btn-dark a-btn-fix"
+                      :disabled="urlSaving"
+                      @click="saveCustomUrl">지정</button>
+              <button class="a-btn a-btn-fix"
+                      :disabled="urlSaving || !detail.customApplyUrl"
+                      @click="clearCustomUrl">해제</button>
+            </div>
+
+            <!-- 입력 오류와 결과는 입력칸 바로 아래에 둔다.
+                 토스트로 띄우면 무엇을 고쳐야 하는지와 떨어진다 -->
+            <div v-if="urlError" class="a-notice a-notice-dngr mt-2">
+              <div>{{ urlError }}</div>
+            </div>
+            <div v-else-if="urlMessage" class="a-notice a-notice-ok mt-2">
+              <div>{{ urlMessage }}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -467,6 +444,18 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import adminApi from '@/api/adminApi';
+import { useAdminDialog } from '@/composables/useAdminDialog';
+
+/*
+ * 확인창과 알림은 관리자 화면 공용 상자를 쓴다.
+ *
+ * 예전에는 이 화면이 자체 모달 두 개를 갖고 있었다. 동작은 문제없었지만
+ * 화면마다 확인창 생김새가 달라 관리자가 매번 다시 읽어야 했다.
+ *
+ * 그리고 상태 변경이 실패하면 loadError 에 담아 목록 맨 위에 띄웠다.
+ * 표 아래쪽 버튼을 누른 경우 화면 밖이라 보이지 않았다.
+ */
+const { toastSuccess, toastError, confirmDialog } = useAdminDialog();
 
 const route = useRoute();
 
@@ -522,8 +511,6 @@ const loading = ref(false);
 const loadError = ref('');
 const data = ref(null);
 const detail = ref(null);
-const pendingToggle = ref(null);
-const pendingClear = ref(null);
 const togglingNo = ref(null);
 
 // 신청 링크 지정
@@ -553,18 +540,15 @@ const effectiveUrl = computed(() => {
       || refText.value;
 });
 
-// 현재 페이지 주변 최대 5개만 노출한다
-const pageNumbers = computed(() => {
-  if (!data.value) return [];
-  const total = data.value.totalPages;
-  const cur = data.value.page;
-  let start = Math.max(1, cur - 2);
-  const end = Math.min(total, start + 4);
-  start = Math.max(1, end - 4);
-
-  const list = [];
-  for (let i = start; i <= end; i++) list.push(i);
-  return list;
+/*
+ * 지금 몇 번째부터 몇 번째를 보고 있는지.
+ * 페이지 번호만 있으면 '3페이지'가 전체에서 어디쯤인지 감이 오지 않는다.
+ */
+const rangeText = computed(() => {
+  if (!data.value || data.value.totalCount === 0) return '';
+  const start = (data.value.page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(data.value.page * PAGE_SIZE, data.value.totalCount);
+  return `${start}–${end}`;
 });
 
 async function load(page = 1) {
@@ -672,7 +656,7 @@ async function openDetail(benefitNo) {
     urlError.value = '';
     urlMessage.value = '';
   } catch (e) {
-    loadError.value = '혜택 상세를 불러오지 못했습니다.';
+    toastError('혜택 상세를 불러오지 못했습니다.');
     console.error(e);
   }
 }
@@ -740,16 +724,26 @@ async function applyCustomUrl(value, successMessage) {
   }
 }
 
-// 되돌릴 수 있는 작업이지만 추천 결과가 즉시 달라지므로 한 번 확인한다
-function askToggle(benefit) {
-  pendingToggle.value = benefit;
-}
+/**
+ * 노출 상태 변경.
+ * 되돌릴 수 있는 작업이지만 추천 결과가 즉시 달라지므로 한 번 확인한다.
+ */
+async function askToggle(b) {
+  const turningOff = b.effectiveStatus === 'Y';
 
-async function confirmToggle() {
-  const b = pendingToggle.value;
-  const next = b.effectiveStatus === 'Y' ? 'N' : 'Y';
+  const ok = await confirmDialog({
+    title: turningOff ? '비활성화할까요?' : '다시 활성화할까요?',
+    message: b.plcyNm,
+    detail: turningOff
+      ? '비활성화하면 추천 대상에서 제외됩니다. 데이터는 삭제되지 않습니다.\n'
+        + '지정한 상태는 원본과 별도로 저장되므로 동기화를 실행해도 유지됩니다.'
+      : '다시 추천 대상에 포함됩니다.\n'
+        + '지정한 상태는 원본과 별도로 저장되므로 동기화를 실행해도 유지됩니다.',
+    confirmText: turningOff ? '비활성화' : '활성화',
+  });
+  if (!ok) return;
 
-  pendingToggle.value = null;
+  const next = turningOff ? 'N' : 'Y';
   togglingNo.value = b.benefitNo;
 
   try {
@@ -762,23 +756,34 @@ async function confirmToggle() {
     b.adminIsActive = updated.adminIsActive;
     b.apiIsActive = updated.apiIsActive;
     b.effectiveStatus = updated.effectiveStatus;
+
+    toastSuccess(
+      updated.effectiveStatus === 'Y'
+        ? '활성으로 바꿨습니다. 추천 대상에 포함됩니다.'
+        : '비활성으로 바꿨습니다. 추천 대상에서 제외됩니다.'
+    );
   } catch (e) {
-    loadError.value = '상태 변경에 실패했습니다.';
+    toastError('상태 변경에 실패했습니다.');
     console.error(e);
   } finally {
     togglingNo.value = null;
   }
 }
 
-// 해제하면 다음 동기화에서 상태가 바뀔 수 있으므로 한 번 확인한다
-function askClear(benefit) {
-  pendingClear.value = benefit;
-}
+/**
+ * 관리자 지정 해제.
+ * 해제하면 다음 동기화에서 상태가 바뀔 수 있으므로 한 번 확인한다.
+ */
+async function askClear(b) {
+  const ok = await confirmDialog({
+    title: '관리자 지정을 해제할까요?',
+    message: b.plcyNm,
+    detail: '해제하면 이 정책은 다시 온통청년이 내려주는 상태를 따릅니다.\n'
+          + '다음 동기화에서 상태가 바뀔 수 있습니다.',
+    confirmText: '해제',
+  });
+  if (!ok) return;
 
-async function confirmClear() {
-  const b = pendingClear.value;
-
-  pendingClear.value = null;
   togglingNo.value = b.benefitNo;
 
   try {
@@ -788,15 +793,17 @@ async function confirmClear() {
     b.adminIsActive = updated.adminIsActive;
     b.apiIsActive = updated.apiIsActive;
     b.effectiveStatus = updated.effectiveStatus;
+
+    toastSuccess('지정을 해제했습니다. 다시 온통청년 값을 따릅니다.');
   } catch (e) {
-    loadError.value = '지정 해제에 실패했습니다.';
+    toastError('지정 해제에 실패했습니다.');
     console.error(e);
   } finally {
     togglingNo.value = null;
   }
 }
 
-// 네 종류 중 하나라도 있으면 배지 영역을, 하나도 없으면 '-' 를 보여준다
+// 네 종류 중 하나라도 있으면 배지 영역을, 하나도 없으면 '—' 를 보여준다
 function hasRule(b) {
   return !!b.conflictGroupCode
       || b.pairRuleCount > 0
@@ -808,27 +815,33 @@ function categoryName(code) {
   return CATEGORY[code] || '기타';
 }
 
-// 카테고리를 색으로 구분해 목록에서 한눈에 묶이도록 한다
-function categoryClass(code) {
-  return `cat-${CATEGORY[code] ? code : 'etc'}`;
-}
-
 /**
  * 최종 노출 상태의 색과 문구.
  * 세 컬럼(api_deleted_yn · admin_is_active · is_active)을 서버가 합쳐
  * effectiveStatus 하나로 내려주므로 화면은 그것만 본다.
- * 화면이 직접 계산하면 서버의 우선순위와 어긋날 수 있다.
  */
 function statusBadge(b) {
-  if (b.effectiveStatus === 'D') return 'bg-danger-subtle text-danger';
-  return b.effectiveStatus === 'Y'
-    ? 'bg-success-subtle text-success'
-    : 'bg-secondary-subtle text-secondary';
+  if (b.effectiveStatus === 'D') return 'a-bdg-dngr';
+  return b.effectiveStatus === 'Y' ? 'a-bdg-ok' : 'a-bdg-mute';
+}
+
+/*
+ * 색과 함께 형태도 같이 실어준다.
+ * 색만으로 구분하면 색약인 사람과 흑백 인쇄에서 활성·비활성이 같아 보인다.
+ */
+function statusMark(b) {
+  if (b.effectiveStatus === 'D') return '✕';
+  return b.effectiveStatus === 'Y' ? '●' : '○';
 }
 
 function statusText(b) {
-  if (b.effectiveStatus === 'D') return 'API 삭제';
+  if (b.effectiveStatus === 'D') return '삭제';
   return b.effectiveStatus === 'Y' ? '활성' : '비활성';
+}
+
+// 값이 0이면 흐리게 뺀다
+function numClass(v) {
+  return Number(v || 0) === 0 ? 'a-zero' : 'a-val';
 }
 
 // apply_end_date가 NULL인 경우가 상시모집(0057002)과 마감(0057003) 두 가지라
@@ -843,13 +856,20 @@ function deadlineText(b) {
   return `D-${b.dday}`;
 }
 
-function ddayTone(b) {
-  if (b.aplyPrdSeCd === '0057003') return 'text-muted';
-  if (b.dday === null || b.dday === undefined) return 'text-muted';
-  if (b.dday < 0) return 'text-muted';
-  if (b.dday <= 3) return 'text-danger fw-semibold';
-  if (b.dday <= 7) return 'text-warning-emphasis';
-  return '';
+/*
+ * 마감 임박의 색.
+ *
+ * 예전에는 3일 이내를 빨강으로 칠했다. 빨강은 되돌릴 수 없는 것(삭제)에만
+ * 쓰기로 했으므로 여기서는 쓰지 않는다. 마감은 시간이 지나면 저절로 오는 것이지
+ * 관리자가 잘못한 것이 아니다.
+ */
+function ddayBadge(b) {
+  if (b.aplyPrdSeCd === '0057003') return 'a-bdg-mute';
+  if (b.aplyPrdSeCd === '0057002') return 'a-bdg-plain';
+  if (b.dday === null || b.dday === undefined) return 'a-bdg-plain';
+  if (b.dday < 0) return 'a-bdg-mute';
+  if (b.dday <= 7) return 'a-bdg-warn';
+  return 'a-bdg-plain';
 }
 
 function periodText(d) {
@@ -896,150 +916,125 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.table td { word-break: keep-all; }
+.mb-3 { margin-bottom: 14px; }
+.mt-2 { margin-top: 10px; }
 
-/* 정렬 가능한 컬럼임을 알린다 */
-.sortable {
-  cursor: pointer;
-  user-select: none;
-  white-space: nowrap;
+/* ---- 필터 ---- */
+.f-top {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 18px;
 }
 
-.sortable:hover { color: #2e2a24; }
+.f-ico { color: var(--a-c400); }
 
-.sort-mark {
-  font-size: 10px;
-  opacity: 0.55;
-  margin-left: 2px;
+.f-legend {
+  margin-top: 16px;
+  line-height: 2.1;
 }
 
-/* 목록 안의 조작 버튼. 행 높이를 키우지 않도록 부트스트랩 btn-sm 보다 작게 둔다 */
-.btn-xs {
-  padding: 2px 8px;
-  font-size: 12px;
-  line-height: 1.6;
-  border-radius: 6px;
-  white-space: nowrap;
+.f-sep {
+  margin: 0 7px;
+  color: var(--a-c300);
 }
+
+/* ---- 표 ---- */
+/* 열이 많아 좁은 창에서는 표만 가로로 흐르게 한다.
+   화면 전체가 흔들리면 사이드바까지 밀린다 */
+.t-wrap { overflow-x: auto; }
+
+.a-tbl td { word-break: keep-all; }
+
+.t-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.t-slash { color: var(--a-c300); margin: 0 2px; }
 
 /* 관리자가 지정한 상태임을 배지 아래 작게 알리고 되돌릴 길을 함께 둔다 */
-.admin-mark {
-  font-size: 10px;
-  color: #8a857c;
-  margin-top: 3px;
+.t-mark {
+  font-size: var(--a-t-cap);
+  color: var(--a-c400);
+  margin-top: 4px;
   white-space: nowrap;
 }
 
-.clear-link {
+.t-clear {
   border: 0;
   background: none;
   padding: 0 0 0 5px;
-  font-size: 10px;
-  color: #8a857c;
+  font-family: var(--a-font);
+  font-size: var(--a-t-cap);
+  color: var(--a-c400);
   text-decoration: underline;
   cursor: pointer;
 }
 
-.clear-link:hover { color: #2e2a24; }
-.clear-link:disabled { opacity: .4; cursor: default; }
+.t-clear:hover { color: var(--a-c900); }
+.t-clear:disabled { opacity: 0.4; cursor: default; }
 
-/* 카테고리 색상 — 목록에서 같은 분야가 한눈에 묶이도록 한다 */
-.cat {
-  border: 1px solid transparent;
-  font-weight: 600;
-}
+/* ---- 상세 ---- */
+.d-badges { display: flex; gap: 5px; flex-wrap: wrap; }
 
-.cat-1 { background-color: #e8f0fe; color: #1a56c4; border-color: #cfe0fb; }  /* 일자리 */
-.cat-2 { background-color: #e6f5ec; color: #1e7a45; border-color: #c9e8d6; }  /* 주거 */
-.cat-3 { background-color: #f0e9fb; color: #6b3fa0; border-color: #ddd0f4; }  /* 교육 */
-.cat-4 { background-color: #fff2d6; color: #98701a; border-color: #f7e2b0; }  /* 복지·문화 */
-.cat-5 { background-color: #e3f4f4; color: #16706e; border-color: #c7e8e7; }  /* 참여·권리 */
-.cat-etc { background-color: #efece4; color: #6f6860; border-color: #e2ddd2; }
+.d-note { color: var(--a-warn); }
 
-/*
-  중복수혜 규칙 배지.
-  카테고리 배지와 같은 줄에 놓이므로 채도를 낮춰 카테고리 쪽이 먼저 읽히게 한다.
-  검수만 점선 테두리를 쓰는데, '아직 확정되지 않았다'를 색이 아니라
-  형태로 구분하면 색약인 사용자도 구분할 수 있다.
-*/
-.rule {
-  border: 1px solid transparent;
-  font-weight: 600;
-  font-size: 11px;
-  cursor: help;
-}
-
-.rule-group    { background-color: #eceff4; color: #414a58; border-color: #d6dbe4; }
-.rule-pair     { background-color: #fdecec; color: #a83232; border-color: #f5d2d2; }
-.rule-external { background-color: #fdf0e0; color: #9a5f16; border-color: #f2ddbe; }
-.rule-review   { background-color: #fff;    color: #7a736a; border-color: #b9b2a8; border-style: dashed; }
-.rule-custom   { background-color: #e6f5ec; color: #1e7a45; border-color: #c9e8d6; cursor: default; }
-
-/* 배지 뜻풀이 줄 */
-.rule-legend {
-  font-size: 12px;
-  color: #6f6860;
-  line-height: 2;
-}
-
-.rule-legend .sep {
-  margin: 0 6px;
-  color: #cfc9bf;
-}
-
-/* 신청 링크 관리 영역 */
-.url-box {
-  background: #faf9f6;
-  border: 1px solid #e8e4da;
-  border-radius: 10px;
+.d-url {
+  margin-top: 20px;
+  background: var(--a-c50);
+  border: var(--a-bd);
+  border-radius: var(--a-r);
   padding: 16px;
 }
 
-.url-row {
+.d-url-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.d-url-row {
   display: flex;
   gap: 10px;
-  font-size: 12px;
-  line-height: 1.7;
+  font-size: var(--a-t-sm);
+  line-height: 1.8;
 }
 
-.url-label {
-  flex: 0 0 72px;
-  color: #908980;
+.d-url-k {
+  flex: 0 0 76px;
+  color: var(--a-c500);
 }
 
-/* 긴 주소가 모달 폭을 밀어내지 않도록 강제로 줄바꿈한다 */
-.url-value {
+/* 긴 주소가 상자 폭을 밀어내지 않도록 강제로 줄바꿈한다 */
+.d-url-v {
   flex: 1 1 auto;
   word-break: break-all;
 }
 
-/* D-day 아래 붙는 실제 마감일. 주가 아니므로 작고 흐리게 둔다 */
-.deadline-date {
-  font-size: 11px;
-  color: #908980;
-  margin-top: 1px;
-}
+.d-none { color: var(--a-dngr); }
 
-.modal-backdrop-custom {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+.d-url-form {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1050;
-  padding: 20px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.modal-box {
-  background: #fff;
-  border-radius: 14px;
-  padding: 24px;
-  width: 100%;
-  max-width: 420px;
-  max-height: 85vh;
-  overflow-y: auto;
+.d-url-form input {
+  flex: 1 1 auto;
+  height: var(--a-h);
+  border: var(--a-bd-ctl);
+  border-radius: var(--a-r);
+  padding: 0 12px;
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  outline: 0;
+  color: var(--a-c900);
+  background: var(--a-c0);
 }
 
-.modal-wide { max-width: 680px; }
+.d-url-form input:focus { border-color: var(--a-c400); }
 </style>

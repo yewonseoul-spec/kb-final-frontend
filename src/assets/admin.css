@@ -1,0 +1,662 @@
+/* ============================================================
+   청년타파 관리자 공통 스타일
+   ------------------------------------------------------------
+   토큰과 공용 컴포넌트를 여기 한 곳에서만 정한다.
+   화면 컴포넌트(.vue)에서는 색·크기를 직접 쓰지 않고
+   여기 변수와 a- 클래스를 쓴다.
+
+   ★ 클래스는 전부 a- 로 시작한다.
+     부트스트랩과 이름이 겹치면 어느 쪽이 이겼는지 추적이 안 된다.
+   ============================================================ */
+
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
+
+:root {
+  /* ---- 회색: 차가운 슬레이트 계열만 쓴다 ---- */
+  --a-c900: #0f172a;
+  --a-c800: #1e293b;
+  --a-c700: #334155;
+  --a-c600: #475569;
+  --a-c500: #64748b;
+  --a-c400: #94a3b8;
+  --a-c300: #cbd5e1;
+  --a-c200: #e2e8f0;
+  --a-c100: #f1f5f9;
+  --a-c50:  #f8fafc;
+  --a-c0:   #ffffff;
+
+  /* ---- 사이드바 ---- */
+  --a-nav-bg:    #1a1d23;
+  --a-nav-line:  #2a2f38;
+  --a-nav-hover: #232833;
+  --a-nav-text:  #9aa3b0;
+  --a-nav-on:    #ffffff;
+
+  /* ---- 강조: KB 노랑.
+         뜻은 「지금 관리자가 손대야 할 곳」 하나뿐이다. ---- */
+  --a-kb:      #ffcc00;
+  --a-kb-dim:  #8a6f00;
+  --a-kb-soft: #fffbeb;
+
+  /* ---- 의미색 5종. 색 하나에 뜻 하나 ---- */
+  --a-ok:   #15803d;  --a-ok-bg:   #f0fdf4;  --a-ok-bd:   #bbf7d0;  /* 활성·정상 */
+  --a-info: #1d4ed8;  --a-info-bg: #eff6ff;  --a-info-bd: #bfdbfe;  /* 규칙이 걸림 */
+  --a-mute: #64748b;  --a-mute-bg: #f1f5f9;  --a-mute-bd: #e2e8f0;  /* 비활성·마감 */
+  --a-warn: #c2410c;  --a-warn-bg: #fff7ed;  --a-warn-bd: #fed7aa;  /* 확인 필요 */
+  --a-dngr: #b91c1c;  --a-dngr-bg: #fef2f2;  --a-dngr-bd: #fecaca;  /* 되돌릴 수 없는 것 */
+
+  /* ---- 글자: 크기와 자간을 여기서만 정한다.
+         상태(선택됨·강조됨)에 따라 크기나 굵기를 바꾸지 않는다.
+         굵기가 바뀌면 글자 폭이 늘어나 줄 전체가 밀린다. ---- */
+  --a-t-cap: 11.5px;  --a-ls-cap: 0.005em;
+  --a-t-sm:  12.5px;  --a-ls-sm:  0;
+  --a-t-md:  13px;    --a-ls-md:  -0.005em;
+  --a-t-lg:  15px;    --a-ls-lg:  -0.015em;
+  --a-t-h1:  20px;    --a-ls-h1:  -0.025em;
+  --a-t-num: 26px;    --a-ls-num: -0.035em;
+
+  /*
+   * ---- 치수 ----
+   *
+   * 앞선 시안은 버튼 32px / 표 안 버튼 26px 이었는데
+   * 글자에 비해 눌린 느낌이 났다. 표 안 버튼은 30×82 로
+   * 가로세로 2.7:1 이라 특히 납작하고 옆으로 길었다.
+   * 34×76 으로 바꿔 2.2:1 이 되었고 조회 버튼(36×88)과 비슷해졌다.
+   */
+  --a-h: 36px;        /* 버튼·입력·검색 */
+  --a-h-xs: 34px;     /* 표 안 버튼 */
+  --a-h-seg: 34px;    /* 필터 구간 선택 */
+  --a-w-btn: 88px;    /* 폭 고정 버튼 */
+  --a-w-btn-sm: 76px; /* 표 안 폭 고정 버튼 */
+  --a-w-bdg: 72px;    /* 폭 고정 배지 */
+  --a-w-seg: 84px;    /* 구간 선택 한 칸 */
+
+  --a-r: 6px;
+  --a-r-lg: 8px;
+  /* 테두리를 c200 → c300 으로 한 단계 진하게.
+     얇아 보이던 원인의 절반은 테두리가 너무 연한 것이었다 */
+  --a-bd: 1px solid var(--a-c200);
+  --a-bd-ctl: 1px solid var(--a-c300);
+
+  --a-font: "Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================================
+   본문 공통
+   ============================================================ */
+.a-body {
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  line-height: 1.5;
+  color: var(--a-c900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 숫자는 폭을 고정한다. 표에서 자릿수가 흔들리면 비교가 안 된다 */
+.a-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* 화면 머리: 제목 + 한 줄 설명 + 오른쪽 액션 */
+.a-head {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: var(--a-bd);
+  margin-bottom: 18px;
+}
+.a-head h1 {
+  margin: 0;
+  font-size: var(--a-t-h1);
+  letter-spacing: var(--a-ls-h1);
+  font-weight: 700;
+}
+.a-head p {
+  margin: 0 0 2px;
+  color: var(--a-c500);
+  font-size: var(--a-t-sm);
+}
+.a-head-act {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+/* 머리의 액션 버튼은 글자 수와 상관없이 같은 폭 */
+.a-head-act .a-btn { min-width: 132px; }
+
+/* ============================================================
+   버튼
+   ============================================================ */
+.a-btn {
+  height: var(--a-h);
+  border: var(--a-bd-ctl);
+  background: var(--a-c0);
+  color: var(--a-c700);
+  border-radius: var(--a-r);
+  padding: 0 16px;
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.a-btn:hover { background: var(--a-c50); border-color: var(--a-c400); }
+
+/* 그 줄에서 주로 누르게 되는 버튼 */
+.a-btn-dark {
+  background: var(--a-c900);
+  border-color: var(--a-c900);
+  color: #fff;
+  font-weight: 600;
+}
+.a-btn-dark:hover { background: var(--a-c800); border-color: var(--a-c800); }
+
+/* 되돌릴 수 있는 보조 동작(비활성화·활성화 등) */
+.a-btn-quiet { color: var(--a-c600); }
+.a-btn-quiet:hover { color: var(--a-c900); }
+
+/* 되돌릴 수 없는 동작. 규칙상 빨강을 쓰는 자리 */
+.a-btn-dngr { color: var(--a-dngr); border-color: var(--a-dngr-bd); }
+.a-btn-dngr:hover:not(:disabled) { background: var(--a-dngr-bg); border-color: var(--a-dngr); }
+
+.a-btn-xs {
+  height: var(--a-h-xs);
+  padding: 0 12px;
+  font-size: var(--a-t-sm);
+  letter-spacing: var(--a-ls-sm);
+}
+.a-btn:disabled {
+  background: var(--a-c50);
+  color: var(--a-c300);
+  border-color: var(--a-c200);
+  cursor: default;
+}
+
+/*
+ * 폭 고정.
+ * 「비활성화」와 「활성화」가 글자 수만큼 늘었다 줄었다 하면
+ * 행마다 버튼 끝이 들쭉날쭉해진다.
+ */
+.a-btn-fix { width: var(--a-w-btn); padding: 0; }
+.a-btn-fix-sm { width: var(--a-w-btn-sm); padding: 0; }
+
+.a-lnk {
+  border: 0;
+  background: none;
+  color: var(--a-c500);
+  font-family: var(--a-font);
+  font-size: var(--a-t-sm);
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.a-lnk:hover { color: var(--a-c900); text-decoration: underline; }
+
+/* ============================================================
+   배지 — 색과 함께 형태(●○✕·점선)도 같이 실어
+   흑백 인쇄나 색약에서도 구분되게 한다
+   ============================================================ */
+.a-bdg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: var(--a-t-cap);
+  letter-spacing: var(--a-ls-cap);
+  font-weight: 600;
+  border-radius: 5px;
+  padding: 6px 11px;
+  border: 1px solid;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.a-bdg-ok   { color: var(--a-ok);   background: var(--a-ok-bg);   border-color: var(--a-ok-bd); }
+.a-bdg-info { color: var(--a-info); background: var(--a-info-bg); border-color: var(--a-info-bd); }
+.a-bdg-mute { color: var(--a-mute); background: var(--a-mute-bg); border-color: var(--a-mute-bd); }
+.a-bdg-warn { color: var(--a-warn); background: var(--a-warn-bg); border-color: var(--a-warn-bd); }
+.a-bdg-dngr { color: var(--a-dngr); background: var(--a-dngr-bg); border-color: var(--a-dngr-bd); }
+.a-bdg-plain{ color: var(--a-c600); background: var(--a-c0);      border-color: var(--a-c300); font-weight: 500; }
+/* 아직 확정되지 않은 것은 테두리를 점선으로 */
+.a-bdg-dash { border-style: dashed; }
+/* 상태 배지처럼 열에 나란히 놓이는 것은 폭을 고정한다 */
+.a-bdg-fix { width: var(--a-w-bdg); }
+.a-dot { font-size: 9px; line-height: 1; }
+
+/* ============================================================
+   카드
+   ============================================================ */
+.a-card {
+  background: var(--a-c0);
+  border: var(--a-bd);
+  border-radius: var(--a-r-lg);
+}
+.a-card-h {
+  padding: 0 16px;
+  height: 48px;
+  border-bottom: var(--a-bd);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.a-card-h h2 {
+  margin: 0;
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 700;
+}
+.a-card-h .a-sub { color: var(--a-c400); font-size: var(--a-t-sm); }
+.a-card-h .a-more { margin-left: auto; }
+.a-card-b { padding: 16px; }
+
+/* ============================================================
+   구간 선택 (필터의 전체 / 활성 / 비활성 같은 묶음)
+   글자 수와 무관하게 한 칸 84px 고정
+   ============================================================ */
+.a-seg {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--a-w-seg);
+  border: var(--a-bd-ctl);
+  border-radius: var(--a-r);
+  overflow: hidden;
+  background: var(--a-c0);
+}
+.a-seg button {
+  height: var(--a-h-seg);
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--a-c200);
+  background: var(--a-c0);
+  color: var(--a-c500);
+  font-family: var(--a-font);
+  font-size: var(--a-t-sm);
+  letter-spacing: var(--a-ls-sm);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.a-seg button:last-child { border-right: 0; }
+.a-seg button:hover { background: var(--a-c50); color: var(--a-c700); }
+.a-seg button.is-on { background: var(--a-c900); color: #fff; font-weight: 600; }
+
+.a-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  align-items: flex-end;
+}
+.a-fl {
+  font-size: var(--a-t-cap);
+  color: var(--a-c500);
+  margin-bottom: 6px;
+}
+
+.a-search {
+  height: var(--a-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: var(--a-bd-ctl);
+  background: var(--a-c0);
+  border-radius: var(--a-r);
+  padding: 0 12px;
+  min-width: 280px;
+}
+.a-search input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  color: var(--a-c900);
+}
+.a-search input::placeholder { color: var(--a-c400); }
+
+/* ============================================================
+   표
+   ============================================================ */
+.a-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  /*
+   * 열 폭을 colgroup 으로 정한다.
+   * auto 로 두면 남는 폭이 모든 열에 비례 배분되어
+   * 열 사이가 조금씩 벌어지고, 그 누적이 오른쪽 여백처럼 보인다.
+   * ★ 폭을 정하지 않은 열이 하나 있어야 남는 공간을 그 열이 가져간다.
+   */
+  table-layout: fixed;
+}
+.a-tbl th {
+  background: var(--a-c50);
+  color: var(--a-c500);
+  font-size: var(--a-t-sm);
+  letter-spacing: var(--a-ls-sm);
+  font-weight: 600;
+  text-align: left;
+  padding: 0 12px;
+  height: 40px;
+  border-bottom: var(--a-bd);
+  white-space: nowrap;
+}
+.a-tbl td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--a-c100);
+  vertical-align: middle;
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+}
+.a-tbl tbody tr:hover td { background: var(--a-c50); }
+.a-tbl tbody tr:last-child td { border-bottom: 0; }
+.a-tbl .a-r { text-align: right; }
+
+.a-t-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.a-t-sub {
+  color: var(--a-c400);
+  font-size: var(--a-t-sm);
+  letter-spacing: var(--a-ls-sm);
+  margin-top: 2px;
+}
+.a-t-act { white-space: nowrap; text-align: right; }
+.a-t-act .a-btn + .a-btn { margin-left: 6px; }
+
+/* 값이 0이면 흐리게, 있으면 진하게.
+   0 이 다른 숫자와 같은 굵기면 눈이 계속 거기 걸린다 */
+.a-zero { color: var(--a-c300); font-weight: 400; }
+.a-val { font-weight: 600; }
+.a-unit {
+  color: var(--a-c400);
+  font-size: var(--a-t-cap);
+  margin-left: 2px;
+  font-weight: 400;
+}
+.a-dim { color: var(--a-c500); }
+.a-none { color: var(--a-c300); }
+
+/* 페이지 이동. 136개를 나열하지 않는다 */
+.a-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  height: 52px;
+  border-top: var(--a-bd);
+  color: var(--a-c500);
+  font-size: var(--a-t-md);
+}
+.a-pager b { color: var(--a-c900); font-weight: 600; }
+.a-pager-grp { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.a-pg {
+  width: 32px;
+  height: 32px;
+  border: var(--a-bd-ctl);
+  background: var(--a-c0);
+  border-radius: var(--a-r);
+  color: var(--a-c500);
+  display: grid;
+  place-items: center;
+  font-size: var(--a-t-md);
+  cursor: pointer;
+}
+.a-pg:hover:not(:disabled) { border-color: var(--a-c400); color: var(--a-c900); }
+.a-pg:disabled { color: var(--a-c300); border-color: var(--a-c200); cursor: default; }
+
+/* 정렬되는 표 머리 */
+.a-th-sort { cursor: pointer; user-select: none; }
+.a-th-sort:hover { color: var(--a-c900); }
+.a-th-mark { font-size: 10px; opacity: 0.5; margin-left: 2px; }
+
+/* ============================================================
+   탭 (밑줄형)
+   ============================================================ */
+.a-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: var(--a-bd);
+  margin-bottom: 16px;
+}
+.a-tab {
+  height: 42px;
+  padding: 0 16px;
+  color: var(--a-c500);
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 500;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  margin-bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.a-tab:hover { color: var(--a-c900); }
+.a-tab.is-active { color: var(--a-c900); border-bottom-color: var(--a-c900); font-weight: 600; }
+.a-tab .a-n { color: var(--a-c400); font-size: var(--a-t-sm); }
+.a-tab.is-active .a-n { color: var(--a-c700); }
+
+/* ============================================================
+   지표 카드
+   ★ 색은 값에 따라 켜진다. 항상 켜져 있으면 신호가 아니다.
+     0 이면 회색(is-quiet), 확인이 필요하면 주황(is-watch),
+     문제가 있으면 빨강(is-alert), 조치할 곳이면 노랑(is-pick).
+   ============================================================ */
+.a-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.a-metric {
+  background: var(--a-c0);
+  border: var(--a-bd);
+  border-radius: var(--a-r-lg);
+  padding: 15px 16px;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+.a-metric:hover { border-color: var(--a-c300); background: var(--a-c50); }
+.a-metric-v {
+  font-size: 23px;
+  letter-spacing: var(--a-ls-num);
+  font-weight: 600;
+  line-height: 1.15;
+}
+.a-metric-l {
+  color: var(--a-c700);
+  font-size: var(--a-t-sm);
+  margin-top: 4px;
+  font-weight: 600;
+}
+.a-metric-d {
+  color: var(--a-c500);
+  font-size: var(--a-t-sm);
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--a-c200);
+}
+.a-metric.is-pick { border-color: var(--a-kb); box-shadow: inset 0 0 0 1px var(--a-kb); }
+.a-metric.is-watch { border-color: var(--a-warn-bd); background: var(--a-warn-bg); }
+.a-metric.is-watch .a-metric-v { color: var(--a-warn); }
+.a-metric.is-alert { border-color: var(--a-dngr-bd); background: var(--a-dngr-bg); }
+.a-metric.is-alert .a-metric-v { color: var(--a-dngr); }
+.a-metric.is-quiet .a-metric-v { color: var(--a-c400); font-weight: 500; }
+
+/* ============================================================
+   입력 · 안내
+   ============================================================ */
+.a-field { margin-bottom: 10px; }
+.a-field label {
+  display: block;
+  font-size: var(--a-t-sm);
+  color: var(--a-c500);
+  margin-bottom: 6px;
+}
+.a-field input,
+.a-field select {
+  width: 100%;
+  height: var(--a-h);
+  border: var(--a-bd-ctl);
+  border-radius: var(--a-r);
+  padding: 0 12px;
+  font-family: var(--a-font);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  outline: 0;
+  color: var(--a-c900);
+  background: var(--a-c0);
+}
+.a-field input:focus,
+.a-field select:focus { border-color: var(--a-c400); }
+.a-field input:disabled { background: var(--a-c50); color: var(--a-c400); }
+
+.a-hint {
+  font-size: var(--a-t-sm);
+  color: var(--a-c500);
+  background: var(--a-c50);
+  border: var(--a-bd);
+  border-radius: var(--a-r);
+  padding: 10px 12px;
+  line-height: 1.6;
+}
+.a-notice {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  background: var(--a-warn-bg);
+  border: 1px solid var(--a-warn-bd);
+  border-radius: var(--a-r);
+  padding: 11px 13px;
+  font-size: var(--a-t-md);
+  line-height: 1.6;
+}
+.a-notice b { color: var(--a-warn); }
+.a-notice-info { background: var(--a-info-bg); border-color: var(--a-info-bd); }
+.a-notice-info b { color: var(--a-info); }
+.a-notice-ok { background: var(--a-ok-bg); border-color: var(--a-ok-bd); }
+.a-notice-ok b { color: var(--a-ok); }
+.a-notice-dngr { background: var(--a-dngr-bg); border-color: var(--a-dngr-bd); }
+.a-notice-dngr b { color: var(--a-dngr); }
+
+/* ============================================================
+   비어 있는 상태 · 불러오는 중
+   ============================================================ */
+.a-empty {
+  text-align: center;
+  color: var(--a-c400);
+  font-size: var(--a-t-md);
+  padding: 48px 0;
+}
+.a-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--a-c400);
+  font-size: var(--a-t-md);
+  padding: 48px 0;
+}
+.a-spin {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--a-c200);
+  border-top-color: var(--a-c400);
+  border-radius: 50%;
+  animation: a-spin 0.7s linear infinite;
+}
+@keyframes a-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .a-spin { animation-duration: 2s; }
+}
+
+/* ============================================================
+   상자 (상세 · 확인창)
+   ============================================================ */
+.a-modal-back {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 24px;
+}
+.a-modal {
+  background: var(--a-c0);
+  border-radius: var(--a-r-lg);
+  width: 100%;
+  max-width: 460px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.a-modal-wide { max-width: 720px; }
+.a-modal-h {
+  padding: 16px 18px;
+  border-bottom: var(--a-bd);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--a-c0);
+  z-index: 1;
+}
+.a-modal-t {
+  font-size: var(--a-t-lg);
+  letter-spacing: var(--a-ls-lg);
+  font-weight: 700;
+  margin: 7px 0 2px;
+}
+.a-modal-b { padding: 16px 18px 20px; }
+.a-modal-x {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border: var(--a-bd-ctl);
+  background: var(--a-c0);
+  border-radius: var(--a-r);
+  color: var(--a-c500);
+  font-size: var(--a-t-md);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.a-modal-x:hover { background: var(--a-c50); color: var(--a-c900); }
+
+/* 이름과 값이 짝을 이루는 목록 */
+.a-dl { margin: 0; }
+.a-dl-row {
+  display: flex;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--a-c100);
+  font-size: var(--a-t-md);
+}
+.a-dl-row:last-child { border-bottom: 0; }
+.a-dl-k { flex: 0 0 100px; color: var(--a-c500); }
+.a-dl-v { flex: 1 1 auto; min-width: 0; word-break: keep-all; }
+
+/* 키보드로 옮겨 다닐 때 어디에 있는지 보이게 한다 */
+.a-btn:focus-visible,
+.a-seg button:focus-visible,
+.a-tab:focus-visible,
+.a-pg:focus-visible,
+.a-metric:focus-visible {
+  outline: 2px solid var(--a-c900);
+  outline-offset: 2px;
+}
