@@ -28,9 +28,13 @@
         <h1>검색 결과</h1>
       </div>
 
-      <KbButton type="secondary" size="small" @click="isFilterOpen = true">
-        필터
-      </KbButton>
+    <button
+          type="button"
+          class="filter-button"
+          @click="isFilterOpen = true"
+        >
+          필터
+        </button>
     </header>
 
     <section class="search-summary">
@@ -112,7 +116,6 @@
 import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getBenefit } from '@/api/benefitApi';
-import KbButton from '@/components/common/KbButton.vue';
 import BenefitCard from '@/components/benefit/BenefitCard.vue';
 import BenefitFilterModal from '@/components/benefit/BenefitFilterModal.vue';
 import AppliedFilterChips from '@/components/benefit/filter/AppliedFilterChips.vue';
@@ -433,4 +436,18 @@ onMounted(() => {
 .result-summary-text strong {
   font-size: 16px;
 }
+
+.filter-button {
+  min-width: 54px;
+  height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 20px;
+  background: #ffbc00;
+  color: #26221c;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 </style>
