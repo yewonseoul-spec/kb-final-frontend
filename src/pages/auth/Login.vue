@@ -36,7 +36,7 @@ const login = async () => {
     <div class="intro">
       <div class="intro-mark">⭐</div>
       <h1 class="intro-title">놓치는 청년혜택 없이<br />내 것부터 챙기기</h1>
-      <p class="intro-sub">로그인하면 마감 임박한 혜택부터 알려드려요</p>
+      <p class="intro-sub">로그인하면 내 조건에 맞는 혜택을 보여드려요</p>
     </div>
 
     <form class="login-form" @submit.prevent="login">

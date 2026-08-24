@@ -325,12 +325,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* 바깥 DefaultLayout 이 my-5 px-3 을 이미 주므로 여기서는 정렬과 폭만 맡는다 */
+/* 바깥 DefaultLayout 이 my-3 px-3 을 이미 주므로 여기서는 정렬과 폭만 맡는다 */
 .home {
   max-width: 500px;
   margin: 0 auto;
-  /* 마지막 배너가 탭바와 붙지 않을 정도의 여백만 남긴다 */
-  padding-bottom: 20px;
+  /* 탭바가 position:fixed 라 마지막 요소를 덮는다. 탭바 80px + 여백 16px */
+  padding-bottom: 96px;
 }
 
 .section {
@@ -363,12 +363,14 @@ onMounted(async () => {
 .card-lead {
   margin: 0;
   font-size: 12px;
+  line-height: 1.45;
   color: #908980;
 }
 
 .card-title {
   margin: 0;
   font-size: 16px;
+  line-height: 1.45;
   font-weight: 700;
   color: #2e2a24;
   word-break: keep-all;
@@ -483,13 +485,15 @@ onMounted(async () => {
 }
 
 .total-label {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   font-size: 12px;
+  line-height: 1.45;
   opacity: 0.8;
 }
 
 .total-amount {
   font-size: 20px;
+  line-height: 1.3;
   margin: 0 0 10px;
   font-weight: 700;
 }
@@ -673,12 +677,11 @@ onMounted(async () => {
 /* KbCard 의 padding 은 공통 컴포넌트 값(20px)이라 홈 안에서만 줄인다 */
 .home :deep(.kb-card) {
   padding: 14px 16px;
-  gap: 7px;
+  gap: 5px;
 }
 
 .home :deep(.kb-btn) {
-  padding: 8px 16px;
-  border-radius: 10px;
+  padding: 10px 16px;
   font-size: 13px;
 }
 
