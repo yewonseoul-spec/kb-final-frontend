@@ -137,7 +137,10 @@ const onLogout = async () => {
 <style scoped>
 .admin-shell {
   display: flex;
+  width: 100%;
+  max-width: 1380px;
   min-height: 100vh;
+  margin: 0 auto;
   background: var(--a-c50);
 }
 

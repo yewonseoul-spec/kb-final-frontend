@@ -121,7 +121,7 @@
             <!-- 혜택명만 폭을 정하지 않아 남는 공간을 가져간다 -->
             <colgroup>
               <col style="width:112px">
-              <col style="min-width:280px">
+              <col>
               <col style="width:170px">
               <col style="width:124px">
               <col style="width:96px">
@@ -147,7 +147,7 @@
                 </th>
 
                 <th>중복수혜</th>
-                <th class="a-r">관리</th>
+                <th>관리</th>
               </tr>
             </thead>
             <tbody>
@@ -945,6 +945,13 @@ onMounted(() => {
 .t-wrap { overflow-x: auto; }
 
 .a-tbl td { word-break: keep-all; }
+
+/* 관리 열은 다른 문자 열처럼 왼쪽에서 읽고,
+   버튼 뒤에는 카드 경계와 맞닿지 않도록 여백을 남긴다. */
+.a-t-act {
+  text-align: left;
+  padding-right: 24px;
+}
 
 .t-rules {
   display: flex;
