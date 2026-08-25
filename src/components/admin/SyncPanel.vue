@@ -1,11 +1,18 @@
 <template>
   <div class="a-card">
-    <div class="a-card-h">
-      <h2>정책 데이터 동기화</h2>
-    </div>
-
     <div class="a-card-b">
-      <p class="s-lead">온통청년 API에서 청년정책을 가져와 DB에 반영합니다.</p>
+      <div class="s-head">
+        <div>
+          <h2>정책 데이터 동기화</h2>
+          <p class="s-lead">온통청년 API에서 청년정책을 가져와 DB에 반영합니다.</p>
+        </div>
+
+        <button class="a-btn a-btn-dark s-run"
+                :disabled="loading || !isPeriodValid" @click="executeSync">
+          <span v-if="loading" class="a-spin"></span>
+          {{ loading ? '동기화 중…' : '동기화 실행' }}
+        </button>
+      </div>
 
       <div class="s-dates">
         <div class="a-field">
@@ -28,24 +35,9 @@
         실제로는 8월에 온통청년에 새로 등록된 정책만 들어온다.
         결과가 예상과 다르게 나오고, 원인을 화면 어디에서도 찾을 수 없다.
       -->
-      <div class="a-hint s-hint">
-        <div>정책이 온통청년에 <b>처음 등록된 날짜</b> 기준입니다. 신청 기간이 아닙니다.</div>
-        <div class="s-hint-sub">
-          온통청년 API가 등록일 조회를 지원하지 않아 전체를 받아온 뒤 걸러냅니다.
-          기간을 좁혀도 소요 시간은 줄어들지 않습니다.
-        </div>
-      </div>
-
-      <!--
-        실행 버튼을 안내 아래에 둔다.
-        제목 옆에 두면 좁은 칸에서 제목과 자리를 다투고,
-        무엇을 실행하는지 읽기 전에 먼저 눌리게 된다.
-      -->
-      <button class="a-btn a-btn-dark s-run"
-              :disabled="loading || !isPeriodValid" @click="executeSync">
-        <span v-if="loading" class="a-spin"></span>
-        {{ loading ? '동기화 중…' : '동기화 실행' }}
-      </button>
+      <p class="s-hint">
+        정책이 온통청년에 <b>처음 등록된 날짜</b> 기준입니다. 신청 기간이 아닙니다.
+      </p>
 
       <!-- 실행 결과 -->
       <div v-if="result" class="s-result">
@@ -171,30 +163,49 @@ async function executeSync() {
 </script>
 
 <style scoped>
+.s-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.s-head h2 {
+  margin: 0 0 5px;
+  color: var(--a-c900);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 700;
+}
+
 .s-lead {
-  margin: 0 0 14px;
+  margin: 0;
   color: var(--a-c500);
   font-size: var(--a-t-sm);
   line-height: 1.6;
 }
 
-/* 좁은 칸(380px)에 두 개가 나란히 들어간다 */
 .s-dates {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 14px;
+  max-width: 420px;
 }
 
 .s-dates .a-field { margin-bottom: 0; }
 
-.s-hint { margin-top: 12px; }
+.s-hint {
+  margin: 14px 0 0;
+  color: var(--a-c500);
+  font-size: var(--a-t-sm);
+  line-height: 1.6;
+}
 .s-hint b { color: var(--a-c900); font-weight: 700; }
-.s-hint-sub { margin-top: 5px; }
 
 .s-run {
-  width: 100%;
+  flex-shrink: 0;
   justify-content: center;
-  margin-top: 12px;
 }
 
 /* 실행 중 표시는 어두운 버튼 위에 얹히므로 색을 바꾼다 */

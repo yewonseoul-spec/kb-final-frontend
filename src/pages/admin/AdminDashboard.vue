@@ -3,9 +3,6 @@
     <div class="a-head">
       <div><h1>대시보드</h1></div>
       <p>청년타파 운영 현황을 한눈에 확인합니다.</p>
-      <div class="a-head-act">
-        <button class="a-btn" :disabled="loading" @click="loadDashboard">새로고침</button>
-      </div>
     </div>
 
     <div v-if="loading" class="a-loading">
@@ -52,16 +49,18 @@
             카드 전체가 그 화면으로 가는 링크다.
           -->
           <router-link to="/admin/recommendKeyword" class="a-card kw-card">
-            <div class="a-card-h">
-              <h2>추천검색어</h2>
-              <span class="a-sub">사용자 혜택 검색 화면에 노출 중</span>
-              <span class="kw-count a-more">
-                <b class="a-num">{{ activeKeywords.length }}</b>개
-                <span class="m-go">›</span>
-              </span>
-            </div>
+            <div class="a-card-b kw-body">
+              <div class="kw-head">
+                <div>
+                  <h2>현재 활성 추천검색어</h2>
+                  <p>사용자 혜택 검색 화면에 현재 노출되고 있습니다.</p>
+                </div>
+                <span class="kw-count a-more">
+                  <b class="a-num">{{ activeKeywords.length }}</b>개
+                  <span class="m-go">›</span>
+                </span>
+              </div>
 
-            <div class="a-card-b">
               <div v-if="keywordLoading" class="kw-msg">
                 추천검색어를 불러오는 중입니다.
               </div>
@@ -72,7 +71,6 @@
                 </span>
               </div>
 
-              <!-- 비어 있는 화면은 무엇을 하라는 안내여야 한다 -->
               <div v-else class="kw-msg">
                 노출 중인 추천검색어가 없습니다. 설정 화면에서 추가할 수 있습니다.
               </div>
@@ -85,7 +83,7 @@
             <h2>마감 임박 정책</h2>
             <span class="a-sub">30일 이내</span>
             <router-link to="/admin/benefits?deadlineSoon=true&isActive=Y"
-                         class="a-btn a-btn-xs a-more">전체 보기</router-link>
+                         class="d-more a-more">전체 보기</router-link>
           </div>
 
           <table v-if="data.deadlineBenefits.length" class="a-tbl">
@@ -119,7 +117,7 @@
         <div class="a-card-h">
           <h2>최근 동기화</h2>
           <span class="a-sub">최근 {{ data.recentSyncLogs.length }}건</span>
-          <router-link to="/admin/synclog" class="a-btn a-btn-xs a-more">전체 보기</router-link>
+          <router-link to="/admin/synclog" class="d-more a-more">전체 보기</router-link>
         </div>
 
         <div class="t-wrap">
@@ -343,12 +341,18 @@ onMounted(() => {
 <style scoped>
 .grid37 {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 460px minmax(0, 1fr);
   gap: 14px;
   margin-bottom: 16px;
-  /* 두 칸의 높이를 억지로 맞추지 않는다.
-     예전에는 h-100 으로 늘려서 짧은 쪽 아래가 빈 채로 남았다 */
-  align-items: start;
+  /* 오른쪽 카드를 왼쪽 카드 묶음 높이에 맞춰
+     다음 동기화 로그와의 불필요한 외부 여백을 없앤다. */
+  align-items: stretch;
+}
+
+.grid37 > .a-card {
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
 }
 
 /* 왼쪽 칸. 카드를 세로로 쌓는다 */
@@ -365,12 +369,38 @@ onMounted(() => {
 /* 카드 전체가 링크다. 글자색이 파랗게 변하지 않게 되돌린다 */
 .kw-card {
   display: block;
+  flex: 1;
   color: inherit;
   text-decoration: none;
 }
 
 .kw-card:hover { border-color: var(--a-c300); }
 .kw-card:hover .kw-chip { border-color: var(--a-c300); }
+
+.kw-body { padding: 24px 20px; }
+
+.kw-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.kw-head h2 {
+  margin: 0 0 5px;
+  color: var(--a-c900);
+  font-size: var(--a-t-md);
+  letter-spacing: var(--a-ls-md);
+  font-weight: 700;
+}
+
+.kw-head p {
+  margin: 0;
+  color: var(--a-c400);
+  font-size: var(--a-t-sm);
+  line-height: 1.6;
+}
 
 .kw-count {
   color: var(--a-c500);
@@ -426,6 +456,15 @@ onMounted(() => {
 
 .d-link { color: var(--a-c900); text-decoration: none; }
 .d-link:hover { text-decoration: underline; }
+
+.d-more {
+  color: var(--a-c700);
+  font-size: var(--a-t-sm);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.d-more:hover { color: var(--a-c900); }
 
 @media (max-width: 1280px) {
   .grid37 { grid-template-columns: 1fr; }

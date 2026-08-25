@@ -436,7 +436,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   min-height: 2.8em;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .skeleton-line {
@@ -630,7 +630,7 @@ onMounted(async () => {
 
 .banner-desc {
   margin: 0;
-  font-size: 13px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.72);
   word-break: keep-all;
 }
@@ -652,7 +652,7 @@ onMounted(async () => {
 .dot {
   display: flex;
   width: 20px;
-  height: 20px;
+  height: 14px;
   padding: 0;
   align-items: center;
   justify-content: center;

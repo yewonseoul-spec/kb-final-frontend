@@ -94,15 +94,15 @@
             <colgroup>
               <col style="width:84px">
               <col style="width:128px">
-              <col style="width:196px">
-              <col style="width:96px">
+              <col style="width:140px">
+              <col style="width:76px">
               <col style="width:78px">
               <col style="width:68px">
               <col style="width:68px">
               <col style="width:68px">
               <col style="width:76px">
-              <col style="min-width:240px">
-              <col style="width:96px">
+              <col>
+              <col style="width:112px">
             </colgroup>
             <thead>
               <tr>
@@ -118,7 +118,7 @@
                 <th class="a-r">삭제</th>
                 <th class="a-r">소요</th>
                 <th>오류 내용</th>
-                <th class="a-r">상세</th>
+                <th>상세</th>
               </tr>
             </thead>
             <tbody>
@@ -666,6 +666,13 @@ onMounted(() => load(1));
 .t-wrap { overflow-x: auto; }
 
 .a-tbl td { word-break: keep-all; }
+
+/* 상세 열은 제목과 버튼을 왼쪽에 맞추고,
+   카드 오른쪽 경계와 버튼 사이에는 여백을 둔다. */
+.a-t-act {
+  text-align: left;
+  padding-right: 24px;
+}
 
 .d-nowrap { white-space: nowrap; }
 .d-del { color: var(--a-warn); font-weight: 600; }
